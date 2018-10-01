@@ -8,8 +8,8 @@ root['bg']='MintCream'
 try:
     t1txt='t1.txt'
     btxt='button.txt'
-    open(t1txt,'x').close()
-    open(btxt,'x').close()
+    open(t1txt, 'x').close()
+    open(btxt, 'x').close()
 except FileExistsError: pass
 
 t1=Text(root)
