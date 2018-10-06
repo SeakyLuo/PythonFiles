@@ -13,14 +13,44 @@ try:
 except FileExistsError: pass
 
 t1=Text(root)
+
+history = ['']
+pointer = 0
+ctrlCounter = yzCounter = 0
+
 def monitor(event):
+    global history, pointer, ctrlCounter, yzCounter
     t=gettxt(t1)
-    if not t or t==ez.fread(t1txt):
+    if not t or t == history[-1]:
         return
     ez.fwrite(t1txt,t)
+    if ctrlCounter and 'Control' in event.keysym:
+        ctrlCounter -= 1
+    elif yzCounter and event.keysym in ['y', 'z']:
+        yzCounter -= 1
+    else:
+        history = history[:pointer + 1] + [t]
+        pointer = len(history) - 1
     txt=ez.fread(btxt,0)
     if txt: eval(txt)
 t1.bind('<KeyRelease>',monitor)
+
+def undo(event):
+    global history, pointer, ctrlCounter, yzCounter
+    if not pointer: return
+    pointer -= 1
+    deltxt(t1)
+    instxt(t1, history[pointer])
+    ctrlCounter = yzCounter = 1
+t1.bind('<Control-z>', undo)
+def redo(event):
+    global history, pointer, ctrlCounter, yzCounter
+    if pointer == len(history) - 1: return
+    pointer += 1
+    deltxt(t1)
+    instxt(t1, history[pointer])
+    ctrlCounter = yzCounter = 1
+t1.bind('<Control-y>', redo)
 
 w0=Label(root,text='Input:↑')
 def linecount(event):

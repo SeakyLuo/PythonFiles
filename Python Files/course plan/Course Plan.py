@@ -237,6 +237,7 @@ class coursePlan(Frame):
 
     def save(self):
         ez.fwrite('schedule.txt',self.courseInfo)
+        messagebox.showinfo("Success", "You have successfully saved your schedule!")
 
     def clear(self):
         for box in self.boxList:
