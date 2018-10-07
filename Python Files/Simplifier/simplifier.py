@@ -141,8 +141,9 @@ def smart_newline_remover(string):
     new = ''
     length = len(string)
     for i, ch in enumerate(string):
-        if ch == '\n' and i > 1 and \
-           (string[i - 1].isalnum() or string[i - 1] in [',', '-','，' ,'–','—']):
+        if ch == '\n' and \
+           (i + 1 < length and string[i + 1] not in ['•','-' ,'–','—']) and \
+           (i > 1 and (string[i - 1].isalnum() or string[i - 1] in [',', '-','，' ,'–','—'])):
             new += ' '
         else:
             new += ch
