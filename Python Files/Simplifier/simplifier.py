@@ -5,6 +5,7 @@ import ez
 
 root=Tk()
 root['bg']='MintCream'
+root.title('Simplifier')
 try:
     t1txt='t1.txt'
     btxt='button.txt'
@@ -106,7 +107,9 @@ def remove_brackets():
 def brackets_remover(string):
     new=''
     stop=0
-    d={'[':']','(':')','{':'}','（':'）','【':'】',0:None}
+    d={'[':']','(':')','{':'}','（':'）',\
+       '【':'】','<':'>','《':'》',\
+       '『':'』','「':'」',0:None}
     for ch in string:
         if ch in d and not stop and string.count(ch)==string.count(d[ch]):
             stop=ch
