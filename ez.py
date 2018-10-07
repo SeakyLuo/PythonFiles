@@ -7,7 +7,21 @@ import time
 desktop='C:\\Users\\Seaky\\Desktop\\'
 DataTypeError=Exception('This data type is not supported!')
 
+def py2pyw(directory):
+    ''' Converts a py file or a folder of py files to pyw files.'''
+    if os.path.isfile(directory) and endwith(directory, '.py'):
+        print('File detected')
+        fwrite(directory + 'w', fread(directory, False))
+    elif os.path.isdir(directory):
+        print('Folder detected')
+        for file in os.listdir(directory):
+            if endwith(file, '.py'):
+                fwrite(directory + file + 'w', fread(directory + file, False))
+    else:
+        print('Invalid directory!')
+
 def rmlnk():
+    ''' Remove "- 快捷方式"'''
     for folder in os.listdir():
         if endwith(folder, '.lnk'):
             os.rename(folder, folder.replace(' - 快捷方式',''))
@@ -17,6 +31,7 @@ def chdt():
     os.chdir(desktop)
 
 def copyToClipboard(text):
+    ''' Copy text to clipboard'''
     from win32 import win32clipboard
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
@@ -77,13 +92,11 @@ def fread(filename,evaluate=True,coding='utf8'):
     '''Read the file that has the filename.
         Set evaluate to true to evaluate the content.
         Default coding: utf8.'''
-    file=open(filename,encoding=coding)
+    file=open(filename, encoding=coding)
     content=file.read()
     if evaluate:
-        try:
-            content=eval(content)
-        except:
-            pass
+        try: content=eval(content)
+        except: pass
     file.close()
     return content
 
