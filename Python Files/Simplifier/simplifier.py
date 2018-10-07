@@ -6,10 +6,7 @@ import ez
 root=Tk()
 root['bg']='MintCream'
 root.title('Simplifier')
-t1txt='t1.txt'
 btxt='button.txt'
-try: open(t1txt, 'x').close()
-except FileExistsError: pass
 try: open(btxt, 'x').close()
 except FileExistsError: pass
 
@@ -27,7 +24,6 @@ def monitor(event):
     t=gettxt(t1)
     if not t or t == history[-1]:
         return
-    ez.fwrite(t1txt,t)
     if ctrlCounter and 'Control' in event.keysym:
         ctrlCounter -= 1
     elif yzCounter and event.keysym in ['y', 'z']:
@@ -140,10 +136,11 @@ b2 = Button(root,text='1',command=lambda: remover('numbers'))
 def smart_newline_remover(string):
     new = ''
     length = len(string)
+    notEnd = [',', '-','，' ,'–','—',']',')','}','）','】','>','》','』','」']
     for i, ch in enumerate(string):
         if ch == '\n' and \
            (i + 1 < length and string[i + 1] not in ['•','-' ,'–','—']) and \
-           (i > 1 and (string[i - 1].isalnum() or string[i - 1] in [',', '-','，' ,'–','—'])):
+           (i > 1 and (string[i - 1].isalnum() or string[i - 1] in notEnd)):
             new += ' '
         else:
             new += ch
@@ -166,3 +163,5 @@ t2.grid(row=3,column=0,columnspan=columnspanLength)
 
 wrapper()
 root.mainloop()
+
+ez.py2pyw('simplifier.py')
