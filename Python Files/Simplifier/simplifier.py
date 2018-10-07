@@ -17,6 +17,7 @@ t1=Text(root)
 history = ['']
 pointer = 0
 ctrlCounter = yzCounter = 0
+wrappers = ez.fread(btxt, False)
 
 def monitor(event):
     global history, pointer, ctrlCounter, yzCounter
@@ -31,8 +32,7 @@ def monitor(event):
     else:
         history = history[:pointer + 1] + [t]
         pointer = len(history) - 1
-    txt=ez.fread(btxt,0)
-    if txt: eval(txt)
+    wrapper()
 t1.bind('<KeyRelease>',monitor)
 
 def undo(event):
@@ -64,45 +64,77 @@ def clear():
     deltxt(t1)
     deltxt(t2)
 w2=Button(root,text='Clear',command=clear)
-def newline():
-    t=gettxt(t1)
+
+def wrapper():
+    global wrappers, w3, w4
+    string=gettxt(t1)
+    funcs = wrappers.split('\n')
+    wrappers = ''
+    for func in ['newline', 'brackets']:
+        if func not in funcs: continue
+        if func == 'newline':
+            string = newline_remover(string)
+            w3['relief'] = GROOVE
+        elif func == 'brackets':
+            string = brackets_remover(string)
+            w4['relief'] = GROOVE
+        wrappers += func + '\n'
+    inst2(string)
+def switchButtonState(button, name):
+    global wrappers
+    name += '\n'
+    if button['relief'] == GROOVE: # turn off
+        button['relief'] = FLAT
+        wrappers = wrappers.replace(name, '')
+    else: # turn on
+        button['relief'] = GROOVE
+        wrappers += name
+
+def remove_newline():
+    global w3
+    switchButtonState(w3, 'newline')
+    wrapper()
+def newline_remover(string):
     new=''
-    for i,ch in enumerate(t):
-        if ch=='\n' and t[i+1:i+3]!='- ':
-            new+=' '
-        else:
-            new+=ch
-    inst2(new,'newline()')
-w3=Button(root,text="\\n",command=newline)
-def brackets():
-    t=gettxt(t1)
+    for i,ch in enumerate(string):
+        new += ' ' if ch=='\n' and string[i+1:i+3]!='- ' else ch
+    return new
+
+w3=Button(root,text="\\n",command=remove_newline)
+def remove_brackets():
+    global w4
+    switchButtonState(w4, 'brackets')
+    wrapper()
+def brackets_remover(string):
     new=''
     stop=0
     d={'[':']','(':')','{':'}','（':'）','【':'】',0:None}
-    for ch in t:
-        if ch in d and not stop and t.count(ch)==t.count(d[ch]):
+    for ch in string:
+        if ch in d and not stop and string.count(ch)==string.count(d[ch]):
             stop=ch
         elif ch==d[stop]:
             stop=0
         elif not stop:
             new+=ch
-    inst2(new,'brackets()')
-w4=Button(root,text='([{}])',command=brackets)
+    return new
+w4=Button(root,text='([{}])',command=remove_brackets)
 t2=Text(root)
 
-ws=[w0,w1,w2,w3,w4]
+ws=[w0, w1, w2, w3, w4]
 t1.grid(row=0,column=0,columnspan=len(ws))
 for i,w in enumerate(ws):
     w.configure(relief=FLAT,bg='SeaGreen1')
     w.grid(row=1,column=i,sticky=NS)
 t2.grid(row=2,column=0,columnspan=len(ws))
 
-def inst2(text,caller):
-    ez.fwrite(btxt,caller)
+def inst2(text):
+    global wrappers
+    ez.fwrite(btxt, wrappers)
     deltxt(t2)
-    instxt(t2,text)
+    instxt(t2, text)
     linecount('<KeyRelease>')
     try: ez.cpc(text)
     except UnicodeError: messagebox.showerror('Error','You need to copy it to your clipboard manually.')
-    
+
+if wrappers: wrapper()
 root.mainloop()
