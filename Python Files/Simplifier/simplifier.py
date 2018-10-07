@@ -66,18 +66,16 @@ def clear():
 w2=Button(root,text='Clear',command=clear)
 
 def wrapper():
-    global wrappers, w3, w4
+    global wrappers, wd
     string=gettxt(t1)
     funcs = wrappers.split('\n')
     wrappers = ''
-    for func in ['newline', 'brackets']:
+    for func in wd:
         if func not in funcs: continue
-        if func == 'newline':
-            string = newline_remover(string)
-            w3['relief'] = GROOVE
-        elif func == 'brackets':
-            string = brackets_remover(string)
-            w4['relief'] = GROOVE
+        if func == 'newline': string = newline_remover(string)
+        elif func == 'brackets': string = brackets_remover(string)
+        elif func == 'numbers': string = numbers_remover(string)
+        wd[func]['relief'] = GROOVE
         wrappers += func + '\n'
     inst2(string)
 def switchButtonState(button, name):
@@ -99,8 +97,8 @@ def newline_remover(string):
     for i,ch in enumerate(string):
         new += ' ' if ch=='\n' and string[i+1:i+3]!='- ' else ch
     return new
+w3 = Button(root,text="\\n",command=remove_newline)
 
-w3=Button(root,text="\\n",command=remove_newline)
 def remove_brackets():
     global w4
     switchButtonState(w4, 'brackets')
@@ -117,14 +115,26 @@ def brackets_remover(string):
         elif not stop:
             new+=ch
     return new
-w4=Button(root,text='([{}])',command=remove_brackets)
-t2=Text(root)
+w4 = Button(root,text='([{}])',command=remove_brackets)
 
-ws=[w0, w1, w2, w3, w4]
+def remove_numbers():
+    global w5
+    switchButtonState(w5, 'numbers')
+    wrapper()
+def numbers_remover(string):
+    new=''
+    for ch in string:
+        new += '' if ch.isnumeric() else ch
+    return new
+w5 = Button(root,text='1',command=remove_numbers)    
+
+ws = [w0, w1, w2, w3, w4, w5]
+wd = {'newline': w3, 'brackets': w4, 'numbers': w5}
 t1.grid(row=0,column=0,columnspan=len(ws))
 for i,w in enumerate(ws):
     w.configure(relief=FLAT,bg='SeaGreen1')
     w.grid(row=1,column=i,sticky=NS)
+t2=Text(root)
 t2.grid(row=2,column=0,columnspan=len(ws))
 
 def inst2(text):
