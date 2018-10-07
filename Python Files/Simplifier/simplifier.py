@@ -6,11 +6,11 @@ import ez
 root=Tk()
 root['bg']='MintCream'
 root.title('Simplifier')
-try:
-    t1txt='t1.txt'
-    btxt='button.txt'
-    open(t1txt, 'x').close()
-    open(btxt, 'x').close()
+t1txt='t1.txt'
+btxt='button.txt'
+try: open(t1txt, 'x').close()
+except FileExistsError: pass
+try: open(btxt, 'x').close()
 except FileExistsError: pass
 
 t1=Text(root)
@@ -18,7 +18,9 @@ t1=Text(root)
 history = ['']
 pointer = 0
 ctrlCounter = yzCounter = 0
-wrappers = ez.fread(btxt, False)
+wrappers = ez.fread(btxt, True)
+if wrappers == '':
+    wrappers = {'newline': 0, 'brackets': 0, 'numbers': 0, 'smartnl': 1, 'autocopy': 1}
 
 def monitor(event):
     global history, pointer, ctrlCounter, yzCounter
@@ -53,42 +55,52 @@ def redo(event):
     ctrlCounter = yzCounter = 1
 t1.bind('<Control-y>', redo)
 
-w0=Label(root,text='Input:↑')
+w0=Label(root,text='In:↑Out:↓')
 def linecount(event):
     count=lambda t:t.count('\n')+(t[-1]!='\n') if t else 0
     up=count(gettxt(t1))
     down=count(gettxt(t2))
-    w1['text']=f'LineCount:↑{up}↓{down}'
+    w1['text']=f'Lines:↑{up}↓{down}'
 root.bind('<KeyRelease>', linecount)
 w1=Label(root,text='LineCount')
 def clear():
     deltxt(t1)
     deltxt(t2)
 w2=Button(root,text='Clear',command=clear)
+def autocopy():
+    switchButtonState(w3, 'autocopy')
+    ez.fwrite(btxt, wrappers)
+    ez.cpc(gettxt(t2))
+w3 = Button(root,text = 'AutoCopy', command = autocopy, relief = FLAT)
 
 def wrapper():
     global wrappers, wd
     string=gettxt(t1)
-    funcs = wrappers.split('\n')
-    wrappers = ''
     for func in wd:
-        if func not in funcs: continue
-        if func == 'newline': string = newline_remover(string)
-        elif func == 'brackets': string = brackets_remover(string)
-        elif func == 'numbers': string = numbers_remover(string)
-        elif func == 'smartnl': string = smart_newline_remover(string)
-        wd[func]['relief'] = GROOVE
-        wrappers += func + '\n'
-    inst2(string)
+        if wrappers[func]:
+            if func == 'newline': string = newline_remover(string)
+            elif func == 'brackets': string = brackets_remover(string)
+            elif func == 'numbers': string = numbers_remover(string)
+            elif func == 'smartnl': string = smart_newline_remover(string)
+            wd[func]['relief'] = GROOVE
+
+    ez.fwrite(btxt, wrappers)
+    deltxt(t2)
+    instxt(t2, string)
+    linecount('<KeyRelease>')
+    if wrappers['autocopy']:
+        try:
+            ez.cpc(string)
+        except UnicodeError:
+            messagebox.showerror('Error','You need to copy it to your clipboard manually.')
 def switchButtonState(button, name):
     global wrappers
-    name += '\n'
     if button['relief'] == GROOVE: # turn off
         button['relief'] = FLAT
-        wrappers = wrappers.replace(name, '')
+        wrappers[name] = 0
     else: # turn on
         button['relief'] = GROOVE
-        wrappers += name
+        wrappers[name] = 1
 def remover(name):
     global wd
     switchButtonState(wd[name], name)
@@ -100,7 +112,7 @@ def newline_remover(string):
     for i,ch in enumerate(string):
         new += ' ' if ch == '\n' else ch  
     return new.strip()
-w3 = Button(root,text="\\n",command=lambda: remover('newline'))
+b0 = Button(root,text="\\n",command=lambda: remover('newline'))
 
 def brackets_remover(string):
     new=''
@@ -116,14 +128,14 @@ def brackets_remover(string):
         elif not stop:
             new+=ch
     return new
-w4 = Button(root,text='([{}])',command=lambda: remover('brackets'))
+b1 = Button(root,text='([{}])',command=lambda: remover('brackets'))
 
 def numbers_remover(string):
     new=''
     for ch in string:
         new += '' if ch.isnumeric() else ch
     return new
-w5 = Button(root,text='1',command=lambda: remover('numbers'))
+b2 = Button(root,text='1',command=lambda: remover('numbers'))
 
 def smart_newline_remover(string):
     new = ''
@@ -135,25 +147,21 @@ def smart_newline_remover(string):
         else:
             new += ch
     return new.strip()
-w6 = Button(root,text='smartnl',command=lambda: remover('smartnl'))        
+b3 = Button(root,text='smartnl',command=lambda: remover('smartnl'))
 
-ws = [w0, w1, w2, w3, w4, w5, w6]
-wd = {'newline': w3, 'brackets': w4, 'numbers': w5, 'smartnl': w6}
-t1.grid(row=0,column=0,columnspan=len(ws))
-for i,w in enumerate(ws):
+widgets = [w0, w1, w2, w3]
+buttons = [b0, b1, b2, b3]
+wd = {'newline': b0, 'brackets': b1, 'numbers': b2, 'smartnl': b3, 'autocopy': w3}
+columnspanLength = max(len(widgets),len(buttons))
+for i,w in enumerate(buttons):
     w.configure(relief=FLAT,bg='SeaGreen1')
-    w.grid(row=1,column=i,sticky=NS)
+    w.grid(row=0,column=i,sticky=NS)
+t1.grid(row=1,column=0,columnspan=columnspanLength)
+for i,w in enumerate(widgets):
+    w.configure(relief=FLAT,bg='SeaGreen1')
+    w.grid(row=2,column=i,sticky=NS)
 t2=Text(root)
-t2.grid(row=2,column=0,columnspan=len(ws))
+t2.grid(row=3,column=0,columnspan=columnspanLength)
 
-def inst2(text):
-    global wrappers
-    ez.fwrite(btxt, wrappers)
-    deltxt(t2)
-    instxt(t2, text)
-    linecount('<KeyRelease>')
-    try: ez.cpc(text)
-    except UnicodeError: messagebox.showerror('Error','You need to copy it to your clipboard manually.')
-
-if wrappers: wrapper()
+wrapper()
 root.mainloop()
