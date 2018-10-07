@@ -7,6 +7,18 @@ import time
 desktop='C:\\Users\\Seaky\\Desktop\\'
 DataTypeError=Exception('This data type is not supported!')
 
+def translate(string, to_l = 'zh', from_l = 'en'):
+    import urllib.request
+    header={'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
+    flag='class="t0">'
+    query=sub(string,' ','+','w/','with')
+    url="https://translate.google.cn/m?hl=%s&sl=%s&q=%s" % (to_l, from_l, query)
+    request=urllib.request.Request(url, headers=header)
+    page=str(urllib.request.urlopen(request).read().decode('utf-8'))
+    target=page[page.find(flag) + len(flag):]
+    target=target.split("<")[0]
+    return target
+
 def py2pyw(directory):
     ''' Converts a py file or a folder of py files to pyw files.'''
     if os.path.isfile(directory) and endwith(directory, '.py'):
