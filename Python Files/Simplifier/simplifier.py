@@ -76,6 +76,7 @@ def wrapper():
         if func == 'newline': string = newline_remover(string)
         elif func == 'brackets': string = brackets_remover(string)
         elif func == 'numbers': string = numbers_remover(string)
+        elif func == 'smartnl': string = smart_newline_remover(string)
         wd[func]['relief'] = GROOVE
         wrappers += func + '\n'
     inst2(string)
@@ -88,22 +89,19 @@ def switchButtonState(button, name):
     else: # turn on
         button['relief'] = GROOVE
         wrappers += name
-
-def remove_newline():
-    global w3
-    switchButtonState(w3, 'newline')
+def remover(name):
+    global wd
+    switchButtonState(wd[name], name)
     wrapper()
+    
 def newline_remover(string):
     new=''
+    length = len(string)
     for i,ch in enumerate(string):
-        new += ' ' if ch=='\n' and string[i+1:i+3]!='- ' else ch
-    return new
-w3 = Button(root,text="\\n",command=remove_newline)
+        new += ' ' if ch == '\n' else ch  
+    return new.strip()
+w3 = Button(root,text="\\n",command=lambda: remover('newline'))
 
-def remove_brackets():
-    global w4
-    switchButtonState(w4, 'brackets')
-    wrapper()
 def brackets_remover(string):
     new=''
     stop=0
@@ -118,21 +116,29 @@ def brackets_remover(string):
         elif not stop:
             new+=ch
     return new
-w4 = Button(root,text='([{}])',command=remove_brackets)
+w4 = Button(root,text='([{}])',command=lambda: remover('brackets'))
 
-def remove_numbers():
-    global w5
-    switchButtonState(w5, 'numbers')
-    wrapper()
 def numbers_remover(string):
     new=''
     for ch in string:
         new += '' if ch.isnumeric() else ch
     return new
-w5 = Button(root,text='1',command=remove_numbers)    
+w5 = Button(root,text='1',command=lambda: remover('numbers'))
 
-ws = [w0, w1, w2, w3, w4, w5]
-wd = {'newline': w3, 'brackets': w4, 'numbers': w5}
+def smart_newline_remover(string):
+    new = ''
+    length = len(string)
+    for i, ch in enumerate(string):
+        if ch == '\n' and i > 1 and \
+           (string[i - 1].isalnum() or string[i - 1] in [',', '-','，' ,'–','—']):
+            new += ' '
+        else:
+            new += ch
+    return new.strip()
+w6 = Button(root,text='smartnl',command=lambda: remover('smartnl'))        
+
+ws = [w0, w1, w2, w3, w4, w5, w6]
+wd = {'newline': w3, 'brackets': w4, 'numbers': w5, 'smartnl': w6}
 t1.grid(row=0,column=0,columnspan=len(ws))
 for i,w in enumerate(ws):
     w.configure(relief=FLAT,bg='SeaGreen1')
