@@ -116,18 +116,22 @@ def newline_remover(string):
     return new.strip()
 b0 = Button(root,text="\\n",command=lambda: remover('newline'))
 def brackets_remover(string):
-    new=''
-    stop=0
-    d={'[':']','(':')','{':'}','（':'）',\
+    new = ''
+    d = {'[':']','(':')','{':'}','（':'）',\
        '【':'】','<':'>','《':'》',\
-       '『':'』','「':'」',0:None}
+       '『':'』','「':'」'}
+    rd = { d[key] : key for key in d } 
+    left = { key : 0 for key in d }
+    right = []
     for ch in string:
-        if ch in d and not stop and string.count(ch)==string.count(d[ch]):
-            stop=ch
-        elif ch==d[stop]:
-            stop=0
-        elif not stop:
-            new+=ch
+        if ch in d:
+            left[ch] += 1
+            right.append(d[ch])
+        elif ch in right:
+            left[rd[ch]] -= 1
+            right.remove(ch)
+        elif all(left[b] == 0 for b in left):
+            new += ch
     return new
 b1 = Button(root,text='([{}])',command=lambda: remover('brackets'))
 def numbers_remover(string):
@@ -139,7 +143,7 @@ b2 = Button(root,text='1',command=lambda: remover('numbers'))
 def smart_newline_remover(string):
     new = ''
     length = len(string)
-    notEnd = [',', '-','，' ,'–','—',']',')','}','）','】','>','》','』','」']
+    notEnd = [',', '-','，' ,'–','—',']',')','}','）','】','>','》','』','」',';',':']
     for i, ch in enumerate(string):
         if ch == '\n' and \
            (i + 1 < length and string[i + 1] not in ['•','-' ,'–','—']) and \
