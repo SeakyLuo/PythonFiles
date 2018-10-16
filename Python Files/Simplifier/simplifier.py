@@ -23,22 +23,26 @@ class Simplifier(Tk):
         self.buttonbar = Frame(self)
         self.input = Frame(self)
         self.widgetbar = Frame(self)
-        self.output = Frame(self, width = 600, height = 800)
+        self.output = Frame(self, width = 600, height = 450)
         self.output.grid_propagate(False)
         frames = [self.buttonbar, self.input, self.widgetbar, self.output]
         self.t1 = Text(self.input)
+        self.scrollb1 = Scrollbar(self.input, command = self.t1.yview)
         self.t1.bind('<KeyRelease>', self.monitor)
+        self.t1.bind('<Control-z>', lambda event: self.undo())
+        self.t1.bind('<Control-y>', lambda event: self.redo())
+        self.t2 = Text(self.output)
+        self.scrollb2 = Scrollbar(self.output, command = self.t2.yview)
         self.w0 = Label(self.widgetbar, text = 'In↑Out↓')
         self.w1 = Button(self.widgetbar, command = self.lineCount)
         self.w2 = Button(self.widgetbar, command = self.charCount)
         self.w3 = Button(self.widgetbar, text = 'Clear',command = self.clear)
         self.w4 = Button(self.widgetbar, text = 'AutoCopy', command = self.autocopy)
         self.w5 = Button(self.widgetbar, text = 'Paste', command = self.paste)
-        self.w6 = Button(self.widgetbar, text = 'Undo', command = self.ButtonUndo)
-        self.t1.bind('<Control-z>', lambda event: self.undo())
-        self.w7 = Button(self.widgetbar,text = 'Redo', command = self.ButtonRedo)
-        self.t1.bind('<Control-y>', lambda event: self.redo())
-        self.w8 = Scale(self.widgetbar, from_ = 5, to = 50, orient = HORIZONTAL, showvalue = 0, command = lambda event: self.fontSize())
+        self.w6 = Button(self.widgetbar, text = 'Undo', command = self.Undo)
+        self.w7 = Button(self.widgetbar,text = 'Redo', command = self.Redo)
+        self.w8 = Scale(self.widgetbar, from_ = 5, to = 50, orient = HORIZONTAL,\
+                        showvalue = 0, command = lambda event: self.fontSize())
         self.b0 = Button(self.buttonbar, text = "\\n", command = lambda: self.remover('newline'))
         self.b1 = Button(self.buttonbar, text = '([{}])', command = lambda: self.remover('brackets'))
         self.b2 = Button(self.buttonbar, text = '1', command = lambda: self.remover('numbers'))
@@ -50,6 +54,11 @@ class Simplifier(Tk):
         self.wd = {'newline': self.b0, 'brackets': self.b1, 'numbers': self.b2, 'smartnl': self.b3, \
         'autocopy': self.w4, 'space': self.b4, 'translate': self.b5}
         columnspanLength = max(len(widgets),len(buttons))
+        for sb, t in zip([self.scrollb1, self.scrollb2], [self.t1, self.t2]):
+            t.grid(row = 0, column = 0, sticky = NSEW)
+            t['yscrollcommand'] = sb.set
+            sb.configure(relief = FLAT, borderwidth = 0)
+            sb.grid(row = 0, column = 1, sticky = NS)
         for f in frames:
             f['bg'] = 'MintCream'
             f.pack(fill = BOTH, expand = 1)
@@ -58,12 +67,9 @@ class Simplifier(Tk):
         for w in buttons:
             w.configure(relief = FLAT,bg = 'SeaGreen1')
             w.pack(side = LEFT, fill = Y, expand = 1)
-        self.t1.grid(columnspan = columnspanLength, sticky = NSEW)
         for w in widgets:
             w.configure(relief = FLAT, bg = 'thistle1')
             w.pack(side = LEFT, fill = Y, expand = 1)
-        self.t2 = Text(self.output)
-        self.t2.grid(columnspan = columnspanLength, sticky = NSEW)
         self.wrapper()
         self.w8.set(self.wrappers['fontsize'])
         self.fontSize()
@@ -122,7 +128,7 @@ class Simplifier(Tk):
         deltxt(self.t1)
         instxt(self.t1, self.history[self.pointer])
         self.ctrlCounter = self.yzCounter = 1
-    def ButtonUndo(self):
+    def Undo(self):
         self.undo()
         self.wrapper()
     def redo(self):
@@ -131,7 +137,7 @@ class Simplifier(Tk):
         deltxt(self.t1)
         instxt(self.t1, self.history[self.pointer])
         self.ctrlCounter = self.yzCounter = 1
-    def ButtonRedo(self):
+    def Redo(self):
         self.redo()
         self.wrapper()
     def fontSize(self):
