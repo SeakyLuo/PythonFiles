@@ -8,6 +8,7 @@ desktop='C:\\Users\\Seaky\\Desktop\\'
 DataTypeError=Exception('This data type is not supported!')
 
 def translate(string, to_l = 'zh', from_l = 'en'):
+    if not string: return ''
     import urllib.request, urllib.parse
     header = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
     flag = 'class="t0">'

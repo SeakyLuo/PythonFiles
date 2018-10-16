@@ -17,7 +17,7 @@ pointer = 0
 ctrlCounter = yzCounter = 0
 wrappers = ez.fread(btxt, True)
 if wrappers == '':
-    wrappers = {'newline': 0, 'brackets': 0, 'numbers': 0, 'smartnl': 1,'space': 1, 'autocopy': 1, 'translate': 0}
+    wrappers = {'newline': 0, 'brackets': 0, 'numbers': 0, 'smartnl': 1,'space': 1, 'autocopy': 1, 'translate': 0, 'lines': 1, 'chars': 0}
 
 def monitor(event):
     global history, pointer, ctrlCounter, yzCounter
@@ -34,18 +34,32 @@ def monitor(event):
     wrapper()
 t1.bind('<KeyRelease>',monitor)
 
-w0=Label(root,text = 'In↑Out↓')
-def lineCount(event):
-    count = lambda t:t.count('\n')+(t[-1] != '\n') if t else 0
-    up = count(gettxt(t1))
-    down = count(gettxt(t2))
-    w1['text']=f'Lines↑{up}↓{down}'
-root.bind('<KeyRelease>', lineCount)
-w1 = Label(root,text = 'lineCount')
-def charCount(event):
-    w2['text'] = 'Chars↓' + str(len(gettxt(t2)))
-root.bind('<KeyRelease>', charCount)
-w2 = Label(root,text = 'Chars:↓0')
+w0 = Label(root,text = 'In↑Out↓')
+def countLines():
+    if wrappers['lines']: 
+        count = lambda t: t.count('\n')+(t[-1] != '\n') if t else 0
+        up = count(gettxt(t1))
+        down = count(gettxt(t2))
+        w1['text'] = f'Lines↑{up}↓{down}'
+    else:
+        w1['text'] = 'LineCount'
+def lineCount():
+    wrappers['lines'] = int(not wrappers['lines'])
+    countLines()
+root.bind('<KeyRelease>', lambda event: countLines())
+w1 = Button(root, command = lineCount)
+def countChars():
+    if wrappers['chars']:
+        up = len(gettxt(t1))
+        down = len(gettxt(t2))
+        w2['text'] = f'Chars↑{up}↓{down}'
+    else:
+        w2['text'] = 'CharCount'
+def charCount():
+    wrappers['chars'] = int(not wrappers['chars'])
+    countChars()    
+root.bind('<KeyRelease>', lambda event: countChars())
+w2 = Button(root, command = charCount)
 def clear():
     deltxt(t1)
     deltxt(t2)
@@ -108,7 +122,8 @@ def wrapper():
     ez.fwrite(btxt, wrappers)
     deltxt(t2)
     instxt(t2, string)
-    lineCount('<KeyRelease>')
+    countLines()
+    countChars()
     if wrappers['autocopy']:
         try:
             ez.cpc(string)
@@ -185,9 +200,14 @@ def space_remover(string):
 b4 = Button(root,text = 'space',command = lambda: remover('space'))
 def translate(string):
     try:
+        if len(string) > 5000:
+            messagebox.showwarning('Warning', 'String length can\'t exceeds 5000!')
         return ez.translate(string)
-    except TimeoutError:
-        messagebox.showerror('Error', 'No Network!')
+    except Exception as e:
+        if e is UnicodeError:
+            messagebox.showerror('Error', 'Can\'t translate!')
+        else:
+            messagebox.showerror('Error', 'No Network!')
         remover('translate')
         return string
 b5 = Button(root,text = 'translate',command = lambda: remover('translate'))
