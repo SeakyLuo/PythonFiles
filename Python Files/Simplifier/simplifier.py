@@ -65,7 +65,7 @@ class Simplifier(Tk):
             f.rowconfigure(0, weight = 1)
             f.columnconfigure(0, weight = 1)
         for w in buttons:
-            w.configure(relief = FLAT,bg = 'SeaGreen1')
+            w.configure(relief = FLAT, bg = 'SeaGreen1')
             w.pack(side = LEFT, fill = Y, expand = 1)
         for w in widgets:
             w.configure(relief = FLAT, bg = 'thistle1')
