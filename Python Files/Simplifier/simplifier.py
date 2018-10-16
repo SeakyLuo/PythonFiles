@@ -186,7 +186,7 @@ b4 = Button(root,text = 'space',command = lambda: remover('space'))
 def translate(string):
     try:
         return ez.translate(string)
-    except:
+    except TimeoutError:
         messagebox.showerror('Error', 'No Network!')
         remover('translate')
         return string
