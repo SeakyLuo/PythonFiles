@@ -378,3 +378,5 @@ cp=coursePlan(root)
 cp.pack()
 root.title('Schedule')
 root.mainloop()
+
+ez.py2pyw('Course Plan.py')

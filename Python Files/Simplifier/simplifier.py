@@ -12,7 +12,9 @@ class Simplifier(Tk):
         try: open(self.btxt, 'x').close()
         except FileExistsError: pass
         self.wrappers = ez.fread(self.btxt, True)
-        if self.wrappers == '': self.wrappers = {'newline': 0, 'brackets': 0, 'numbers': 0, 'smartnl': 1,'space': 1, 'autocopy': 1, 'translate': 0, 'lines': 1, 'chars': 0, 'fontsize': 10}
+        if self.wrappers == '':
+            self.wrappers = {'newline': 0, 'brackets': 0, 'numbers': 0, 'smartnl': 1,'space': 1, 'autocopy': 1,\
+                             'punc': 'en', 'translate': 0, 'lines': 1, 'chars': 0, 'fontsize': 10}
         self.history = ['']
         self.pointer = 0
         self.ctrlCounter = self.yzCounter = 0
@@ -49,10 +51,11 @@ class Simplifier(Tk):
         self.b3 = Button(self.buttonbar, text = 'smartnl', command = lambda: self.remover('smartnl'))
         self.b4 = Button(self.buttonbar, text = 'space', command = lambda: self.remover('space'))
         self.b5 = Button(self.buttonbar, text = 'translate', command = lambda: self.remover('translate'))
-        buttons = [self.b0, self.b1, self.b2, self.b3, self.b4, self.b5]
+        self.b6 = Button(self.buttonbar, text = self.wrappers['punc'] if self.wrappers['punc'] else 'Punctuation', command = self.switch_punc)
+        buttons = [self.b0, self.b1, self.b2, self.b3, self.b4, self.b5, self.b6]
         widgets = [self.w0, self.w1, self.w2, self.w3, self.w4, self.w5, self.w6, self.w7, self.w8]
         self.wd = {'newline': self.b0, 'brackets': self.b1, 'numbers': self.b2, 'smartnl': self.b3, \
-        'autocopy': self.w4, 'space': self.b4, 'translate': self.b5}
+        'autocopy': self.w4, 'space': self.b4, 'translate': self.b5, 'punc': self.b6}
         columnspanLength = max(len(widgets),len(buttons))
         for sb, t in zip([self.scrollb1, self.scrollb2], [self.t1, self.t2]):
             t.grid(row = 0, column = 0, sticky = NSEW)
@@ -148,12 +151,13 @@ class Simplifier(Tk):
     def wrapper(self):
         string = gettxt(self.t1)
         for func in self.wd:
-            if self.wrappers.get(func, 0):
-                if func == 'newline': string = self.newline_remover(string)
-                elif func == 'brackets': string = self.brackets_remover(string)
-                elif func == 'numbers': string = self.numbers_remover(string)
-                elif func == 'smartnl': string = self.smart_newline_remover(string)
-                self.wd[func]['relief'] = GROOVE
+            if not self.wrappers[func]: continue
+            if func == 'newline': string = self.newline_remover(string)
+            elif func == 'brackets': string = self.brackets_remover(string)
+            elif func == 'numbers': string = self.numbers_remover(string)
+            elif func == 'smartnl': string = self.smart_newline_remover(string)
+            elif func == 'punc': string = self.punc_switch(string)
+            self.wd[func]['relief'] = GROOVE
         
         if self.wrappers['space']: string = self.space_remover(string)
         if self.wrappers['translate']: string = self.translate(string)
@@ -223,6 +227,24 @@ class Simplifier(Tk):
         return new.strip()
     def space_remover(self, string):
         return ez.sub(string, ' ,',',','  ',' ',' .','.',' 。','。',' ，','，')
+    def switch_punc(self):
+        texts = ['Punctuation', 'en', 'zh']
+        states = [0] + texts[1:]
+        next_index = (states.index(self.wrappers['punc']) + 1) % len(states) 
+        self.wrappers['punc'] = states[next_index]
+        self.b6['text'] = texts[next_index]
+        if next_index == 0: self.b6['relief'] = FLAT
+        self.wrapper()
+    def punc_switch(self, string):
+        zh2en = ['‘', '\'','“','"', '’', '\'', '”', '"', '，', ',', '。', '.', '：', ':', '；', ';', '【', '[', '】', ']',\
+                 '—', '-', '、', '\\']
+        if self.wrappers['punc'] == 'en':
+            string = ez.sub(string, *zh2en)
+        elif self.wrappers['punc'] == 'zh':
+            en2zh = []
+            for i in range(0, len(zh2en), 2): en2zh += [zh2en[i + 1], zh2en[i]]
+            string = ez.sub(string, *en2zh)
+        return string
     def translate(self, string):
         try:
             if len(string) > 5000:

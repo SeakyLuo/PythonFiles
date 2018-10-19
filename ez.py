@@ -4,8 +4,8 @@ import datetime
 import os
 import time
 
-desktop='C:\\Users\\Seaky\\Desktop\\'
-DataTypeError=Exception('This data type is not supported!')
+desktop = 'C:\\Users\\Seaky\\Desktop\\'
+DataTypeError = Exception('This data type is not supported!')
 
 def translate(string, to_l = 'zh', from_l = 'en'):
     if not string: return ''
@@ -488,44 +488,44 @@ def delta_days(day1,day2):
     delta=(end-start).days+1
     print(abs(delta))
 
-def substitute(obj,*args):
+def substitute(obj, *args):
     '''Support data type: str, tuple, list, set.
         Usage: substitute([1,2,3,4],1,2,2,3) // Returns [3,3,3,4]
         Abbreviation:sub'''
-    num=len(args)
-    if num==0:
+    num = len(args)
+    if num == 0:
         return
-    if num%2:
+    if num % 2:
         raise Exception('Please type in the correct number of subsitution words!')
-    typ=type(obj)
-    if typ==str:
-        new=obj
+    typ = type(obj)
+    if typ == str:
+        new = obj
         for i in range(0,num,2):
-            subed=args[i]
-            if type(subed)!=str:
-                subed=str(subed)
-            subs=args[i+1]
-            if type(subs)!=str:
-                subs=str(subs)
-            new=new.replace(subed,subs)
+            subed = args[i]
+            if type(subed) != str:
+                subed = str(subed)
+            subs = args[i + 1]
+            if type(subs) != str:
+                subs = str(subs)
+            new = new.replace(subed,subs)
     else:
-        if typ==tuple:
-            new=()
-        elif typ==list:
-            new=[]
-        elif typ==set:
-            new=set()
+        if typ == tuple:
+            new = ()
+        elif typ == list:
+            new = []
+        elif typ == set:
+            new = set()
         else:
             raise DataTypeError
         for item in obj:
-            for i in range(0,num,2):
-                if item==args[i]:
-                    item=args[i+1]
-            if typ==tuple:
-                new+=(item,)
-            elif typ==list:
-                new+=[item]
-            elif typ==set:
+            for i in range(0, num, 2):
+                if item == args[i]:
+                    item = args[i + 1]
+            if typ == tuple:
+                new += (item,)
+            elif typ == list:
+                new += [item]
+            elif typ == set:
                 new.add(item)
     return new
 
