@@ -18,6 +18,7 @@ def translate(string, to_l = 'zh', from_l = 'en'):
     page = urllib.request.urlopen(request).read().decode('utf-8')
     target = page[page.find(flag) + len(flag):]
     target = target.split("<")[0]
+    target = sub(target, "&#39;", "'")
     return target
 
 def py2pyw(directory):
