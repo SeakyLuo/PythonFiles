@@ -24,5 +24,5 @@ def main(startYear = 0, endYear = 0):
         document.save(f'{year}.docx')
         
 if __name__ == '__main__':
-    main(2010, 2014)
+    main(2019)
 

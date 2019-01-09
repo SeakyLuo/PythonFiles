@@ -258,7 +258,6 @@ class Simplifier(Tk):
             self.remover('translate')
             return string
         
-
 app = Simplifier()
 app.mainloop()
 ez.py2pyw('simplifier.py')
