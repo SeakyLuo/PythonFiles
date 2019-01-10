@@ -674,9 +674,9 @@ def matrixProducer(row = 0, column = 0, formula = '', matrixOrDeterminant = 'm')
                 output  += Ent[i*column + j] + '&'
             output = output[:-1] + '\\\\'
         if matrixOrDeterminant == 'm':
-            output = '$$\\begin{bmatrix}' + output[:-2] + '\\end{bmatrix}$$'
+            output = '\\begin{bmatrix}' + output[:-2] + '\\end{bmatrix}'
         elif matrixOrDeterminant == 'd':
-            output = '$$\\begin{vmatrix}' + output[:-2] + '\\end{vmatrix}$$'
+            output = '\\begin{vmatrix}' + output[:-2] + '\\end{vmatrix}'
         return output
 
 def matrixLaTeX(row = 0, column = 0, matrix = '', printResult = True):
@@ -824,9 +824,9 @@ def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
 def formJudge(m):
     if type(m) != str:
         return False
-    if m.find('$$\\begin{bmatrix}') == 0 and len(m)-m.find('\end{bmatrix}$$') == 15 and (m.find('&') and m.find('\\')) != -1:
+    if m.find('\\begin{bmatrix}') == 0 and len(m)-m.find('\end{bmatrix}') == 15 and (m.find('&') and m.find('\\')) != -1:
         return 'l'
-    elif m.find('$$\\begin{vmatrix}') == 0 and len(m)-m.find('\end{vmatrix}$$') == 15 and (m.find('&') and m.find('\\')) != -1:
+    elif m.find('\\begin{vmatrix}') == 0 and len(m)-m.find('\end{vmatrix}') == 15 and (m.find('&') and m.find('\\')) != -1:
         return 'dl'
     elif m.find(' ')>0:
         for i in m.split():
@@ -869,7 +869,7 @@ def matrixConvert(form = '', matrix = ''):
     newMat = ''
     if formJudge(inputMat) == 'w':
         if inputForm == 'l':
-            inputMat = ez.substitute(inputMat, '[[', '$$\\begin{bmatrix}', ']]', '\\end{bmatrix}$$', '], [', '\\\\')
+            inputMat = ez.substitute(inputMat, '[[', '\\begin{bmatrix}', ']]', '\\end{bmatrix}', '], [', '\\\\')
             for ch in inputMat:
                 if ch == ', ':
                     ch = '&'
@@ -889,8 +889,8 @@ def matrixConvert(form = '', matrix = ''):
         if formJudge(inputMat) == 'dl':
             inputMat = inputMat.replace('vmatrix', 'bmatrix')
         if inputForm == 'w':
-            inputMat = inputMat.replace('$$\\begin{bmatrix}', '[[')
-            inputMat = inputMat.replace('\\end{bmatrix}$$', ']]')
+            inputMat = inputMat.replace('\\begin{bmatrix}', '[[')
+            inputMat = inputMat.replace('\\end{bmatrix}', ']]')
             for i, ch in enumerate(inputMat):
                 if ch == '&':
                     ch = ', '
@@ -902,7 +902,7 @@ def matrixConvert(form = '', matrix = ''):
         elif inputForm == 'l':
             newMat  += matrix
         elif inputForm == 'b':
-            inputMat = ez.substitute(inputMat, '$$\\begin{bmatrix}', '|', '\\end{bmatrix}$$', '|', '\\\\', '|\n|', '&', ' ')
+            inputMat = ez.substitute(inputMat, '\\begin{bmatrix}', '|', '\\end{bmatrix}', '|', '\\\\', '|\n|', '&', ' ')
             newMat = formatBMat(inputMat)
         else:
             inputMat = inputMat[18:-15]
@@ -928,8 +928,8 @@ def matrixConvert(form = '', matrix = ''):
         elif inputForm == 'b':
             newMat  += matrix
         if inputForm == 'l':
-            inputMat = inputMat[1:] + '$$\\begin{bmatrix}'
-            inputMat = inputMat[:-1] + '\\end{bmatrix}$$'
+            inputMat = inputMat[1:] + '\\begin{bmatrix}'
+            inputMat = inputMat[:-1] + '\\end{bmatrix}'
             for ch in inputMat:
                 if ch == ' ':
                     ch = '&'
@@ -1196,13 +1196,13 @@ dc = determinantCalculation
 
 def boldedRLaTeX(n = 0):
     if n:
-        return ('$$\mathbb{R}^' + str(n) + '$$')
+        return ('\mathbb{R}^' + str(n) + '')
     else:
         n = input('How many dimensions would you like?\n>>> ')
         if n:
-            print('$$\mathbb{R}^' + n + '$$')
+            print('\mathbb{R}^' + n + '')
         else:
-            print('$$\mathbb{R}$$')
+            print('\mathbb{R}')
 
 ##abbreviation
 br = boldedRLaTeX
@@ -1213,9 +1213,9 @@ def fractionLaTeX(numerator = None, denominator = None):
             numerator = input('Please type in numerator here: ')
         if denominator == None:
             denominator = input('Please type in denominator here: ')
-        print('$$\\frac{' + numerator + '}{' + denominator + '}$$')
+        print('\\frac{' + numerator + '}{' + denominator + '}')
     else:
-        return ('$$\\frac{' + str(numerator) + '}{' + str(denominator) + '}$$')
+        return ('\\frac{' + str(numerator) + '}{' + str(denominator) + '}')
 
 ##abbreviation
 fl = fractionLaTeX
@@ -1224,9 +1224,9 @@ def vectorLaTeX(entry = None, vector = True, overRightArrow = False):
     if entry == None:
         entry = input('Please input your entry here: ')
     if vector == True and overRightArrow == False:
-        print('$$vec{' + entry + '}$$')
+        print('\vec{' + entry + '}')
     elif overRightArrow == True:
-        print('$$overrightarrow{' + entry + '}$$')
+        print('\overrightarrow{' + entry + '}')
 
 ##abbreviation
 vl = vectorLaTeX
