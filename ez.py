@@ -220,7 +220,7 @@ def similar(obj1, obj2, capital = True):
         return grade(obj2, obj1)
 
 def predir():
-    '''Go back to the previous folder.'''
+    '''Go back to the parent folder (not root).'''
     path = os.getcwd()
     os.chdir(path[:find(path).last('\\')])
 
