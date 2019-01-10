@@ -340,11 +340,11 @@ class find:
         raise DataTypeError
 
     def any(self, *args):
-        '''Find any element of args in obj.'''
+        '''Find any elements of args in obj.'''
         return [arg for arg in args if arg in self.obj]
 
     def second(self, occurrence):
-        '''Find the second occuring positions in an obj.'''
+        '''Find the second occurring positions in an obj.'''
         count = 0
         if self.type == str:
             for idx in range(len(self.obj)):
@@ -411,13 +411,13 @@ class find:
         return len(self.between(obj1, obj2))
 
     def key(self, value):
-        '''Find all the keys that have the value.'''
+        '''Find all the keys with the value.'''
         if self.type != dict:
             raise DataTypeError
         return tuple(k for k in self.obj if self.obj[k] == value)
 
     def last(self, occurrence):
-        '''Find the last occuring position in an obj.'''
+        '''Find the last occurring position in an obj.'''
         if occurrence not in self.obj:
             return -1
         index = self.obj.index(occurrence)
@@ -483,7 +483,7 @@ def without(obj, *args):
     raise DataTypeError
 
 def delta_days(day1, day2):
-    '''Please enter an 8-digit number like 20170101'''
+    '''Please enter an 8-digit number with the format YYYYMMDD like 20170101'''
     year = lambda x:x//10000
     month = lambda x:(x%10000)//100
     day = lambda x:x%100
