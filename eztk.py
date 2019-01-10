@@ -10,3 +10,6 @@ def instxt(textwidget, text):
 def setEntry(entry, text):
     entry.delete(0, 'end')
     entry.insert(0, text)
+
+def clearEntry(entry):
+    entry.delete(0, 'end')

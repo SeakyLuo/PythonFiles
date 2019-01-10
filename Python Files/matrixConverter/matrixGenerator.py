@@ -23,9 +23,10 @@ class Converter(Frame):
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *self.resultFormatOptions, command = lambda event: self.onResultFormatChange())
         self.generateButton = Button(self, text = 'Generate', command = self.generate)
-        self.showDialogButton = Button(self, text = "ShowDialog", command = self.showDialog)
+        self.showDialogButton = Button(self, text = 'ShowDialog', command = self.showDialog)
         self.SHOW_DIALOG = "ShowDialog"
-        self.switchButtonState(self.showDialogButton, self.settings.get(self.SHOW_DIALOG, True))
+        self.clearButton = Button(self, text = 'Clear', command = self.clear)
+        
         self.rowLabel = Label(self, text = 'Rows: ')
         self.rowEntry = Entry(self)
         self.rowEntry.bind('<KeyRelease>', self.onRowColChange)
@@ -35,15 +36,17 @@ class Converter(Frame):
         self.colEntry.bind('<KeyRelease>', self.onRowColChange)
 
         ## place widgets
-        for i, w in enumerate([self.resultTypeDropdown, self.resultFormatDropdown, self.generateButton, self.showDialogButton]):
+        for i, w in enumerate([self.resultTypeDropdown, self.resultFormatDropdown, self.generateButton, self.showDialogButton, self.clearButton]):
             w.grid(row = 0, column = i, sticky = NSEW)
         for i, w in enumerate([self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
-            
+
+        ## init variables
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
+        self.switchButtonState(self.showDialogButton, self.settings.get(self.SHOW_DIALOG, True))
         self.entries = {}
         atexit.register(self.saveSettings)
 
@@ -86,7 +89,13 @@ class Converter(Frame):
         if text == '':
             return
         if not text.isnumeric():
-            eztk.setEntry(event.widget, text[:-1])
+            text = text[:-1]
+            eztk.setEntry(event.widget, text)
+        if self.resultType.get() == DETERMINANT:
+            if event.widget == self.rowEntry:
+                eztk.setEntry(self.colEntry, text)
+            else:
+                eztk.setEntry(self.rowEntry, text)
         r = self.getRow()
         c = self.getCol()
         self.maxRows = r + self.minRows
@@ -149,6 +158,10 @@ class Converter(Frame):
     def showDialog(self):
         self.switchButtonState(self.showDialogButton)
         self.settings[self.SHOW_DIALOG] = self.isOn(self.showDialogButton)
+
+    def clear(self):
+        for entry in self.entries.values():
+            eztk.clearEntry(entry)
         
     def generate(self):
         for entry in self.entries.values():
