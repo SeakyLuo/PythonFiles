@@ -689,18 +689,7 @@ def matrixLaTeX(row = 0, column = 0, matrix = '', printResult = True):
 ##abbreviation
 ml = matrixLaTeX
 
-def matrixWolframAlpha(row = 0, column = 0, matrix = '', leftBracket = '[', rightBracket = ']', printResult = True):   ##no brackets
-##        inputBracket = input('By using this function you will get a matrix in WolframAlpha form.\nFirst of all,  which bracket do you want to use,  \'(\',  \'[\'(default) or\'{\'?\n>>> ')
-##        if inputBracket != '(' and ')' and '[' and ']' and '{' and '}' and '':
-##            print('Please type in the correct bracket!\n')
-##            matrixWolframAlpha()
-##        leftBracket = '['
-##        rightBracket = ']'
-##        if inputBracket == '(' or inputBracket == ')':
-##            leftBracket = '('
-##            rightBracket = ')'
-##        elif inputBracket == '{' or inputBracket == '}':
-##            leftBracket = '{'
+def matrixWolframAlpha(row = 0, column = 0, matrix = '', printResult = True):
 ##            rightBracket = '}'
     output = matrixProducer(row, column, matrix)
     output = matrixConvert(form = 'w', matrix = output)
@@ -824,11 +813,11 @@ def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
 def formJudge(m):
     if type(m) != str:
         return False
-    if m.find('\\begin{bmatrix}') == 0 and len(m)-m.find('\end{bmatrix}') == 15 and (m.find('&') and m.find('\\')) != -1:
+    if ez.startwith(m, '\\begin{bmatrix}') and ez.endwith(m, '\\end{bmatrix}') and (m.find('&') and m.find('\\')) > -1:
         return 'l'
-    elif m.find('\\begin{vmatrix}') == 0 and len(m)-m.find('\end{vmatrix}') == 15 and (m.find('&') and m.find('\\')) != -1:
+    elif ez.startwith(m, '\\begin{vmatrix}') and ez.endwith(m, '\\end{vmatrix}') and (m.find('&') and m.find('\\')) > -1:
         return 'dl'
-    elif m.find(' ')>0:
+    elif m.find(' ') > 0:
         for i in m.split():
             if not i.isalnum():
                 return False

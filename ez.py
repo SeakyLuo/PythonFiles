@@ -24,16 +24,17 @@ def translate(string, to_l = 'zh', from_l = 'en'):
 def py2pyw(directory, reminder = False):
     ''' Converts a py file or a folder of py files to pyw files.'''
     if os.path.isfile(directory) and endwith(directory, '.py'):
-        print('File detected')
+        if reminder:
+            print('File detected')
         fwrite(directory + 'w', fread(directory, False))
     elif os.path.isdir(directory):
-        print('Folder detected')
+        if reminder:
+            print('Folder detected')
         for file in os.listdir(directory):
             if endwith(file, '.py'):
                 fwrite(directory + file + 'w', fread(directory + file, False))
     else:
-        if reminder:
-            print('Invalid directory!')
+        raise Exception('Invalid directory!')
 
 def rmlnk(path = None):
     ''' Remove "- 快捷方式"'''
