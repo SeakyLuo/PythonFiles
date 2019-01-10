@@ -7,6 +7,10 @@ DETERMINANT = 'Determinant'
 VECTOR = 'Vector'
 LATEX = 'LaTeX'
 WOLFRAM = 'Wolfram'
+LEFT = 'Left'
+RIGHT = 'Right'
+UP = 'Up'
+DOWN = 'Down'
 
 class Converter(Frame):
     def __init__(self, master):
@@ -44,6 +48,7 @@ class Converter(Frame):
         ## init variables
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4
+        self.maxSize = 20
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
         self.switchButtonState(self.showDialogButton, self.settings.get(self.SHOW_DIALOG, True))
@@ -60,13 +65,23 @@ class Converter(Frame):
     def onResultTypeChange(self):
         resultType = self.resultType.get()
         self.settings[self.RESULT_TYPE] = resultType
+        row = self.getRow()
+        col = self.getCol()
         if resultType == VECTOR:
             eztk.setEntry(self.colEntry, 1)
             self.colEntry['state'] = DISABLED
-            row = self.getRow()
             if row:
                 self.generateEntries(row, 1)
-        else:
+        elif resultType == DETERMINANT:
+            self.colEntry['state'] = NORMAL
+            if row != col:
+                if row > col:
+                    eztk.setEntry(self.colEntry, str(row))
+                else:
+                    eztk.setEntry(self.rowEntry, str(col))
+                row = col = max(row, col)
+                self.generateEntries(row, col)
+        elif resultType == MATRIX:
             self.colEntry['state'] = NORMAL
 
     def setResultFormat(self, resultFormat):
@@ -91,6 +106,9 @@ class Converter(Frame):
         if not text.isnumeric():
             text = text[:-1]
             eztk.setEntry(event.widget, text)
+        elif eval(text) > self.maxSize:
+            text = str(self.maxSize)
+            eztk.setEntry(event.widget, self.maxSize)
         if self.resultType.get() == DETERMINANT:
             if event.widget == self.rowEntry:
                 eztk.setEntry(self.colEntry, text)
@@ -119,29 +137,40 @@ class Converter(Frame):
 
     def moveFocus(self, event):
         key = event.keysym
-        move = {'Up': (-1, 0), 'Down': (1, 0), 'Left': (0, -1), 'Right': (0, 1)}
-        if key not in move:
+        move = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}
+        if type(event.widget) != Entry or key not in move or (key == LEFT and event.widget.index(INSERT) > 0) or (key == RIGHT and event.widget.index(INSERT) == len(event.widget.get()) - 1):
             return False
         x, y = move[key]
         info = event.widget.grid_info()
         r = info['row']
         c = info['column']
         while True:
-            r = (r + x) % self.maxRows if x else r
-            c = (c + y) % self.maxCols if y else c
+            r += x
+            c += y
+            if r == self.maxRows:
+                r = 0
+                if self.entries:
+                    c = (c + 1) % self.maxCols
+            elif r == -1:
+                r = self.maxRows - 1
+                if self.entries:
+                    c = (c - 1) % self.maxCols
+            elif c == self.maxCols:
+                c = 0
+            elif c == -1:
+                c = self.maxCols - 1
             w = self.findByGrid(r, c)
             if (type(w) == Entry):
                 w.focus()
                 break
         return True
 
-
     def findByGrid(self, row, column):
         for child in self.children.values():
             info = child.grid_info()
-            if info['row'] == row and info['column'] == column:
+            if info and info['row'] == row and info['column'] == column:
                 return child
-        return
+        return None
 
     def isOn(self, switchButton):
         return switchButton['relief'] == GROOVE
