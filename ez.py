@@ -316,7 +316,7 @@ class find:
         self.support = [str, list, dict, tuple, set]
         self.type = type(obj)
         if self.type not in self.support:
-            print('Unsupported data type automatically converts to str.')
+            print('Unsupported data type automatically is converted to str.')
             self.obj = repr(obj)
             self.type = str
         else:
