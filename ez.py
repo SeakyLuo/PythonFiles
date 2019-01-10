@@ -155,7 +155,7 @@ def advancedSplit(obj, *sep):
 asplit = advancedSplit
 
 def similar(obj1, obj2, capital = True):
-    '''Check the similarity of two strings.
+    '''Check the similarities of two strings.
         Set capital to False to ignore capital.'''
     def grade(o1, o2):
         ## Let o1 >= o2
