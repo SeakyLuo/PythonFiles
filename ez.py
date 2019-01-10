@@ -332,7 +332,7 @@ class find:
         raise DataTypeError
 
     def all(self, occurrence):
-        '''Find all the occuring positions in an obj.'''
+        '''Find all the occurring positions in an obj.'''
         if self.type == str:
             return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx:idx+len(occurrence)]]
         if self.type in [list, tuple]:
