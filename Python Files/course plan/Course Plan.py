@@ -13,7 +13,7 @@ def evaluateTime(time):
     colon = time.find(':')
     h = eval(time[:colon])
     if h<8:
-        h+ = 12
+        h += 12
     m = time[colon+1:]
     if m[0] == '0':
         m = eval(m[1])
@@ -41,7 +41,7 @@ def weekIndex(datetime):
     weekindex = 0
     while datetime[weekindex].isalpha():
         if datetime[weekindex] not in aweekdays: raise SyntaxError
-        weekindex+ = 1
+        weekindex += 1
     return weekindex
 
 class coursePlan(Frame):
@@ -133,12 +133,12 @@ class coursePlan(Frame):
                 dash = time.find('-')
                 start = time[:dash]
                 if start.count(':') == 0:
-                    start+ = ':00'
+                    start += ':00'
                 end = time[dash:] ## 不用dash+1
                 if end.count(':') == 0:
-                    end+ = ':00'
+                    end += ':00'
                 time = start+end
-            elif time.count('-')! = 1 or time.count(':')>2:
+            elif time.count('-') != 1 or time.count(':')>2:
                 raise SyntaxError
             ## 时间冲突有没有更好的解决办法
             for info in self.courseInfo:
@@ -228,7 +228,7 @@ class coursePlan(Frame):
     def asksave(self):
         root = Tk()
         root.withdraw()
-        if self.courseInfo! = self.readInfo:
+        if self.courseInfo != self.readInfo:
             if self.readInfo:
                 if messagebox.askyesno('Reminder', 'You have modified your schedule.\nDo you want to save it?'):
                     self.save()
@@ -237,6 +237,7 @@ class coursePlan(Frame):
 
     def save(self):
         ez.fwrite('schedule.txt', self.courseInfo)
+        self.readInfo = self.courseInfo
         messagebox.showinfo("Success",  "You have successfully saved your schedule!")
 
     def clear(self):
@@ -288,7 +289,7 @@ class coursePlan(Frame):
             rowNum = i+index+len(self.boxList)+1
             for j, wid in enumerate(widgets):
                 wid.grid_forget()
-                wid.grid(row = rowNum, column = 6+j+(j! = 0)*2, columnspan = 1+(j == 0)*2, sticky = NSEW)
+                wid.grid(row = rowNum, column = 6+j+(j != 0)*2, columnspan = 1+(j == 0)*2, sticky = NSEW)
                 
     def dropAll(self):
         for lst in self.courseLabels:
@@ -317,17 +318,17 @@ class coursePlan(Frame):
                     name = x[0][:i].strip().lower()
                     for ch in x[0][i:]:
                         if ch.isnumeric():
-                            number+ = ch
+                            number += ch
                         elif ch.isalpha():
-                            level+ = ch
+                            level += ch
                     number = eval(number)
                     level = level.lower()
                     break
-                i+ = 1
+                i += 1
             ## by time
             time = x[1][weekIndex(x[1]):]
             time = eval(time[:time.find(':')])
-            if time<8: time+ = 12
+            if time<8: time += 12
             return (name, number, level, aweekdays.index(x[1][0]), time, x[2], x[3])
         copy = sorted(self.courseInfo.copy(), key = key)
         self.dropAll()
