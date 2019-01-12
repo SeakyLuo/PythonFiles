@@ -2,14 +2,18 @@ from tkinter import *
 from tkinter import messagebox
 from json import dumps, loads
 from atexit import register
+from eztk import setEntry, clearEntry
+from random import randrange
 import ez, ezs, eztk, os
 
 MATRIX = 'Matrix'
 DETERMINANT = 'Determinant'
 VECTOR = 'Vector'
 IDENTITY_MATRIX = 'Identity Matrix'
+resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
 LATEX = 'LaTeX'
 WOLFRAM = 'Wolfram'
+resultFormatOptions = [LATEX, WOLFRAM]
 LEFT = 'Left'
 RIGHT = 'Right'
 UP = 'Up'
@@ -19,26 +23,49 @@ class Generator(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         ## init variables
+        self.master = master
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4
-        self.maxSize = 20
+        self.maxSize = 15
         self.entries = {}
-        
-        ## generate widgets
         self.settingsFileName = 'settings.json'
         self.settings = loads(ez.fread(self.settingsFileName)) if os.path.exists(self.settingsFileName) else {}
-        self.resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
+
+        ## generate menu        
+        self.menu = Menu(self)
+        self.editMenu = Menu(self.menu, tearoff = 0)
+        self.editMenu.add_command(label = 'Random', command = self.randomFill)
+        self.editMenu.add_command(label = 'Unit Matrix', command = self.unitMatrix)
+        self.editMenu.add_command(label = 'Generate', command = self.generate)
+        self.editMenu.add_separator()
+        self.editMenu.add_command(label = 'Clear Size', command = lambda: self.clear(0))
+        self.editMenu.add_command(label = 'Clear Entries', command = lambda: self.clear(1))
+        self.editMenu.add_command(label = 'Clear All', command = lambda: self.clear(0, 1))
+        self.matMenu = Menu(self.menu, tearoff = 0)
+        self.matMenu.add_command(label = 'Transpose', command = self.transpose)
+        self.matMenu.add_command(label = 'Lower Triangular', command = self.lowerTriangular)
+        self.matMenu.add_command(label = 'Upper Triangular', command = self.upperTriangular)
+        self.detMenu = Menu(self.menu, tearoff = 0)
+        self.detMenu.add_command(label = 'Transpose', command = self.transpose)
+        self.vecMenu = Menu(self.menu, tearoff = 0)
+        self.vecMenu.add_command(label = 'Transpose', command = self.transpose)
+        self.imatMenu = Menu(self.menu, tearoff = 0)
+        self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
+        self.settingsMenu = Menu(self.menu, tearoff = 0)
+        self.SHOW_DIALOG = 'ShowDialog'
+        self.showDialogVar = BooleanVar(self, value = self.settings.get(self.SHOW_DIALOG, True))
+        self.settingsMenu.add_checkbutton(label = 'Show Dialog', onvalue = 1, offvalue = 0, variable = self.showDialogVar, command = self.showDialog)
+        for name, menu in zip(['Edit'] + resultTypeOptions + ['Settings'], [self.editMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
+            self.menu.add_cascade(label = name, menu = menu)
+        
+        ## generate widgets
+        self.master.config(menu = self.menu)
         self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
-        self.resultTypeDropdown = OptionMenu(self, self.resultType, *self.resultTypeOptions, command = lambda event: self.onResultTypeChange())
-        self.resultFormatOptions = [LATEX, WOLFRAM]
+        self.resultTypeDropdown = OptionMenu(self, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
         self.RESULT_FORMAT = "ResultFormat"
         self.resultFormat = StringVar(self)
-        self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *self.resultFormatOptions, command = lambda event: self.onResultFormatChange())
-        self.generateButton = Button(self, text = 'Generate', command = self.generate)
-        self.showDialogButton = Button(self, text = 'ShowDialog', command = self.showDialog)
-        self.SHOW_DIALOG = "ShowDialog"
-        self.clearButton = Button(self, text = 'Clear', command = self.clear)
+        self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
         
         self.rowLabel = Label(self, text = 'Rows: ')
         self.rowEntry = Entry(self)
@@ -50,7 +77,7 @@ class Generator(Frame):
             entry.bind('<KeyRelease>', self.onRowColChange)
 
         ## place widgets
-        for i, w in enumerate([self.resultTypeDropdown, self.resultFormatDropdown, self.generateButton, self.showDialogButton, self.clearButton]):
+        for i, w in enumerate([self.resultTypeDropdown, self.resultFormatDropdown]):
             w.grid(row = 0, column = i, sticky = NSEW)
         for i, w in enumerate([self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
@@ -58,12 +85,22 @@ class Generator(Frame):
         ## set values
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
-        self.switchButtonState(self.showDialogButton, self.settings.get(self.SHOW_DIALOG, True))
-
         register(self.saveSettings)
 
     def saveSettings(self):
         ez.fwrite(self.settingsFileName, dumps(self.settings))
+
+    def getRow(self):
+        return int(self.rowEntry.get() or 0)
+
+    def getCol(self):
+        return int(self.colEntry.get() or 0)
+
+    def setRow(self, num):
+        setEntry(self.rowEntry, num)
+
+    def setCol(self, num):
+        setEntry(self.colEntry, num)
 
     def setResultType(self, resultType):
         self.resultType.set(resultType)
@@ -83,7 +120,7 @@ class Generator(Frame):
                 row = col = size
                 self.syncRowCol(size)
         elif resultType == VECTOR:
-            eztk.setEntry(self.colEntry, 1)
+            self.setCol(1)
             self.colEntry['state'] = DISABLED
             if row:
                 self.generateEntries(row, 1)
@@ -102,22 +139,16 @@ class Generator(Frame):
     def onResultFormatChange(self):
         self.settings[self.RESULT_FORMAT] = self.resultFormat.get()
 
-    def getRow(self):
-        return int(self.rowEntry.get() or 0)
-
-    def getCol(self):
-        return int(self.colEntry.get() or 0)
-
     def onRowColChange(self, event):
         text = event.widget.get()
         if not text:
             return
         if not text.isnumeric():
             text = text[:-1]
-            eztk.setEntry(event.widget, text)
+            setEntry(event.widget, text)
         elif eval(text) > self.maxSize:
             text = str(self.maxSize)
-            eztk.setEntry(event.widget, text)
+            setEntry(event.widget, text)
         resultType = self.resultType.get()
         r = self.getRow()
         c = self.getCol()
@@ -194,35 +225,119 @@ class Generator(Frame):
         return None
 
     def syncRowCol(self, size):
-        eztk.setEntry(self.rowEntry, size)
-        eztk.setEntry(self.colEntry, size)
+        self.setRow(size)
+        self.setCol(size)
         self.generateEntries(size, size)
 
     def fillIdentityMatrix(self):
         for i, j in self.entries:
-            eztk.setEntry(self.entries[(i, j)], 1 if i == j else 0)
+            setEntry(self.entries[(i, j)], 1 if i == j else 0)
 
-    def isOn(self, switchButton):
-        return switchButton['relief'] == GROOVE
+    def transpose(self):
+        resultType = self.resultType.get()
+        if resultType not in [MATRIX, DETERMINANT, VECTOR]:
+            return
+        row = self.getRow()
+        col = self.getCol()
+        entries = { key: self.entries[key].get() for key in self.entries }
+        if row != col:            
+            if resultType == VECTOR:
+                self.setResultType(MATRIX)
+            self.generateEntries(col, row)
+            self.setRow(col)
+            self.setCol(row)
+        for i in range(row):
+            for j in range(col):
+                setEntry(self.entries[(j, i)], entries[(i, j)])
 
-    def switchButtonState(self, switchButton, on = None):
-        switchButton['relief'] = FLAT if self.isOn(switchButton) else GROOVE \
-                                 if on == None else \
-                                 GROOVE if on else FLAT
+    def randomFill(self):
+        resultType = self.resultType.get()
+        ## Use ezs random matrix instead
+        row = self.getRow()
+        col = self.getCol()
+        isIdentity = resultType == IDENTITY_MATRIX
+        if not row or not col or isIdentity:
+            if resultType == MATRIX:
+                if not row:
+                    row = randrange(self.maxSize)
+                if not col:
+                    col = randrange(self.maxSize)
+            elif resultType == DETERMINANT:
+                row = col = randrange(self.maxSize)
+            elif resultType == VECTOR:
+                row = randrange(self.maxSize)
+            elif resultType == IDENTITY_MATRIX:
+                row = col = randrange(self.maxSize)
+            self.setRow(row)
+            self.setCol(col)
+            self.generateEntries(row, col)
+        if isIdentity:
+            self.fillIdentityMatrix()
+        else:
+            for entry in self.entries.values():
+                setEntry(entry, randrange(1, 10))
+
+    def lowerTriangular(self):
+        isIdentity = self.resultType.get() == IDENTITY_MATRIX
+        for i, j in self.entries:
+            if i < j:
+                setEntry(self.entries[(i ,j)], 0)
+            elif isIdentity:
+                setEntry(self.entries[(i ,j)], 1)
+        if isIdentity:
+            self.setResultType(MATRIX)
+
+    def upperTriangular(self):
+        isIdentity = self.resultType.get() == IDENTITY_MATRIX
+        for i, j in self.entries:
+            if i > j:
+                setEntry(self.entries[(i ,j)], 0)
+            elif isIdentity:
+                setEntry(self.entries[(i ,j)], 1)
+        if isIdentity:
+            self.setResultType(MATRIX)
+
+    def unitMatrix(self):
+        if self.resultType.get() == IDENTITY_MATRIX:
+            self.fillIdentityMatrix()
+        else:
+            for entry in self.entries.values():
+                setEntry(entry, 1)
+
+    def permutationMatrix(self):
+        row = self.getRow()
+        col = self.getCol()
+        if not row:
+            row = col = randrange(self.maxSize)
+            self.setRow(row)
+            self.setCol(col)
+            self.generateEntries(row, col)
+            self.fillIdentityMatrix()
+        self.setResultType(MATRIX)
+        cols = list(range(col))
+        for i in range(row):
+            j = cols.pop(randrange(len(cols)))
+            setEntry(self.entries[(i, i)], 0)
+            setEntry(self.entries[(i, j)], 1)
 
     def showDialog(self):
-        self.switchButtonState(self.showDialogButton)
-        self.settings[self.SHOW_DIALOG] = self.isOn(self.showDialogButton)
-
-    def clear(self): 
-        if self.resultType.get() != IDENTITY_MATRIX:
+        self.settings[self.SHOW_DIALOG] = self.showDialogVar.get()
+        
+    def clear(self, *mode):
+        if 0 in mode:
+            clearEntry(self.rowEntry)
+            clearEntry(self.colEntry)
+            for key, entry in self.entries.copy().items():
+                entry.grid_forget()
+                del self.entries[key]
+        if 1 in mode and self.resultType.get() != IDENTITY_MATRIX:
             for entry in self.entries.values():
-                eztk.clearEntry(entry)
+                clearEntry(entry)
         
     def generate(self):
-        for entry in self.entries.values():
+        for entry in list(self.entries.values()) + [self.rowEntry, self.colEntry]:
             if not entry.get():
-                messagebox.showerror(title = "Error!", message = "Not All Entries are Filled")
+                messagebox.showerror(title = "Error", message = "Not All Entries are Filled")
                 return
         text = ''
         r = self.getRow()
