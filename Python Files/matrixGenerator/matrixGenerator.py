@@ -1,6 +1,8 @@
 from tkinter import *
 from tkinter import messagebox
-import ez, ezs, eztk, os, atexit
+from json import dumps, loads
+from atexit import register
+import ez, ezs, eztk, os
 
 MATRIX = 'Matrix'
 DETERMINANT = 'Determinant'
@@ -16,9 +18,15 @@ DOWN = 'Down'
 class Generator(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
+        ## init variables
+        self.minRows = self.maxRows = 2
+        self.minCols = self.maxCols = 4
+        self.maxSize = 20
+        self.entries = {}
+        
         ## generate widgets
         self.settingsFileName = 'settings.json'
-        self.settings = ez.fread(self.settingsFileName) if os.path.exists(self.settingsFileName) else {}
+        self.settings = loads(ez.fread(self.settingsFileName)) if os.path.exists(self.settingsFileName) else {}
         self.resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
         self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
@@ -47,18 +55,15 @@ class Generator(Frame):
         for i, w in enumerate([self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
 
-        ## init variables
-        self.minRows = self.maxRows = 2
-        self.minCols = self.maxCols = 4
-        self.maxSize = 20
+        ## set values
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
         self.switchButtonState(self.showDialogButton, self.settings.get(self.SHOW_DIALOG, True))
-        self.entries = {}
-        atexit.register(self.saveSettings)
+
+        register(self.saveSettings)
 
     def saveSettings(self):
-        ez.fwrite(self.settingsFileName, self.settings)
+        ez.fwrite(self.settingsFileName, dumps(self.settings))
 
     def setResultType(self, resultType):
         self.resultType.set(resultType)
@@ -73,8 +78,10 @@ class Generator(Frame):
             self.colEntry['state'] = NORMAL
         elif resultType == DETERMINANT:
             self.colEntry['state'] = NORMAL
-            self.syncRowCol(row, col)
-            row = col = max(row, col)
+            size = max(row, col)
+            if size:                
+                row = col = size
+                self.syncRowCol(size)
         elif resultType == VECTOR:
             eztk.setEntry(self.colEntry, 1)
             self.colEntry['state'] = DISABLED
@@ -82,9 +89,11 @@ class Generator(Frame):
                 self.generateEntries(row, 1)
         elif resultType == IDENTITY_MATRIX:
             self.colEntry['state'] = NORMAL
-            self.syncRowCol(row, col)
-            row = col = max(row, col)
-            self.fillIdentityMatrix(row, col)
+            size = max(row, col)
+            if size:                
+                row = col = size
+                self.syncRowCol(size)
+                self.fillIdentityMatrix()
 
     def setResultFormat(self, resultFormat):
         self.resultFormat.set(resultFormat)
@@ -101,24 +110,26 @@ class Generator(Frame):
 
     def onRowColChange(self, event):
         text = event.widget.get()
-        if text == '':
+        if not text:
             return
         if not text.isnumeric():
             text = text[:-1]
             eztk.setEntry(event.widget, text)
         elif eval(text) > self.maxSize:
             text = str(self.maxSize)
-            eztk.setEntry(event.widget, self.maxSize)
+            eztk.setEntry(event.widget, text)
         resultType = self.resultType.get()
-        if resultType in [DETERMINANT, IDENTITY_MATRIX]:
-            self.syncRowCol()
         r = self.getRow()
         c = self.getCol()
+        if resultType in [DETERMINANT, IDENTITY_MATRIX]:
+            size = r if text == str(r) else c
+            r = c = size
+            self.syncRowCol(size)
         self.maxRows = r + self.minRows
         self.maxCols = max(c, self.maxCols)
         self.generateEntries(r, c)
         if resultType == IDENTITY_MATRIX:
-            self.fillIdentityMatrix(r, c)
+            self.fillIdentityMatrix()
 
     def generateEntries(self, row, column):
         for i in range(row):
@@ -182,23 +193,14 @@ class Generator(Frame):
                 return child
         return None
 
-    def syncRowCol(self, row = 0, col = 0):
-        row = row or self.getRow()
-        col = col or self.getCol()
-        if row != col:
-            if row > col:
-                eztk.setEntry(self.colEntry, str(row))
-            else:
-                eztk.setEntry(self.rowEntry, str(col))
-            row = col = max(row, col)
-            self.generateEntries(row, col)
+    def syncRowCol(self, size):
+        eztk.setEntry(self.rowEntry, size)
+        eztk.setEntry(self.colEntry, size)
+        self.generateEntries(size, size)
 
-    def fillIdentityMatrix(self, r = 0, c = 0):
-        r = r or self.getRow()
-        c = c or self.getCol()
-        for i in range(r):
-            for j in range(c):
-                eztk.setEntry(self.entries[(i, j)], str(1 if i == j else 0))
+    def fillIdentityMatrix(self):
+        for i, j in self.entries:
+            eztk.setEntry(self.entries[(i, j)], 1 if i == j else 0)
 
     def isOn(self, switchButton):
         return switchButton['relief'] == GROOVE
@@ -225,7 +227,7 @@ class Generator(Frame):
         text = ''
         r = self.getRow()
         c = self.getCol()
-        resultType = self.resultType.get()
+        # resultType = self.resultType.get()
         resultFormat = self.resultFormat.get()
         if resultFormat == LATEX:
             text = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
@@ -241,4 +243,4 @@ gui.pack()
 root.title('Generator')
 root.mainloop()
 
-ez.py2pyw('matrixGenerator.py')
+ez.py2pyw(__file__)

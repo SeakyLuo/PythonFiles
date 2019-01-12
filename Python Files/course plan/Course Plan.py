@@ -380,4 +380,4 @@ cp.pack()
 root.title('Schedule')
 root.mainloop()
 
-ez.py2pyw('Course Plan.py')
+ez.py2pyw(__file__)

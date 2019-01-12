@@ -32,7 +32,8 @@ def py2pyw(directory, reminder = False):
             print('Folder detected')
         for file in os.listdir(directory):
             if endwith(file, '.py'):
-                fwrite(directory + file + 'w', fread(directory + file, False))
+                filename = os.path.join(directory, file)
+                fwrite(filename + 'w', fread(filename, False))
     else:
         raise Exception('Invalid directory!')
 

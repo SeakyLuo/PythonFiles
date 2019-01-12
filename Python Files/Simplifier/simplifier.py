@@ -260,4 +260,4 @@ class Simplifier(Tk):
         
 app = Simplifier()
 app.mainloop()
-ez.py2pyw('simplifier.py')
+ez.py2pyw(__file__)
