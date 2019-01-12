@@ -5,6 +5,7 @@ import ez, ezs, eztk, os, atexit
 MATRIX = 'Matrix'
 DETERMINANT = 'Determinant'
 VECTOR = 'Vector'
+IDENTITY_MATRIX = 'Identity Matrix'
 LATEX = 'LaTeX'
 WOLFRAM = 'Wolfram'
 LEFT = 'Left'
@@ -12,13 +13,13 @@ RIGHT = 'Right'
 UP = 'Up'
 DOWN = 'Down'
 
-class Converter(Frame):
+class Generator(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
         ## generate widgets
         self.settingsFileName = 'settings.json'
         self.settings = ez.fread(self.settingsFileName) if os.path.exists(self.settingsFileName) else {}
-        self.resultTypeOptions = [MATRIX, DETERMINANT, VECTOR]
+        self.resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
         self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
         self.resultTypeDropdown = OptionMenu(self, self.resultType, *self.resultTypeOptions, command = lambda event: self.onResultTypeChange())
@@ -33,11 +34,12 @@ class Converter(Frame):
         
         self.rowLabel = Label(self, text = 'Rows: ')
         self.rowEntry = Entry(self)
-        self.rowEntry.bind('<KeyRelease>', self.onRowColChange)
         self.rowEntry.focus()
         self.colLabel = Label(self, text = 'Columns: ')
         self.colEntry = Entry(self)
-        self.colEntry.bind('<KeyRelease>', self.onRowColChange)
+        for entry in [self.rowEntry, self.colEntry]:
+            entry.bind('<KeyPress>', self.moveFocus)
+            entry.bind('<KeyRelease>', self.onRowColChange)
 
         ## place widgets
         for i, w in enumerate([self.resultTypeDropdown, self.resultFormatDropdown, self.generateButton, self.showDialogButton, self.clearButton]):
@@ -67,22 +69,22 @@ class Converter(Frame):
         self.settings[self.RESULT_TYPE] = resultType
         row = self.getRow()
         col = self.getCol()
-        if resultType == VECTOR:
+        if resultType == MATRIX:
+            self.colEntry['state'] = NORMAL
+        elif resultType == DETERMINANT:
+            self.colEntry['state'] = NORMAL
+            self.syncRowCol(row, col)
+            row = col = max(row, col)
+        elif resultType == VECTOR:
             eztk.setEntry(self.colEntry, 1)
             self.colEntry['state'] = DISABLED
             if row:
                 self.generateEntries(row, 1)
-        elif resultType == DETERMINANT:
+        elif resultType == IDENTITY_MATRIX:
             self.colEntry['state'] = NORMAL
-            if row != col:
-                if row > col:
-                    eztk.setEntry(self.colEntry, str(row))
-                else:
-                    eztk.setEntry(self.rowEntry, str(col))
-                row = col = max(row, col)
-                self.generateEntries(row, col)
-        elif resultType == MATRIX:
-            self.colEntry['state'] = NORMAL
+            self.syncRowCol(row, col)
+            row = col = max(row, col)
+            self.fillIdentityMatrix(row, col)
 
     def setResultFormat(self, resultFormat):
         self.resultFormat.set(resultFormat)
@@ -98,8 +100,6 @@ class Converter(Frame):
         return int(self.colEntry.get() or 0)
 
     def onRowColChange(self, event):
-        if self.moveFocus(event):
-            return
         text = event.widget.get()
         if text == '':
             return
@@ -109,16 +109,16 @@ class Converter(Frame):
         elif eval(text) > self.maxSize:
             text = str(self.maxSize)
             eztk.setEntry(event.widget, self.maxSize)
-        if self.resultType.get() == DETERMINANT:
-            if event.widget == self.rowEntry:
-                eztk.setEntry(self.colEntry, text)
-            else:
-                eztk.setEntry(self.rowEntry, text)
+        resultType = self.resultType.get()
+        if resultType in [DETERMINANT, IDENTITY_MATRIX]:
+            self.syncRowCol()
         r = self.getRow()
         c = self.getCol()
         self.maxRows = r + self.minRows
         self.maxCols = max(c, self.maxCols)
         self.generateEntries(r, c)
+        if resultType == IDENTITY_MATRIX:
+            self.fillIdentityMatrix(r, c)
 
     def generateEntries(self, row, column):
         for i in range(row):
@@ -126,7 +126,8 @@ class Converter(Frame):
                 if (i, j) in self.entries:
                     continue
                 e = Entry(self)
-                e.bind('<KeyRelease>', self.moveFocus)
+                e.bind('<KeyRelease>', self.onEntryChange)
+                e.bind('<KeyPress>', self.moveFocus)
                 e.bind('<Return>', lambda event: self.generate())
                 e.grid(row = i + self.minRows, column = j, sticky = NSEW)
                 self.entries[(i, j)] = e
@@ -135,11 +136,21 @@ class Converter(Frame):
                 self.entries[(i, j)].grid_forget()
                 del self.entries[(i, j)]
 
+    def onEntryChange(self, event):
+        resultType = self.resultType.get()
+        if resultType == IDENTITY_MATRIX:
+            for r, c in self.entries:
+                entry = self.entries[(r, c)]
+                text = entry.get()
+                if text and (r == c and text != '1') or (r != c and text != '0'):
+                    self.setResultType(MATRIX)
+                    break
+
     def moveFocus(self, event):
         key = event.keysym
         move = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}
         if type(event.widget) != Entry or key not in move or (key == LEFT and event.widget.index(INSERT) > 0) or (key == RIGHT and event.widget.index(INSERT) == len(event.widget.get()) - 1):
-            return False
+            return
         x, y = move[key]
         info = event.widget.grid_info()
         r = info['row']
@@ -160,10 +171,9 @@ class Converter(Frame):
             elif c == -1:
                 c = self.maxCols - 1
             w = self.findByGrid(r, c)
-            if (type(w) == Entry):
+            if type(w) == Entry:
                 w.focus()
                 break
-        return True
 
     def findByGrid(self, row, column):
         for child in self.children.values():
@@ -172,6 +182,24 @@ class Converter(Frame):
                 return child
         return None
 
+    def syncRowCol(self, row = 0, col = 0):
+        row = row or self.getRow()
+        col = col or self.getCol()
+        if row != col:
+            if row > col:
+                eztk.setEntry(self.colEntry, str(row))
+            else:
+                eztk.setEntry(self.rowEntry, str(col))
+            row = col = max(row, col)
+            self.generateEntries(row, col)
+
+    def fillIdentityMatrix(self, r = 0, c = 0):
+        r = r or self.getRow()
+        c = c or self.getCol()
+        for i in range(r):
+            for j in range(c):
+                eztk.setEntry(self.entries[(i, j)], str(1 if i == j else 0))
+
     def isOn(self, switchButton):
         return switchButton['relief'] == GROOVE
 
@@ -179,18 +207,15 @@ class Converter(Frame):
         switchButton['relief'] = FLAT if self.isOn(switchButton) else GROOVE \
                                  if on == None else \
                                  GROOVE if on else FLAT
-        # if on == None:
-        #     switchButton['relief'] = FLAT if self.isOn(switchButton) else GROOVE
-        # else:
-        #     switchButton['relief'] = GROOVE if on else FLAT
 
     def showDialog(self):
         self.switchButtonState(self.showDialogButton)
         self.settings[self.SHOW_DIALOG] = self.isOn(self.showDialogButton)
 
-    def clear(self):
-        for entry in self.entries.values():
-            eztk.clearEntry(entry)
+    def clear(self): 
+        if self.resultType.get() != IDENTITY_MATRIX:
+            for entry in self.entries.values():
+                eztk.clearEntry(entry)
         
     def generate(self):
         for entry in self.entries.values():
@@ -200,16 +225,18 @@ class Converter(Frame):
         text = ''
         r = self.getRow()
         c = self.getCol()
-        if self.resultFormat.get() == LATEX:
+        resultType = self.resultType.get()
+        resultFormat = self.resultFormat.get()
+        if resultFormat == LATEX:
             text = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
-        elif self.resultFormat.get() == WOLFRAM:
+        elif resultFormat == WOLFRAM:
             text = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
         ez.copyToClipboard(text)
         if self.settings[self.SHOW_DIALOG]:
             messagebox.showinfo(title = "Result", message = text + "\nis Copied to the Clipboard!")
 
-root=Tk()
-gui=Converter(root)
+root = Tk()
+gui = Generator(root)
 gui.pack()
 root.title('Generator')
 root.mainloop()
