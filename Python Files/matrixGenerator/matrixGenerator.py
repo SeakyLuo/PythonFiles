@@ -4,6 +4,7 @@ from json import dumps, loads
 from atexit import register
 from eztk import setEntry, clearEntry
 from random import randrange
+from numpy import linalg
 import ez, ezs, eztk, os
 
 MATRIX = 'Matrix'
@@ -12,8 +13,8 @@ VECTOR = 'Vector'
 IDENTITY_MATRIX = 'Identity Matrix'
 resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
 LATEX = 'LaTeX'
-WOLFRAM = 'Wolfram'
-resultFormatOptions = [LATEX, WOLFRAM]
+ARRAY = 'Array'
+resultFormatOptions = [LATEX, ARRAY]
 LEFT = 'Left'
 RIGHT = 'Right'
 UP = 'Up'
@@ -36,25 +37,27 @@ class Generator(Frame):
         self.editMenu = Menu(self.menu, tearoff = 0)
         self.editMenu.add_command(label = 'Random', command = self.randomFill)
         self.editMenu.add_command(label = 'Unit Matrix', command = self.unitMatrix)
+        self.editMenu.add_command(label = 'Transpose', command = self.transpose)
         self.editMenu.add_command(label = 'Generate', command = self.generate)
         self.editMenu.add_separator()
         self.editMenu.add_command(label = 'Clear Size', command = lambda: self.clear(0))
         self.editMenu.add_command(label = 'Clear Entries', command = lambda: self.clear(1))
         self.editMenu.add_command(label = 'Clear All', command = lambda: self.clear(0, 1))
         self.matMenu = Menu(self.menu, tearoff = 0)
-        self.matMenu.add_command(label = 'Transpose', command = self.transpose)
         self.matMenu.add_command(label = 'Lower Triangular', command = self.lowerTriangular)
         self.matMenu.add_command(label = 'Upper Triangular', command = self.upperTriangular)
         self.detMenu = Menu(self.menu, tearoff = 0)
-        self.detMenu.add_command(label = 'Transpose', command = self.transpose)
+        self.detMenu.add_command(label = 'Calculate', command = self.calculateDet)
         self.vecMenu = Menu(self.menu, tearoff = 0)
-        self.vecMenu.add_command(label = 'Transpose', command = self.transpose)
+        self.COLUMN_VECTOR = 'ColumnVector'
+        self.colVecVar = BooleanVar(self, value = self.settings.get(self.COLUMN_VECTOR, True))
+        self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.setdefault(self.COLUMN_VECTOR, self.colVecVar.get()))
         self.imatMenu = Menu(self.menu, tearoff = 0)
         self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
         self.settingsMenu = Menu(self.menu, tearoff = 0)
         self.SHOW_DIALOG = 'ShowDialog'
         self.showDialogVar = BooleanVar(self, value = self.settings.get(self.SHOW_DIALOG, True))
-        self.settingsMenu.add_checkbutton(label = 'Show Dialog', onvalue = 1, offvalue = 0, variable = self.showDialogVar, command = self.showDialog)
+        self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, command = lambda :self.settings.setdefault(self.SHOW_DIALOG, self.showDialogVar.get()))
         for name, menu in zip(['Edit'] + resultTypeOptions + ['Settings'], [self.editMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
             self.menu.add_cascade(label = name, menu = menu)
         
@@ -320,8 +323,20 @@ class Generator(Frame):
             setEntry(self.entries[(i, i)], 0)
             setEntry(self.entries[(i, j)], 1)
 
-    def showDialog(self):
-        self.settings[self.SHOW_DIALOG] = self.showDialogVar.get()
+    def calculateDet(self):
+        if self.resultType.get() != DETERMINANT or self.checkEmpty():
+            return
+        try:
+            result = linalg.det([[int(self.entries[(i, j)].get()) for j in range(self.getCol())] for i in range(self.getRow())])
+            # result = ezs.dc(self.generate())
+            str_result = str(result)
+            ez.copyToClipboard(str_result)
+            if self.settings[self.SHOW_DIALOG]:
+                messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
+            return result
+        except ValueError:
+            messagebox.showerror(title = 'Error', message = 'Numerical Entries Only')
+        
         
     def clear(self, *mode):
         if 0 in mode:
@@ -333,24 +348,33 @@ class Generator(Frame):
         if 1 in mode and self.resultType.get() != IDENTITY_MATRIX:
             for entry in self.entries.values():
                 clearEntry(entry)
-        
-    def generate(self):
+    
+    def checkEmpty(self):
         for entry in list(self.entries.values()) + [self.rowEntry, self.colEntry]:
             if not entry.get():
-                messagebox.showerror(title = "Error", message = "Not All Entries are Filled")
-                return
-        text = ''
+                messagebox.showerror(title = 'Error', message = 'Not All Entries are Filled')
+                return True
+        return False
+        
+    def generate(self):
+        if self.checkEmpty():
+            return
+        result = ''
         r = self.getRow()
         c = self.getCol()
-        # resultType = self.resultType.get()
+        resultType = self.resultType.get()
         resultFormat = self.resultFormat.get()
         if resultFormat == LATEX:
-            text = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
-        elif resultFormat == WOLFRAM:
-            text = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
-        ez.copyToClipboard(text)
+            if resultType == VECTOR and not self.colVecVar.get():
+                result = ezs.vl(','.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), True, False)
+            else:
+                result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
+        elif resultFormat == ARRAY:
+            result = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
+        ez.copyToClipboard(result)
         if self.settings[self.SHOW_DIALOG]:
-            messagebox.showinfo(title = "Result", message = text + "\nis Copied to the Clipboard!")
+            messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
+        return result
 
 root = Tk()
 gui = Generator(root)

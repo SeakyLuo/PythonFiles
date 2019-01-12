@@ -14,6 +14,7 @@ def npMatrixToLatex(matrix, printResult = True, copy = True):
     if copy:
         ez.cpc(result)
     return result
+
 ##abbreviation
 nl = npMatrixToLatex
 
@@ -38,16 +39,16 @@ def accurateCalculation(formula = '', sn = False):
                    (ch == ' + ' and (i == 0 or nf[i-1] == 'e')) or \
                    (ch == 'e' and (nf[i + 1].isnumeric() or nf[i + 1] in [' + ', '-'])) or \
                    (ch == '.' and nf[i + 1].isnumeric()):
-                    num  += ch
+                    num += ch
                 elif ch == ' ':
                     pass
                 else:
                     if num:
-                        ni  += 'Decimal("{}")'.format(num)
+                        ni += 'Decimal("{}")'.format(num)
                         num = ''
-                    ni  += ch
+                    ni += ch
             if num:
-                ni  += 'Decimal("{}")'.format(num)
+                ni += 'Decimal("{}")'.format(num)
         except:
             raise Exception('Invalid expression: ' + num)
         result = eval(repr(eval(ni))[9:-2])
@@ -78,7 +79,7 @@ def intToList(integer):
 
 def scientificNotation(num, pr = True):
     '''Abbreviation: scin'''
-    result = '%e'%num
+    result = '%e' % num
     if pr:
         print(result)
     else:
@@ -119,11 +120,11 @@ cE = congruenceEquation
 
 def chineseRemainderTheorem():
     '''Find solutions to the system of congruences by typing the a, b, m of ax≡b(mod m).
-        If a is 1,  only b and m are needed.
+        If a is 1, only b and m are needed.
         Abbrevation: crt.'''
     number = ()
     divisor_dict = {}
-    print('Type the a, b, m of ax≡b(mod m). If a is 1,  only b and m are needed.')
+    print('Type the a, b, m of ax≡b(mod m). If a is 1, only b and m are needed.')
     while True:
         s = input('Please seperate a, b, m or b, m by space. Order matters. Press Enter to stop.\n>>> ')
         if s and s.find(' ') == -1:
@@ -158,13 +159,13 @@ def chineseRemainderTheorem():
             number = (dr[1], dr[0])
         else:
             divisor, remainder = number
-            dr[0] = (dr[0]-remainder)%dr[1]
+            dr[0] = (dr[0] - remainder) % dr[1]
             for i in range(dr[1]):
                 if (divisor*i)%dr[1] == dr[0]:
-                    number = (lcm(divisor, dr[1]), remainder + i*divisor)
+                    number = (lcm(divisor, dr[1]), remainder + i * divisor)
                     break
             else:
-                yn = input('Such number doesn\'t exist! Did you just make a typo?\nInput "y" for yes to delete the previous input,  "r" to restart. Other input will be regarded as no.\n>>> ').lower()
+                yn = input('Such number doesn\'t exist! Did you just make a typo?\nInput "y" for yes to delete the previous input, "r" to restart. Other input will be regarded as no.\n>>> ').lower()
                 if yn == 'y':
                     del divisor_dict[dr[1]]
                     continue
@@ -183,26 +184,26 @@ def chineseRemainderTheorem():
         formula = str(n0) + 'x'
     natural_num = 'positive integer'
     if n1 and n0 != n1:
-        formula  += ' + ' + str(n1)
+        formula += ' + ' + str(n1)
         n0 = n1
         natural_num = 'natural number'
     print('The least satisfying postive integer is {}.'.format(n0))
-    print('All the satifying numbers are in the form: {},  where x is any {}.'.format(formula, natural_num))
+    print('All the satifying numbers are in the form: {}, where x is any {}.'.format(formula, natural_num))
 
 ##abbreviation
 crt = chineseRemainderTheorem
 
 def pH(concentration):
-    '''Support pH,  pOH and any pK values'''
+    '''Support pH, pOH and any pK values'''
     return -math.log(concentration, 10)
 
 def titration(volume, molarity1, molarity2, pk, product_basic = 0):
     '''Support weak acid or weak base only'''
-    n1 = volume*molarity1
-    mol = n1/(volume + n1/molarity2)
-    h = (mol*10**(pk-14))**0.5
+    n1 = volume * molarity1
+    mol = n1 / (volume + n1 / molarity2)
+    h = (mol * 10 ** (pk - 14)) ** 0.5
     if product_basic:
-        h = 10**(-14)/h
+        h = 10 ** (-14) / h
     return pH(h)
 
 def burn_equation(formula):
@@ -218,9 +219,9 @@ def burn_equation(formula):
                 dictionary[ch] = dictionary.get(ch, 0) + 1
             elif formula[i + 1].isnumeric():
                 num = ''
-                while i + 1<length and formula[i + 1].isnumeric():
-                    num  += formula[i + 1]
-                    i  += 1
+                while i + 1 < length and formula[i + 1].isnumeric():
+                    num += formula[i + 1]
+                    i += 1
                 dictionary[ch] = dictionary.get(ch, 0) + eval(num)
             else:
                 dictionary[ch] = dictionary.get(ch, 0) + 1
@@ -232,7 +233,7 @@ def burn_equation(formula):
             if i + 1<length and formula[i + 1].isnumeric():
                 multiple = eval(formula[i + 1])
             for element in d_:
-                d[element] = d.get(element, 0) + d_[element]*multiple
+                d[element] = d.get(element, 0) + d_[element] * multiple
             parentheses = False
         if parentheses:
             judge(i, ch, d_)
@@ -260,14 +261,14 @@ def burn_equation(formula):
     product = '{}{}'.format(new_d['CO2'], new_d['H2O'])[1:]
     print(reactant + product)
 
-def truth_table(formula, output = 'a'):
+def truth_table(formula, output= 'a'):
     '''Please enter the formula in terms of a string.
-       Use " = >" or "->" for "imply",  " + " for "exclusive or".
+       Use " = >" or "->" for "imply", " + " for "exclusive or".
        Please use () for precendence in case of miscalculations.
        Default output table will be of Ts and Fs.
        Change the value of output to "full" to output a complete table, 
        to "num" to output a table of 1s and 0s.'''
-    TF = [True,  False]
+    TF = [True, False]
     connective = ['and', 'or', 'not']
 
     new_formula = ''
@@ -282,10 +283,10 @@ def truth_table(formula, output = 'a'):
 
     formula.strip()
     if formula[-1].isalpha():
-        formula  += ' '
+        formula += ' '
     for i, ch in enumerate(formula):
         if ch.isalpha():
-            variable  += ch
+            variable += ch
         else:
             if ch == '(':
                 parentheses_stack.append(i)
@@ -329,14 +330,14 @@ def truth_table(formula, output = 'a'):
                 if variable not in connective:
                     if variable not in var_lst:
                         var_lst.append(variable)
-                    new_formula  += 'method[\'{}\']'.format(variable)
+                    new_formula += 'method[\'{}\']'.format(variable)
                 else:
-                    new_formula  += variable
+                    new_formula += variable
                 variable = ''
             if is_compound:
                 compound_dict[compound] = new_formula[corresponding_stack.pop():]
                 is_compound = False
-            new_formula  += ch
+            new_formula += ch
 
     var_num = len(var_lst)
     col_lst = var_lst + list(compound_dict.keys()) + [formula]
@@ -345,7 +346,7 @@ def truth_table(formula, output = 'a'):
     for col in col_lst:
         length = [6, len(col) + 1][len(col)>5]
         var_len[col] = length
-        first_line  += ('{:' + str(length) + '}').format(col)
+        first_line += ('{:' + str(length) + '}').format(col)
     print(first_line)
 
     printout = ''
@@ -376,33 +377,31 @@ def truth_table(formula, output = 'a'):
             else:
                 row.append((eval('method[\'{}\']'.format(col)), var_len[col]))
         for tf, length in row:
-            printout  += ('{:' + str(length) + '}').format(repr(tf))
-            file_content  += '{}, '.format(tf)
-        printout  += '\n'
+            printout += ('{:' + str(length) + '}').format(repr(tf))
+            file_content += '{}, '.format(tf)
+        printout += '\n'
         file_content = file_content[:-1] + '\n'
     printout = printout[:-1]
     file_content = file_content[:-1]
     print(printout)
-
+    if output == 'num':
+        file_content = ez.sub(file_content, 'True', '1', 'False', '0')
+    elif output != 'full':
+##        file_content = ez.sub(file_content, 'and', '∧', 'or', '∨', 'not', '￢')
+        file_content = ez.sub(file_content, 'True', 'T', 'False', 'F')
+    
     try:
-        infile = open('C:\\Users\\Seaky\\Desktop\\truth table.csv', 'w')
+        ez.fwrite(ez.desktop + 'TruthTable.csv', file_content)
     except:
         print('傻逼关进程啊！')
         return
-    if output == 'num':
-        file_content = sub(file_content, 'True', '1', 'False', '0')
-    elif output != 'full':
-##        file_content = sub(file_content, 'and', '∧', 'or', '∨', 'not', '￢')
-        file_content = sub(file_content, 'True', 'T', 'False', 'F')
-    infile.write(file_content)
-    infile.close()
 
 integer = lambda x:[x, int(x)][x == int(x)]
 
 def get24(a, b = -1, c = -1, d = -1):
     if 1000 <= a<10000 and b == c == d == -1:
         a, b, c, d = map(int, str(a))
-    elif not 0<a<10 or not 0<b<10 or not 0<c<10 or not 0<d<10:
+    elif not 0 < a < 10 or not 0 < b < 10 or not 0 < c < 10 or not 0 < d < 10:
         print('Numbers should be greater than 0 and less than 10.')
         return
     operators = [' + ', '-', '*', '/']
@@ -470,7 +469,7 @@ c = combination
 
 def npickm(n, m):
     '''n cannot have duplicates.
-        Please use builtin func: itertools.combinations,  itertools.combinations_with_replacement'''
+        Please use builtin func: itertools.combinations, itertools.combinations_with_replacement'''
     methods = []
     def recursive(method = set()):
         for item in n:
@@ -488,7 +487,7 @@ def fraction(n, m):
     '''Reduce n/m'''
     output = '{}/{}'.format(n, m)
     negative = ''
-    if n*m<0:
+    if n * m<0:
         negative = '-'
         n = abs(n)
         m = abs(m)
@@ -500,30 +499,30 @@ def fraction(n, m):
         m = int(m)
     new_n = n
     new_m = m
-    if n%m == 0:
-        new_n = n//m
+    if n % m == 0:
+        new_n = n // m
         new_m = 1
-        output  += ' = {}{}/1'.format(negative, new_n)
-    elif m%n == 0:
+        output += ' = {}{}/1'.format(negative, new_n)
+    elif m % n == 0:
         new_n = 1
-        new_m = m//n
-        output  += ' = {}1/{}'.format(negative, new_m)
+        new_m = m // n
+        output += ' = {}1/{}'.format(negative, new_m)
     else:
-        for i in range(2, int(min(n, m)**0.5) + 1):
-            while new_n%i == 0 and new_m%i == 0:
+        for i in range(2, int(min(n, m) ** 0.5) + 1):
+            while new_n % i == 0 and new_m % i == 0:
                 new_n //= i
                 new_m //= i
         if new_n != n:
-            output  += ' = {}{}/{}'.format(negative, new_n, new_m)
-    quotient = ac(repr(n/m))
+            output += ' = {}{}/{}'.format(negative, new_n, new_m)
+    quotient = ac(repr(n / m))
     if quotient == int(quotient):
         quotient = int(quotient)
-        output  += ' = '
+        output += ' = '
     elif set(findPrimeFactors(new_m, False)).issubset({2, 5}):
-        output  += ' = '
+        output += ' = '
     else:
-        output  += '≈'
-    output  += negative + repr(quotient)
+        output += '≈'
+    output += negative + repr(quotient)
     print(output)
 
 ##abbreviation
@@ -542,17 +541,17 @@ fact = factorial
 def factorialSkip(n):
     if n in [0, 1] :
         return 1
-    return n*factorialSkip(n-2)
+    return n * factorialSkip(n-2)
 
 def isPrime(n):
     if type(n) == int and n >= 2:
-        for i in range(2, int(n**0.5) + 1):
+        for i in range(2, int(n ** 0.5) + 1):
             if n%i == 0:
                 return False
         return True
     return False
 
-def findPrimeFactors(num, ifPrint = True, return_dict = False):
+def findPrimeFactors(num, printResult = True, return_dict = False):
     '''Automatically Regarded as a non-negative number'''
     num = abs(num)
     if isPrime(num) or num in [0, 1]:
@@ -567,10 +566,10 @@ def findPrimeFactors(num, ifPrint = True, return_dict = False):
     if d != {}:
         for key in d:
             if d[key] == 1:
-                s  += str(key) + '*'
+                s += str(key) + '*'
             else:
-                s  += '(' + str(key) + '^' + str(d[key]) + ')*'
-    if ifPrint:
+                s += '(' + str(key) + '^' + str(d[key]) + ')*'
+    if printResult:
         print(str(num) + ' = ' + s[:-1])
     if return_dict:
         return d
@@ -581,7 +580,7 @@ def findPrimeFactors(num, ifPrint = True, return_dict = False):
 fpf = findPrimeFactors
 
 def findAllFactors(num):
-    return [ i for i in range(1, int(num**0.5) + 1) if num%i == 0 ]
+    return [ i for i in range(1, int(num**0.5) + 1) if num % i == 0 ]
 
 def findCofactors(num1, num2):
     '''Automatically Regarded as non-negative numbers.'''
@@ -589,7 +588,7 @@ def findCofactors(num1, num2):
         return findAllFactors(num2)
     elif num2 == 0:
         return findAllFactors(num1)
-    return [ i for i in range(1, min([abs(num1), abs(num2)])//2 + 1) if num1%i == num2%i == 0]
+    return [ i for i in range(1, min([abs(num1), abs(num2)])//2 + 1) if num1 % i == num2 % i == 0]
 
 ##abbreviation
 fc = findCofactors
@@ -604,14 +603,14 @@ def lcm(n1, n2):
     '''Least common multiple'''
     if any([n1, n2]) == 0:
         return 0
-    if n1%n2 == 0:
+    if n1 % n2 == 0:
         return n1
-    elif n2%n1 == 0:
+    elif n2 % n1 == 0:
         return n2
     elif gcd(n1, n2) == 1:
-        return n1*n2
-    n1_dict = findPrimeFactors(n1, ifPrint = 0, return_dict = 1)
-    n2_dict = findPrimeFactors(n2, ifPrint = 0, return_dict = 1)
+        return n1 * n2
+    n1_dict = findPrimeFactors(n1, printResult = 0, return_dict = 1)
+    n2_dict = findPrimeFactors(n2, printResult = 0, return_dict = 1)
     for factor in n2_dict:
         n1_dict[factor] = max(n2_dict[factor], n1_dict.get(factor, 0))
     num = 1
@@ -619,7 +618,7 @@ def lcm(n1, n2):
         num *= factor**n1_dict[factor]
     return num
 
-formLst = ['w', 'l', 's', 'b']
+formLst = ['a', 'l', 's', 'b']
 
 def matrixProducer(row = 0, column = 0, formula = '', matrixOrDeterminant = 'm'):
     ## latex form
@@ -649,29 +648,22 @@ def matrixProducer(row = 0, column = 0, formula = '', matrixOrDeterminant = 'm')
         Ent = advancedSplit(inputEnt)
     else:
         Ent = advancedSplit(formula)
-    difference = len(Ent)-row*column
-    if difference != 0:
-        if difference == 1:
-            print('\nYou typed in 1 more entry! We will get restarted!\n')
-        elif difference>1:
-            print('\nYou typed in {} more entries! We will get restarted!\n'.format(difference))
-        elif difference == -1:
-            print('\nYou need to type in 1 more entry! We will get restarted!\n')
-        elif difference<-1:
-            print('\nYou need to type in {} more entries! We will get restarted!\n'.format(-difference))
+    expected = row * column
+    if len(Ent) != expected:
+        print('{} entr{} expected. Found {}. Restarted!\n'.format(expected, 'y' if expected == 1 else 'ies', len(Ent)))
         matrixProducer()
         return
     else:
         output = ''
         for i in range(row):
             for j in range(column):
-##                entry = Ent[i*column + j]
+##                entry = Ent[i * column + j]
 ##                if -1<entry.find('f')<entry.find('(')<entry.find(', ')<entry.find(')'):
-##                    output  += ['', '-'][entry[0] == '-'] + fl(entry[entry.find('(') + 1:entry.find(', ')], entry[entry.find(', ') + 1:entry.find(')')])[2:-2]
+##                    output += ['', '-'][entry[0] == '-'] + fl(entry[entry.find('(') + 1:entry.find(', ')], entry[entry.find(', ') + 1:entry.find(')')])[2:-2]
 ##                else:
-##                    output  += Ent[i*column + j]
-##                output  += '&'
-                output  += Ent[i*column + j] + '&'
+##                    output += Ent[i * column + j]
+##                output += '&'
+                output += Ent[i * column + j] + '&'
             output = output[:-1] + '\\\\'
         if matrixOrDeterminant == 'm':
             output = '\\begin{bmatrix}' + output[:-2] + '\\end{bmatrix}'
@@ -680,35 +672,31 @@ def matrixProducer(row = 0, column = 0, formula = '', matrixOrDeterminant = 'm')
         return output
 
 def matrixLaTeX(row = 0, column = 0, matrix = '', printResult = True):
-    output = matrixProducer(row, column, matrix)
+    result = matrixProducer(row, column, matrix)
     if printResult:
-        print('By using this function you will get a matrix in LaTeX form.')
-        print('The matrix you want in LaTeX is:\n\n' + output + '\n')
-    return output
+        print(f'By using this function you will get a matrix in LaTeX form.\nResult:\n\n{result}\n')
+    return result
 
 ##abbreviation
 ml = matrixLaTeX
 
-def matrixWolframAlpha(row = 0, column = 0, matrix = '', printResult = True):
-##            rightBracket = '}'
-    output = matrixProducer(row, column, matrix)
-    output = matrixConvert(form = 'w', matrix = output)
+def matrixArray(row = 0, column = 0, matrix = '', printResult = True):
+    result = matrixConvert(form = 'a', matrix = matrixProducer(row, column, matrix))
     if printResult:
-        print('By using this function you will get a matrix in WolframAlpha form.')
-        print('The matrix you want in WolframAlpha Form is:\n\n' + output + '\n')
-    return output
+        print(f'By using this function you will get a matrix in Array form.\nResult:\n\n{result}\n')
+    return result
 
 ##abbreviation
-mw = matrixWolframAlpha
+mw = matrixArray
 
 def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
     '''r: row
        c: column
        rg: range
-       f: format (supports'l', 'w', 'b', 'f')
+       f: format (supports'l', 'a', 'b', 'f')
        var: matrix variable
        pr: print result'''
-    if r == 0 or c == 0:
+    if not r or not c:
         inputRC = input('This function provides a shortcut for users to create an m*n matrix.\nPlease type m and n seperated with space or comma\n>>> ')
         RC = advancedSplit(inputRC)
         if len(RC) == 0:
@@ -722,6 +710,7 @@ def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
         for item in RC:
             if not item.isnumeric():
                 print('\nPlease type in numbers!\n')
+                mf()
                 return
         r = int(RC[0]) #r means rows
         c = int(RC[1]) #c means columns
@@ -744,7 +733,7 @@ def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
         return
     inputForm = f
     if f == None:
-        inputForm = input('Please type in the form that you want. \'l\' represents LaTeX form,  \'w\' represents WolframAlpha form(default),  \'b\' represents beautified matrix form and \'s\' represents string form.\n>>> ')
+        inputForm = input('Please type in the form that you want. \'l\' represents LaTeX form, \'w\' represents Array form(default), \'b\' represents beautified matrix form and \'s\' represents string form.\n>>> ')
     while True:
         if inputForm == '':
             inputForm = 'l'
@@ -754,7 +743,7 @@ def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
         break
     output = ''
     var = ''
-    if r*c <= 26 and rg == None and input('Do you want to make the matrix a multi-variables matrix?Type \'y\' representing \'yes\'. Other input will be regarded as \'no\'.\n>>> '):
+    if r * c <= 26 and rg == None and input('Do you want to make the matrix a multi-variables matrix?Type \'y\' representing \'yes\'. Other input will be regarded as \'no\'.\n>>> '):
         output = matrixProducer(r, c, ', '.join( chr(97 + i) for i in range(r*c)))
         output = matrixConvert(form = inputForm, matrix = output)
     else:
@@ -789,7 +778,7 @@ def mf(r = 0, c = 0, rg = None, f = '', var = '', pr = True):
             elif len(newLst) == 3:
                 startNum = newLst[0]
                 endNum = newLst[1]
-                if startNum>endNum:
+                if startNum > endNum:
                     step = -abs(newLst[2])
                 else:
                     step = newLst[2]
@@ -826,7 +815,7 @@ def formJudge(m):
         for item in eval(m):
             if type(item) != list:
                 return False
-        return 'w'
+        return 'a'
     elif m.find(' ') == -1:
         if m.isalnum():
             return 's'
@@ -838,7 +827,7 @@ def formJudge(m):
 
 def matrixConvert(form = '', matrix = ''):
     if matrix == '':
-        inputMat = input('By using this function,  you can change your matrix form.\nPlease type your matrix here:').strip()
+        inputMat = input('By using this function, you can change your matrix form.\nPlease type your matrix here:').strip()
     else:
         inputMat = matrix
     if formJudge(inputMat) == False:
@@ -848,7 +837,7 @@ def matrixConvert(form = '', matrix = ''):
         if form:
             inputForm = form
         else:
-            inputForm = input('Please type in the form that you want. \'l\' represents LaTeX form, \'w\' represents WolframAlpha form,  \'b\' represents beautified matrix form and \'s\' represents string matrix form.\n>>> ').lower()
+            inputForm = input('Please type in the form that you want. \'l\' represents LaTeX form, \'w\' represents Array form, \'b\' represents beautified matrix form and \'s\' represents string matrix form.\n>>> ').lower()
         if inputForm.lower() not in formLst:
             inputForm = input('Your matrix form is not supported! Please type again!\n>>> ')
         else:
@@ -856,15 +845,15 @@ def matrixConvert(form = '', matrix = ''):
     if formJudge(inputMat) == form:
         return inputMat
     newMat = ''
-    if formJudge(inputMat) == 'w':
+    if formJudge(inputMat) == 'a':
         if inputForm == 'l':
             inputMat = ez.substitute(inputMat, '[[', '\\begin{bmatrix}', ']]', '\\end{bmatrix}', '], [', '\\\\')
             for ch in inputMat:
                 if ch == ', ':
                     ch = '&'
-                newMat  += ch
-        elif inputForm == 'w':
-            newMat  += matrix
+                newMat += ch
+        elif inputForm == 'a':
+            newMat += matrix
         elif inputForm == 'b':
             inputMat = ez.substitute(inputMat, '[[', '|', ']]', '|', '], [', '|\n|', ', ', ' ')
             newMat = formatBMat(inputMat)
@@ -873,11 +862,11 @@ def matrixConvert(form = '', matrix = ''):
             for ch in inputMat:
                 if ch == ', ':
                     ch = ' '
-                newMat  += ch
+                newMat += ch
     elif formJudge(inputMat) == 'l' or 'dl':
         if formJudge(inputMat) == 'dl':
             inputMat = inputMat.replace('vmatrix', 'bmatrix')
-        if inputForm == 'w':
+        if inputForm == 'a':
             inputMat = inputMat.replace('\\begin{bmatrix}', '[[')
             inputMat = inputMat.replace('\\end{bmatrix}', ']]')
             for i, ch in enumerate(inputMat):
@@ -887,9 +876,9 @@ def matrixConvert(form = '', matrix = ''):
                     ch = '], ['
                 elif ch == '\\' and inputMat[i-1] == '\\':
                     ch = ''
-                newMat  += ch
+                newMat += ch
         elif inputForm == 'l':
-            newMat  += matrix
+            newMat += matrix
         elif inputForm == 'b':
             inputMat = ez.substitute(inputMat, '\\begin{bmatrix}', '|', '\\end{bmatrix}', '|', '\\\\', '|\n|', '&', ' ')
             newMat = formatBMat(inputMat)
@@ -898,10 +887,10 @@ def matrixConvert(form = '', matrix = ''):
             for ch in inputMat:
                 if not ch.isalnum():
                     ch = ' '
-                newMat  += ch
+                newMat += ch
             newMat = newMat.replace('  ', ' ')
     elif formJudge(inputMat) == 'b':
-        if inputForm == 'w':
+        if inputForm == 'a':
             inputMat = inputMat[1:] + '[['
             inputMat = inputMat[:-1] + ']]'
             for i, ch in enumerate(inputMat):
@@ -913,9 +902,9 @@ def matrixConvert(form = '', matrix = ''):
                     ch = '['
                 elif ch == ' ':
                     ch = ', '
-                newMat  += ch
+                newMat += ch
         elif inputForm == 'b':
-            newMat  += matrix
+            newMat += matrix
         if inputForm == 'l':
             inputMat = inputMat[1:] + '\\begin{bmatrix}'
             inputMat = inputMat[:-1] + '\\end{bmatrix}'
@@ -926,18 +915,18 @@ def matrixConvert(form = '', matrix = ''):
                     ch = '\\'
                 elif ch == '\n':
                     ch = ''
-                newMat  += ch
+                newMat += ch
         else:
             inputMat = inputMat[1:-1]
             for ch in inputMat:
                 if not ch.isalnum():
                     ch = ' '
-                newMat  += ch
+                newMat += ch
             newMat = newMat.replace('  ', ' ')
-    if form == '' or matrix == 'Noe':
-        print('\n' + newMat)
-    else:
+    if form and matrix:        
         return newMat
+    else:        
+        print('\n' + newMat)
 
 ##abbreviation
 mc = matrixConvert
@@ -974,13 +963,13 @@ def matrixRandom(row = 0, column = 0, randRange = None, form = '', printResult =
             endNum = newLst[1]
             step = abs(newLst[2])
         else:
-            print("Please type in 2 or 3 numbers!")
+            print('Please type in 2 or 3 numbers!')
             matrixRandom()
             return
-        numlst = [repr(random.randrange(startNum, endNum + 1, step)) for i in range(row*column)]
+        numlst = [repr(random.randrange(startNum, endNum + 1, step)) for i in range(row * column)]
     inputForm = form
     if form == '':
-        inputForm = input('Please type in the form that you want. \'l\' represents LaTeX form,  \'w\' represents WolframAlpha form(default),  \'b\' represents beautified matrix form and \'s\' represents string form.\n>>> ')
+        inputForm = input('Please type in the form that you want. \'l\' represents LaTeX form, \'w\' represents Array form(default), \'b\' represents beautified matrix form and \'s\' represents string form.\n>>> ')
     while True:
         if inputForm == '':
             inputForm = 'l'
@@ -1000,24 +989,22 @@ mr = matrixRandom
 
 def formatBMat(matrix):
     rowmatrix = matrix.replace('|', ' ')
-    itemlist = rowmatrix.split
-    L = []
+    itemlist = rowmatrix.split()
     longest = len(itemlist[0])
     newMat = ''
     for item in itemlist:
-        if len(item)>longest:
+        if len(item) > longest:
             longest = len(item)
-    for item in itemlist:
-        L.append(('{:' + str(longest) + '}').format(item))
+    L = [('{:' + str(longest) + '}').format(item) for item in itemlist]
     r = matrix.count('\n') + 1
-    c = int(len(itemlist)/r)
+    c = int(len(itemlist) / r)
     for i in range(r):
-        newMat  += '|'
+        newMat += '|'
         for j in range(c):
-            newMat  += L[i*c + j]
+            newMat += L[i * c + j]
             if j != c-1:
-                newMat  += ' '
-        newMat  += '|\n'
+                newMat += ' '
+        newMat += '|\n'
     return newMat[:-1]
 
 ## fold line version
@@ -1036,21 +1023,21 @@ def formatBMat(matrix):
 ##    c = int(len(l)/r)
 ##    for i in range(r):
 ##        if i == 0:
-##            newMat  += '┌'
+##            newMat += '┌'
 ##        elif i == r-1:
-##            newMat  += '└'
+##            newMat += '└'
 ##        else:
-##            newMat  += ' |'
+##            newMat += ' |'
 ##        for j in range(c):
-##            newMat  += L[i*r + j]
+##            newMat += L[i*r + j]
 ##            if j != c-1:
-##                newMat  += ' '
+##                newMat += ' '
 ##        if i == 0:
-##            newMat  += '┐\n'
+##            newMat += '┐\n'
 ##        elif i == r-1:
-##            newMat  += '┘'
+##            newMat += '┘'
 ##        else:
-##            newMat  += '|\n'
+##            newMat += '|\n'
 ##    return newMat
 
 def matrixMultiplication():
@@ -1075,10 +1062,10 @@ def matrixMultiplication():
         matrixMultiplication()
         return
     elif formJudge(rightMat) == 's':
-        print('String form is not supported currently,  please type again!\n')
+        print('String form is not supported currently. Please type again!\n')
         matrixMultiplication()
         return
-    rightMat = eval(matrixConvert('w', rightMat))
+    rightMat = eval(matrixConvert('a', rightMat))
     ml = len(rightMat)
     nl = len(rightMat[0])
     if rightPower != 1:
@@ -1090,7 +1077,7 @@ def matrixMultiplication():
                     for j in range(ml):
                         item = 0
                         for k in range(ml):
-                            item  += rightMat[i][k] * rightMat[k][j]
+                            item += rightMat[i][k] * rightMat[k][j]
                         l.append(item)
                     lst.append(l)
                 rightMat = lst
@@ -1099,7 +1086,7 @@ def matrixMultiplication():
             matrixMultiplication()
             return
     while True:
-        leftMat = input('Please type in your left matrix in any form besides string form,  no input will stop this function.\n>>> ')
+        leftMat = input('Please type in your left matrix in any form besides string form, no input will stop this function.\n>>> ')
         leftPower = 1
         if leftMat == '':
             break
@@ -1115,7 +1102,7 @@ def matrixMultiplication():
         if formJudge(leftMat) == False:
             print('Your left matrix form is not supported! Please type again!\n')
             continue
-        leftMat = eval(matrixConvert(form = 'w', matrix = leftMat))
+        leftMat = eval(matrixConvert(form = 'a', matrix = leftMat))
         mr = len(leftMat)
         nr = len(leftMat[0])
         if nl != mr:
@@ -1128,11 +1115,11 @@ def matrixMultiplication():
                 for j in range(nr):
                     item = 0
                     for k in range(nl):
-                        item  += leftMat[i][k]*rightMat[k][j]
+                        item += leftMat[i][k]*rightMat[k][j]
                     l.append(item)
                 lst.append(l)
             rightMat = lst
-    if input('Do you want to beautify this matrix? Type \'y\' representing \'yes\',  other input will be regarded as \'no\'.\n>>> ').lower() == ( 'y' or 'yes' ):
+    if input('Do you want to beautify this matrix? Type \'y\' representing \'yes\', other input will be regarded as \'no\'.\n>>> ').lower() == ( 'y' or 'yes' ):
         print(matrixConvert(form = 'b', matrix = str(rightMat).replace(' ', '')))
     else:
         print('The result matrix is:\n{}'.format(str(rightMat).replace(' ', '')))
@@ -1141,81 +1128,78 @@ def matrixMultiplication():
 mtp = matrixMultiplication
 
 def determinantLaTeX(size = 0, determinant = '', printResult = True):
-    output = matrixProducer(size, size, determinant, 'd')
+    result = matrixProducer(size, size, determinant, 'd')
     if printResult:
-        print('By using this function you will get a determinant in LaTeX form.')
-        print('The matrix you want in LaTeX is:\n\n' + output + '\n')
-        print('And it has the VALUE:   ' + str(determinantCalculation(determinant)))
-    return output
+        print('By using this function you will get a determinant in LaTeX form.\nResult:\n\n{}\nValue:{}'.format(output, determinantCalculation(determinant)))
+    return result
 
 ##abbreviation
 dl = determinantLaTeX
 
 def determinantCalculation(inputDet = ''):
-    if inputDet == '':
-        det = input('Please input your determinant in LaTeX form or in WolframAlpha form: ')
-    else:
-        det = inputDet
-    if formJudge(det) not in ['dl', 'w']:
+    '''inputDet can be in LaTeX form or in Array form'''
+    det = inputDet or input('Please input your determinant in LaTeX form or in Array form: ')
+    if formJudge(det) not in ['dl', 'a']:
         print('Please type in the correct form!\n')
         determinantCalculation()
         return
     else:
-        det = eval(matrixConvert('w', det))
+        det = eval(matrixConvert('a', det))
         def compute(determinant):
             if len(determinant) == 1:
                 determinantValue = determinant[0][0]
             else:
                 determinantValue = 0
                 for i in range(len(determinant)):
-                    n = [[row[j] for j in range(len(determinant)) if j  !=  i] for row in determinant[1:]]
-                    if i%2 == 0:
-                        determinantValue  += determinant[0][i]*compute(n)
+                    n = [[row[j] for j in range(len(determinant)) if j != i] for row in determinant[1:]]
+                    if i % 2 == 0:
+                        determinantValue += determinant[0][i] * compute(n)
                     else:
-                        determinantValue -= determinant[0][i]*compute(n)
+                        determinantValue -= determinant[0][i] * compute(n)
             return determinantValue
         detValue = compute(det)
-    if inputDet == None:
-        print('The value of your determinant is {}.'.format(detValue))
-    else:
+    if inputDet:        
         return detValue
+    else:        
+        print(f'Value: {detValue}')
 
 ##abbreviation
 dc = determinantCalculation
 
 def boldedRLaTeX(n = 0):
     if n:
-        return ('\mathbb{R}^' + str(n) + '')
+        return f'\\mathbb{R}^{n}'
     else:
         n = input('How many dimensions would you like?\n>>> ')
         if n:
-            print('\mathbb{R}^' + n + '')
+            print(f'\\mathbb{R}^{n}')
         else:
-            print('\mathbb{R}')
+            print('\\mathbb{R}')
 
 ##abbreviation
 br = boldedRLaTeX
 
 def fractionLaTeX(numerator = None, denominator = None):
-    if numerator == None or denominator == None:
-        if numerator == None:
-            numerator = input('Please type in numerator here: ')
-        if denominator == None:
-            denominator = input('Please type in denominator here: ')
-        print('\\frac{' + numerator + '}{' + denominator + '}')
+    num = numerator or input('Numerator: ')
+    denom = denominator or input('Denominator: ')
+    result = '\\frac{' + num + '}{' + denom + '}'
+    if numerator and denominator:
+        return result
     else:
-        return ('\\frac{' + str(numerator) + '}{' + str(denominator) + '}')
+        print(result)
 
 ##abbreviation
 fl = fractionLaTeX
 
-def vectorLaTeX(entry = None, vector = True, overRightArrow = False):
-    if entry == None:
-        entry = input('Please input your entry here: ')
-    if vector == True and overRightArrow == False:
-        print('\vec{' + entry + '}')
-    elif overRightArrow == True:
-        print('\overrightarrow{' + entry + '}')
+def vectorLaTeX(entries = None, overRightArrow = True, printResult = True):
+    '''entries needs to be a string separted by a comma.
+        if overRightArrow, will use \\overrightarrow instead of \\vec'''
+    entries = entries or input('Entries: ')
+    result = '\\overrightarrow{' + entries + '}' if overRightArrow else '\\vec{' + entry + '}'
+    if printResult:
+        print(result)
+    else:
+        return result
 
 ##abbreviation
 vl = vectorLaTeX
@@ -1227,12 +1211,12 @@ def advancedSplit(s):
     for i in range(len(s)):
         ch = s[i]
         if ch in d:
-            d[ch]  += 1
+            d[ch] += 1
         if ch in [' ', ', '] and s[i-1] not in [' ', ','] and d['\'']%2 == 0 and d['\"']%2 == 0 and d['('] == d[')'] and d['['] == d[']'] and d['{'] == d['}']:
            lst.append(item)
            item = ''
            ch = ''
-        item  += ch
+        item += ch
         if i == len(s)-1:
             lst.append(item)
     return lst
