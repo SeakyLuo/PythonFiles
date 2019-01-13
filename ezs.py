@@ -1196,7 +1196,7 @@ def vectorLaTeX(entries = None, overRightArrow = True, printResult = True):
     '''entries needs to be a string separted by a comma.
         if overRightArrow, will use \\overrightarrow instead of \\vec'''
     entries = entries or input('Entries: ')
-    result = '\\overrightarrow{' + entries + '}' if overRightArrow else '\\vec{' + entry + '}'
+    result = '\\overrightarrow{' + entries + '}' if overRightArrow else '\\vec{' + entries + '}'
     if printResult:
         print(result)
     else:

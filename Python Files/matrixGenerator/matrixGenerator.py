@@ -5,7 +5,7 @@ from atexit import register
 from eztk import setEntry, clearEntry
 from random import randrange
 from numpy import linalg
-from ez import fread, fwrite, copyToClipboard, py2pyw
+from ez import fread, fwrite, copyToClipboard, py2pyw, find
 import ezs, os
 
 MATRIX = 'Matrix'
@@ -20,9 +20,12 @@ LEFT = 'Left'
 RIGHT = 'Right'
 UP = 'Up'
 DOWN = 'Down'
-SHORTCUTS = '\n'.join(['Alt + [: Switch Dropdown', 'Alt + ]: Switch Dropdown', \
-                        'Ctrl + [: Switch Dropdown Option', 'Ctrl + ]: Switch Dropdown Option', \
-                        'Enter/Return: Generate Result'])
+shortcutFormatter = lambda command, shortcut: '{:<25}{:>15}'.format(command, shortcut)
+SHORTCUTS = '\n'.join([shortcutFormatter('Switch Dropdown', 'Alt + ['), \
+                       shortcutFormatter('Switch Dropdown', 'Alt + ]'), \
+                       shortcutFormatter('Switch Dropdown Option', 'Ctrl + ['),\
+                       shortcutFormatter('Switch Dropdown Option', 'Ctrl + ]'), \
+                       shortcutFormatter('Generate', 'Enter/Return')])
 CLEAR_SIZE = 'Clear Size'
 CLEAR_ENTRIES = 'Clear Entries'
 CLEAR_ALL = 'Clear All'
@@ -38,65 +41,80 @@ class Generator(Frame):
         self.minCols = self.maxCols = 4
         self.maxSize = 15
         self.entries = {}
+        ## Strings
+        self.GENERATE_CLEAR_OPTION = 'GenerateClearOption'
+        self.CALCULATE_CLEAR_OPTION = 'CalculateClearOption'
+        self.COLUMN_VECTOR = 'ColumnVector'
+        self.REMEMBER_SIZE = 'RememberSize'
+        self.SHOW_DIALOG = 'ShowDialog'
+        self.RESULT_TYPE = 'ResultType'
+        self.RESULT_FORMAT = 'ResultFormat'
+        self.LAST_USED_DROPDOWN = 'LastUsedDropdown'
+        ## Settings
         self.settingsFileName = 'settings.json'
         self.settings = loads(fread(self.settingsFileName)) if os.path.exists(self.settingsFileName) else {}
 
         ## generate menus
         self.menu = Menu(self)
-        self.editMenu = Menu(self.menu, tearoff = False)
-        self.editMenu.add_command(label = 'Random', command = self.randomFill)
-        self.editMenu.add_command(label = 'Unit Matrix', command = self.unitMatrix)
+        ## Edit Menu
+        self.editMenu = Menu(self.menu)
+        self.matMenu = Menu(self.menu)
+        self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
+        self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
+        self.detMenu = Menu(self.menu)
+        self.detMenu.add_command(label = 'Calculate', command = self.calculateDet)
+        self.calculateClearVar = StringVar(self, value = self.settings.setdefault(self.GENERATE_CLEAR_OPTION, NONE))
+        self.setupClearMenu(self.detMenu, self.calculateClearVar, \
+                            lambda :self.settings.__setitem__(self.CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
+                            'Clear After Calculate')
+        self.vecMenu = Menu(self.menu)
+        self.colVecVar = BooleanVar(self, value = self.settings.setdefault(self.COLUMN_VECTOR, True))
+        self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.__setitem__(self.COLUMN_VECTOR, self.colVecVar.get()))
+        self.imatMenu = Menu(self.menu)
+        self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
+        for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu, self.imatMenu]):
+            menu['tearoff'] = False
+            self.editMenu.add_cascade(label = name, menu = menu)
+        self.editMenu.add_separator()
         self.editMenu.add_command(label = 'Multiply', command = self.multiply)
         self.editMenu.add_command(label = 'Transpose', command = self.transpose)
         self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_SIZE, command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ENTRIES, command = lambda: self.clear(1))
         self.editMenu.add_command(label = CLEAR_ALL, command = lambda: self.clear(0, 1))
-        self.generateMenu = Menu(self.menu, tearoff = False)
-        self.generateMenu.add_command(label = 'Generate' + ' ' * 10 + 'Enter/Return', command = self.generate)
-        self.GENERATE_CLEAR_OPTION = 'GenerateClearOption'
-        self.generateClearVar = StringVar(self)
+        ## Insert Menu
+        self.insertMenu = Menu(self)
+        self.insertMenu.add_command(label = 'Random', command = self.randomFill)
+        self.insertMenu.add_command(label = 'Unit Matrix', command = self.unitMatrix)
+        self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
+        self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
+        ## Generate Menu
+        self.generateMenu = Menu(self.menu)
+        self.generateMenu.add_command(label = shortcutFormatter('Generate', 'Enter/Return'), command = self.generate)
+        self.generateClearVar = StringVar(self, value = self.settings.setdefault(self.GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda :self.settings.__setitem__(self.GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
                             'Clear After Generate')
-        self.matMenu = Menu(self.menu, tearoff = False)
-        self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
-        self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
-        self.detMenu = Menu(self.menu, tearoff = False)
-        self.detMenu.add_command(label = 'Calculate', command = self.calculateDet)
-        self.CALCULATE_CLEAR_OPTION = 'CalculateClearOption'
-        self.calculateClearVar = StringVar(self)
-        self.setupClearMenu(self.detMenu, self.calculateClearVar, \
-                            lambda :self.settings.__setitem__(self.CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
-                            'Clear After Calculate')
-        self.vecMenu = Menu(self.menu, tearoff = False)
-        self.COLUMN_VECTOR = 'ColumnVector'
-        self.colVecVar = BooleanVar(self, value = self.settings.get(self.COLUMN_VECTOR, True))
-        self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.__setitem__(self.COLUMN_VECTOR, self.colVecVar.get()))
-        self.imatMenu = Menu(self.menu, tearoff = False)
-        self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
-        self.settingsMenu = Menu(self.menu, tearoff = False)
-        self.REMEMBER_SIZE = 'RememberSize'
-        self.rememberSizeVar = BooleanVar(self, value = self.settings.get(self.REMEMBER_SIZE, self.settings.setdefault(self.REMEMBER_SIZE, (-1, -1))) != (-1, -1))
+        ## Settings Menu
+        self.settingsMenu = Menu(self.menu)
+        self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(self.REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
                                           command = lambda :self.settings.__setitem__(self.REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
-        self.SHOW_DIALOG = 'ShowDialog'
-        self.showDialogVar = BooleanVar(self, value = self.settings.get(self.SHOW_DIALOG, True))
+        self.showDialogVar = BooleanVar(self, value = self.settings.setdefault(self.SHOW_DIALOG, True))
         self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, \
                                           command = lambda :self.settings.__setitem__(self.SHOW_DIALOG, self.showDialogVar.get()))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = SHORTCUTS))
-        for name, menu in zip(['Edit', 'Generate'] + resultTypeOptions + ['Settings'], [self.editMenu, self.generateMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
+        for name, menu in zip(['Edit', 'Insert', 'Generate', 'Settings'], [self.editMenu, self.insertMenu, self.generateMenu, self.settingsMenu]):            
+            menu['tearoff'] = False
             self.menu.add_cascade(label = name, menu = menu)
         self.master.config(menu = self.menu)
         
         ## generate widgets
         self.resultTypeLabel = Label(self, text = 'Type:')
-        self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
         self.resultTypeDropdown = OptionMenu(self, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
         self.resultFormatLabel = Label(self, text = 'Format:')
-        self.RESULT_FORMAT = 'ResultFormat'
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
         self.dropdownTypes = [self.RESULT_TYPE, self.RESULT_FORMAT]
@@ -125,15 +143,15 @@ class Generator(Frame):
             w.grid(row = 1, column = i, sticky = NSEW)
 
         ## set values        
-        self.LAST_USED_DROPDOWN = 'LastUsedDropdown'
         self.master.bind('<Return>', lambda event: self.generate())
         self.master.bind('<Control-[>', lambda event: self.switchDropdownOption(-1))
         self.master.bind('<Alt-[>', lambda event: self.switchLastUsedDropdown(-1))
         self.master.bind('<Control-]>', lambda event: self.switchDropdownOption(1))
         self.master.bind('<Alt-]>', lambda event: self.switchLastUsedDropdown(1))
-        self.settings[self.LAST_USED_DROPDOWN] = self.settings.get(self.LAST_USED_DROPDOWN, self.RESULT_TYPE)
-        self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
-        self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
+        # self.master.bind('<Control-r>', lambda event: self.randomFill)
+        self.settings.setdefault(self.LAST_USED_DROPDOWN, self.RESULT_TYPE)
+        self.setResultType(self.settings.setdefault(self.RESULT_TYPE, MATRIX))
+        self.setResultFormat(self.settings.setdefault(self.RESULT_FORMAT, LATEX))
         register(lambda: fwrite(self.settingsFileName, dumps(self.settings)))
         
     def getRow(self):
@@ -216,7 +234,7 @@ class Generator(Frame):
         if resultType == IDENTITY_MATRIX:
             self.fillIdentityMatrix()
         if self.rememberSizeVar.get():
-            self.rememberSize(r, c)
+            self.settings[self.REMEMBER_SIZE] = (r, c)
 
     def generateEntries(self, row, column):
         if not row or not column:
@@ -309,9 +327,55 @@ class Generator(Frame):
             if info and info['row'] == row and info['column'] == column:
                 return child
         return None
-
-    def rememberSize(self, row, col):
-        self.settings[self.REMEMBER_SIZE] = (row, col)
+        
+    def insert(self, fromFormat):
+        '''fromFormat can only be LaTeX or Array'''
+        def isIdentity(matrix):
+            zero = ['0', 0]
+            one = ['1', 1]
+            for i, row in enumerate(matrix):
+                for j, entry in enumerate(row):
+                    if (i == j and entry not in one) or (i != j and entry not in zero):
+                        return False
+            return True
+        def getResultType(matrix):
+            if matrix in [[[1]], [['1']]]:
+                return MATRIX
+            elif len(matrix[0]) == 1:
+                return VECTOR
+            else:
+                return IDENTITY_MATRIX if isIdentity(matrix) else MATRIX
+        try:
+            title = 'Insert'
+            prompt = f'Input Your Matrix in {fromFormat} Form'
+            result = simpledialog.askstring(title = title, prompt = prompt)
+            if not result:
+                return
+            if fromFormat == LATEX:
+                if 'matrix' in result:
+                    matrix = [row.split('&') for row in find(result).between('}', '\\end').split('\\\\')]
+                    if 'bmatrix' in result:
+                        self.setResultType(getResultType(matrix))
+                    elif 'vmatrix' in result:
+                        self.setResultType(DETERMINANT)
+                else:
+                    matrix = [[i] for i in find(result).between('{', '}').split(',')]
+                    self.setResultType(VECTOR)
+            elif fromFormat == ARRAY:
+                matrix = eval(result)
+                self.setResultType(getResultType(matrix))
+            else:
+                raise Exception()                
+            r = len(matrix)
+            c = len(matrix[0])
+            self.setRow(r)
+            self.setCol(c)
+            self.generateEntries(r, c)
+            for i in range(r):
+                for j in range(c):
+                    setEntry(self.entries[(i, j)], matrix[i][j])
+        except:
+            messagebox.showerror(title = 'Error!', message = 'Invalid Input')
 
     def switchDropdownOption(self, move):
         '''Move should mostly be 1 or -1'''
@@ -359,15 +423,15 @@ class Generator(Frame):
         if not row or not col or isIdentity:
             if resultType == MATRIX:
                 if not row:
-                    row = randrange(self.maxSize)
+                    row = randrange(self.maxSize) + 1
                 if not col:
-                    col = randrange(self.maxSize)
+                    col = randrange(self.maxSize) + 1
             elif resultType == DETERMINANT:
-                row = col = randrange(self.maxSize)
+                row = col = randrange(self.maxSize) + 1
             elif resultType == VECTOR:
-                row = randrange(self.maxSize)
+                row = randrange(self.maxSize) + 1
             elif resultType == IDENTITY_MATRIX:
-                row = col = randrange(self.maxSize)
+                row = col = randrange(self.maxSize) + 1
             self.setRow(row)
             self.setCol(col)
             self.generateEntries(row, col)
@@ -399,7 +463,7 @@ class Generator(Frame):
     def permutationMatrix(self):
         row = self.getRow()
         col = self.getCol()
-        size = max(row, col) or min(row, col) or randrange(self.maxSize)
+        size = max(row, col) or min(row, col) or randrange(self.maxSize) + 1
         self.setResultType(MATRIX)
         if not row == col == size:
             self.syncRowCol(size)
@@ -434,7 +498,7 @@ class Generator(Frame):
         clearMenu = Menu(master = master, tearoff = False)
         for option in clearOptions[1:]:
             clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)
-        variable.set(self.settings.get(self.GENERATE_CLEAR_OPTION, NONE))
+        variable.set(self.settings.setdefault(self.GENERATE_CLEAR_OPTION, NONE))
         master.add_cascade(label = label, menu = clearMenu)
         
     def clear(self, *mode):
