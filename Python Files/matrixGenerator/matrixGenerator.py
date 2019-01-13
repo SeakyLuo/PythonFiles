@@ -335,22 +335,14 @@ class Generator(Frame):
     def permutationMatrix(self):
         row = self.getRow()
         col = self.getCol()
-        if not row or not col:
-            if row:
-                col = row
-            elif col:
-                row = col
-            else:
-                row = col = randrange(self.maxSize)            
-            self.syncRowCol(row)
-        elif row != col:
-            row = col = max(row, col)
-            self.syncRowCol(row)
+        size = max(row, col) or min(row, col) or randrange(self.maxSize)
         self.setResultType(MATRIX)
-        cols = list(range(col))
-        for i in range(row):
+        if not row == col == size:
+            self.syncRowCol(size)
+        cols = list(range(size))
+        for i in range(size):
             c = cols.pop(randrange(len(cols)))
-            for j in range(col):
+            for j in range(size):
                 setEntry(self.entries[(i, j)], 0)
             setEntry(self.entries[(i, c)], 1)
 
