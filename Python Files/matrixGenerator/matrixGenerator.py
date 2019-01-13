@@ -22,6 +22,11 @@ DOWN = 'Down'
 SHORTCUTS = '\n'.join(['Alt + [: Switch Dropdown', 'Alt + ]: Switch Dropdown', \
                         'Ctrl + [: Switch Dropdown Option', 'Ctrl + ]: Switch Dropdown Option', \
                         'Enter/Return: Generate Result'])
+CLEAR_SIZE = 'Clear Size'
+CLEAR_ENTRIES = 'Clear Entries'
+CLEAR_ALL = 'Clear All'
+NONE = 'None'
+clearOptions = [CLEAR_SIZE, CLEAR_ENTRIES, CLEAR_ALL, NONE]
 
 class Generator(Frame):
     def __init__(self, master):
@@ -35,37 +40,52 @@ class Generator(Frame):
         self.settingsFileName = 'settings.json'
         self.settings = loads(ez.fread(self.settingsFileName)) if os.path.exists(self.settingsFileName) else {}
 
-        ## generate menu        
+        ## generate menus
         self.menu = Menu(self)
-        self.editMenu = Menu(self.menu, tearoff = 0)
+        self.editMenu = Menu(self.menu, tearoff = False)
         self.editMenu.add_command(label = 'Random', command = self.randomFill)
-        self.editMenu.add_command(label = 'Multiply', command = self.multiply)
         self.editMenu.add_command(label = 'Unit Matrix', command = self.unitMatrix)
+        self.editMenu.add_command(label = 'Multiply', command = self.multiply)
         self.editMenu.add_command(label = 'Transpose', command = self.transpose)
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = 'Generate', command = self.generate)
-        self.editMenu.add_separator()
-        self.editMenu.add_command(label = 'Clear Size', command = lambda: self.clear(0))
-        self.editMenu.add_command(label = 'Clear Entries', command = lambda: self.clear(1))
-        self.editMenu.add_command(label = 'Clear All', command = lambda: self.clear(0, 1))
-        self.matMenu = Menu(self.menu, tearoff = 0)
+        self.editMenu.add_command(label = CLEAR_SIZE, command = lambda: self.clear(0))
+        self.editMenu.add_command(label = CLEAR_ENTRIES, command = lambda: self.clear(1))
+        self.editMenu.add_command(label = CLEAR_ALL, command = lambda: self.clear(0, 1))
+        self.generateMenu = Menu(self.menu, tearoff = False)
+        self.generateMenu.add_command(label = 'Generate' + ' ' * 10 + 'Enter/Return', command = self.generate)
+        self.GENERATE_CLEAR_OPTION = 'GenerateClearOption'
+        self.generateClearVar = StringVar(self)
+        self.setupClearMenu(self.generateMenu, self.generateClearVar, \
+                            lambda :self.settings.__setitem__(self.GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
+                            'Clear After Generate')
+        self.matMenu = Menu(self.menu, tearoff = False)
         self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
         self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
-        self.detMenu = Menu(self.menu, tearoff = 0)
+        self.detMenu = Menu(self.menu, tearoff = False)
         self.detMenu.add_command(label = 'Calculate', command = self.calculateDet)
-        self.vecMenu = Menu(self.menu, tearoff = 0)
+        self.CALCULATE_CLEAR_OPTION = 'CalculateClearOption'
+        self.calculateClearVar = StringVar(self)
+        self.setupClearMenu(self.detMenu, self.calculateClearVar, \
+                            lambda :self.settings.__setitem__(self.CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
+                            'Clear After Calculate')
+        self.vecMenu = Menu(self.menu, tearoff = False)
         self.COLUMN_VECTOR = 'ColumnVector'
         self.colVecVar = BooleanVar(self, value = self.settings.get(self.COLUMN_VECTOR, True))
         self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.__setitem__(self.COLUMN_VECTOR, self.colVecVar.get()))
-        self.imatMenu = Menu(self.menu, tearoff = 0)
+        self.imatMenu = Menu(self.menu, tearoff = False)
         self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
-        self.settingsMenu = Menu(self.menu, tearoff = 0)
+        self.settingsMenu = Menu(self.menu, tearoff = False)
+        self.REMEMBER_SIZE = 'RememberSize'
+        self.rememberSizeVar = BooleanVar(self, value = self.settings.get(self.REMEMBER_SIZE, self.settings.setdefault(self.REMEMBER_SIZE, (-1, -1))) != (-1, -1))
+        self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
+                                          command = lambda :self.settings.__setitem__(self.REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
         self.SHOW_DIALOG = 'ShowDialog'
         self.showDialogVar = BooleanVar(self, value = self.settings.get(self.SHOW_DIALOG, True))
-        self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, command = lambda :self.settings.__setitem__(self.SHOW_DIALOG, self.showDialogVar.get()))
+        self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, \
+                                          command = lambda :self.settings.__setitem__(self.SHOW_DIALOG, self.showDialogVar.get()))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = SHORTCUTS))
-        for name, menu in zip(['Edit'] + resultTypeOptions + ['Settings'], [self.editMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
+        for name, menu in zip(['Edit', 'Generate'] + resultTypeOptions + ['Settings'], [self.editMenu, self.generateMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
             self.menu.add_cascade(label = name, menu = menu)
         self.master.config(menu = self.menu)
         
@@ -88,6 +108,14 @@ class Generator(Frame):
         for entry in [self.rowEntry, self.colEntry]:
             entry.bind('<KeyPress>', self.moveFocus)
             entry.bind('<KeyRelease>', self.onRowColChange)
+        if self.rememberSizeVar.get():            
+            rememberedSize = self.settings[self.REMEMBER_SIZE]
+            r, c = rememberedSize
+            if r:
+                setEntry(self.rowEntry, r)
+            if c:
+                setEntry(self.colEntry, c)
+            self.generateEntries(r, c)
 
         ## place widgets
         for i, w in enumerate([self.resultTypeLabel, self.resultTypeDropdown, self.resultFormatLabel, self.resultFormatDropdown]):
@@ -186,8 +214,12 @@ class Generator(Frame):
         self.generateEntries(r, c)
         if resultType == IDENTITY_MATRIX:
             self.fillIdentityMatrix()
+        if self.rememberSizeVar.get():
+            self.rememberSize(r, c)
 
     def generateEntries(self, row, column):
+        if not row or not column:
+            return
         for i in range(row):
             for j in range(column):
                 if (i, j) in self.entries:
@@ -270,6 +302,16 @@ class Generator(Frame):
                 w.focus()
                 break
 
+    def findByGrid(self, row, column):
+        for child in self.children.values():
+            info = child.grid_info()
+            if info and info['row'] == row and info['column'] == column:
+                return child
+        return None
+
+    def rememberSize(self, row, col):
+        self.settings[self.REMEMBER_SIZE] = (row, col)
+
     def switchDropdownOption(self, move):
         '''Move should mostly be 1 or -1'''
         last = self.settings[self.LAST_USED_DROPDOWN]
@@ -280,13 +322,6 @@ class Generator(Frame):
 
     def switchLastUsedDropdown(self, move):
         self.settings[self.LAST_USED_DROPDOWN] = self.dropdownTypes[(self.dropdownTypes.index(self.settings[self.LAST_USED_DROPDOWN]) + move) % len(self.dropdownTypes)]
-
-    def findByGrid(self, row, column):
-        for child in self.children.values():
-            info = child.grid_info()
-            if info and info['row'] == row and info['column'] == column:
-                return child
-        return None
 
     def syncRowCol(self, size):
         self.setRow(size)
@@ -385,11 +420,24 @@ class Generator(Frame):
             ez.copyToClipboard(str_result)
             if self.settings[self.SHOW_DIALOG]:
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
+            clearOption = self.calculateClearVar.get()
+            if clearOption == CLEAR_ENTRIES:
+                self.clear(1)
+            elif clearOption == CLEAR_ALL:
+                self.clear(0, 1)
             return result
         except ValueError:
             messagebox.showerror(title = 'Error', message = 'Numerical Entries Only')
+
+    def setupClearMenu(self, master, variable, command, label = 'Clear Options'):
+        clearMenu = Menu(master = master, tearoff = False)
+        for option in clearOptions[1:]:
+            clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)
+        variable.set(self.settings.get(self.GENERATE_CLEAR_OPTION, NONE))
+        master.add_cascade(label = label, menu = clearMenu)
         
     def clear(self, *mode):
+        '''0 for clear size, 1 for clear entries'''
         if 0 in mode:
             clearEntry(self.rowEntry)
             clearEntry(self.colEntry)
@@ -425,12 +473,18 @@ class Generator(Frame):
         ez.copyToClipboard(result)
         if self.settings[self.SHOW_DIALOG]:
             messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
+        clearOption = self.settings[self.GENERATE_CLEAR_OPTION]
+        if clearOption == CLEAR_ENTRIES:
+            self.clear(1)
+        elif clearOption == CLEAR_ALL:
+            self.clear(0, 1)
         return result
 
 root = Tk()
 gui = Generator(root)
 gui.pack()
 root.title('Generator')
+root.geometry('')
 root.mainloop()
 
 ez.py2pyw(__file__)
