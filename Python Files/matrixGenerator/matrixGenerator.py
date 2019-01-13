@@ -19,6 +19,9 @@ LEFT = 'Left'
 RIGHT = 'Right'
 UP = 'Up'
 DOWN = 'Down'
+SHORTCUTS = '\n'.join(['Alt + [: Switch Dropdown', 'Alt + ]: Switch Dropdown', \
+                        'Ctrl + [: Switch Dropdown Option', 'Ctrl + ]: Switch Dropdown Option', \
+                        'Enter/Return: Generate Result'])
 
 class Generator(Frame):
     def __init__(self, master):
@@ -58,19 +61,22 @@ class Generator(Frame):
         self.SHOW_DIALOG = 'ShowDialog'
         self.showDialogVar = BooleanVar(self, value = self.settings.get(self.SHOW_DIALOG, True))
         self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, command = lambda :self.settings.setdefault(self.SHOW_DIALOG, self.showDialogVar.get()))
+        self.settingsMenu.add_separator()
+        self.settingsMenu.add_command(label = 'Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = SHORTCUTS))
         for name, menu in zip(['Edit'] + resultTypeOptions + ['Settings'], [self.editMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
             self.menu.add_cascade(label = name, menu = menu)
+        self.master.config(menu = self.menu)
         
         ## generate widgets
-        self.master.config(menu = self.menu)
         self.resultTypeLabel = Label(self, text = 'Result Type:')
         self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
         self.resultTypeDropdown = OptionMenu(self, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
         self.resultFormatLabel = Label(self, text = 'Result Format:')
-        self.RESULT_FORMAT = "ResultFormat"
+        self.RESULT_FORMAT = 'ResultFormat'
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
+        self.dropdownTypes = [self.RESULT_TYPE, self.RESULT_FORMAT]
         
         self.rowLabel = Label(self, text = 'Rows:')
         self.rowEntry = Entry(self)
@@ -87,7 +93,14 @@ class Generator(Frame):
         for i, w in enumerate([self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
 
-        ## set values
+        ## set values        
+        self.LAST_USED_DROPDOWN = 'LastUsedDropdown'
+        self.master.bind('<Return>', lambda event: self.generate())
+        self.master.bind('<Control-[>', lambda event: self.switchDropdownOption(-1))
+        self.master.bind('<Alt-[>', lambda event: self.switchLastUsedDropdown(-1))
+        self.master.bind('<Control-]>', lambda event: self.switchDropdownOption(1))
+        self.master.bind('<Alt-]>', lambda event: self.switchLastUsedDropdown(1))
+        self.settings[self.LAST_USED_DROPDOWN] = self.settings.get(self.LAST_USED_DROPDOWN, self.RESULT_TYPE)
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
         register(self.saveSettings)
@@ -119,6 +132,7 @@ class Generator(Frame):
 
     def onResultTypeChange(self):
         resultType = self.resultType.get()
+        self.settings[self.LAST_USED_DROPDOWN] = self.RESULT_TYPE
         self.settings[self.RESULT_TYPE] = resultType
         row = self.getRow()
         col = self.getCol()
@@ -148,6 +162,7 @@ class Generator(Frame):
         self.onResultFormatChange()
 
     def onResultFormatChange(self):
+        self.settings[self.LAST_USED_DROPDOWN] = self.RESULT_FORMAT
         self.settings[self.RESULT_FORMAT] = self.resultFormat.get()
 
     def onRowColChange(self, event):
@@ -157,7 +172,7 @@ class Generator(Frame):
         if not text.isnumeric():
             text = text[:-1]
             setEntry(event.widget, text)
-        elif eval(text) > self.maxSize:
+        elif int(text) > self.maxSize:
             text = str(self.maxSize)
             setEntry(event.widget, text)
         resultType = self.resultType.get()
@@ -181,7 +196,6 @@ class Generator(Frame):
                 e = Entry(self)
                 e.bind('<KeyRelease>', self.onEntryChange)
                 e.bind('<KeyPress>', self.moveFocus)
-                e.bind('<Return>', lambda event: self.generate())
                 e.grid(row = i + self.minRows, column = j, sticky = NSEW)
                 self.entries[(i, j)] = e
         for i, j in self.entries.copy():
@@ -227,6 +241,17 @@ class Generator(Frame):
             if type(w) == Entry:
                 w.focus()
                 break
+
+    def switchDropdownOption(self, move):
+        '''Move should mostly be 1 or -1'''
+        last = self.settings[self.LAST_USED_DROPDOWN]
+        if last == self.RESULT_TYPE:
+            self.setResultType(resultTypeOptions[(resultTypeOptions.index(self.resultType.get()) + move) % len(resultTypeOptions)])
+        elif last == self.RESULT_FORMAT:
+            self.setResultFormat(resultFormatOptions[(resultFormatOptions.index(self.resultFormat.get()) + move) % len(resultFormatOptions)])
+
+    def switchLastUsedDropdown(self, move):
+        self.settings[self.LAST_USED_DROPDOWN] = self.dropdownTypes[(self.dropdownTypes.index(self.settings[self.LAST_USED_DROPDOWN]) + move) % len(self.dropdownTypes)]
 
     def findByGrid(self, row, column):
         for child in self.children.values():
