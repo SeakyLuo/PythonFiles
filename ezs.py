@@ -9,11 +9,12 @@ def npMatrixToLatex(matrix, printResult = True, copy = True):
     r = len(matrix)
     c = len(matrix[0])
     result = ml(r, c, ' '.join(str(entry) for row in matrix for entry in row), False)
-    if printResult:
-        print(result)
     if copy:
         ez.cpc(result)
-    return result
+    if printResult:
+        print(result)
+    else:
+        return result
 
 ##abbreviation
 nl = npMatrixToLatex

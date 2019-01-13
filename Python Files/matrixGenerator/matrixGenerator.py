@@ -335,18 +335,21 @@ class Generator(Frame):
     def permutationMatrix(self):
         row = self.getRow()
         col = self.getCol()
-        if not row:
-            row = col = randrange(self.maxSize)
+        self.setResultType(MATRIX)
+        if not row or row != col:
+            if col == 1: # if Vector
+                col = row
+            else:
+                col = row = randrange(self.maxSize)
             self.setRow(row)
             self.setCol(col)
             self.generateEntries(row, col)
-            self.fillIdentityMatrix()
-        self.setResultType(MATRIX)
         cols = list(range(col))
         for i in range(row):
-            j = cols.pop(randrange(len(cols)))
-            setEntry(self.entries[(i, i)], 0)
-            setEntry(self.entries[(i, j)], 1)
+            c = cols.pop(randrange(len(cols)))
+            for j in range(col):
+                setEntry(self.entries[(i, j)], 0)
+            setEntry(self.entries[(i, c)], 1)
 
     def calculateDet(self):
         if self.resultType.get() != DETERMINANT or self.checkEmpty():
