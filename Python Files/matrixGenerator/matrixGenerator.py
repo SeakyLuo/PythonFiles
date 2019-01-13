@@ -347,10 +347,11 @@ class Generator(Frame):
             setEntry(self.entries[(i, c)], 1)
 
     def calculateDet(self):
-        if self.resultType.get() != DETERMINANT or self.checkEmpty():
+        size = self.getRow()
+        if size != self.getCol() or self.checkEmpty():
             return
         try:
-            result = linalg.det([[int(self.entries[(i, j)].get()) for j in range(self.getCol())] for i in range(self.getRow())])
+            result = linalg.det([[int(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)])
             # result = ezs.dc(self.generate())
             str_result = str(result)
             ez.copyToClipboard(str_result)
