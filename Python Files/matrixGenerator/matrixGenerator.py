@@ -2,10 +2,11 @@ from tkinter import *
 from tkinter import messagebox, simpledialog
 from json import dumps, loads
 from atexit import register
-from eztk import setEntry, clearEntry, setEntryHint
+from eztk import setEntry, clearEntry
 from random import randrange
 from numpy import linalg
-import ez, ezs, eztk, os
+from ez import fread, fwrite, copyToClipboard, py2pyw
+import ezs, os
 
 MATRIX = 'Matrix'
 DETERMINANT = 'Determinant'
@@ -38,7 +39,7 @@ class Generator(Frame):
         self.maxSize = 15
         self.entries = {}
         self.settingsFileName = 'settings.json'
-        self.settings = loads(ez.fread(self.settingsFileName)) if os.path.exists(self.settingsFileName) else {}
+        self.settings = loads(fread(self.settingsFileName)) if os.path.exists(self.settingsFileName) else {}
 
         ## generate menus
         self.menu = Menu(self)
@@ -90,11 +91,11 @@ class Generator(Frame):
         self.master.config(menu = self.menu)
         
         ## generate widgets
-        self.resultTypeLabel = Label(self, text = 'Result Type:')
+        self.resultTypeLabel = Label(self, text = 'Type:')
         self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
         self.resultTypeDropdown = OptionMenu(self, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
-        self.resultFormatLabel = Label(self, text = 'Result Format:')
+        self.resultFormatLabel = Label(self, text = 'Format:')
         self.RESULT_FORMAT = 'ResultFormat'
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
@@ -133,7 +134,7 @@ class Generator(Frame):
         self.settings[self.LAST_USED_DROPDOWN] = self.settings.get(self.LAST_USED_DROPDOWN, self.RESULT_TYPE)
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
-        register(lambda: ez.fwrite(self.settingsFileName, dumps(self.settings)))
+        register(lambda: fwrite(self.settingsFileName, dumps(self.settings)))
         
     def getRow(self):
         try:
@@ -417,7 +418,7 @@ class Generator(Frame):
             result = linalg.det([[eval(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)])
             # result = ezs.dc(self.generate())
             str_result = str(result)
-            ez.copyToClipboard(str_result)
+            copyToClipboard(str_result)
             if self.settings[self.SHOW_DIALOG]:
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
             clearOption = self.calculateClearVar.get()
@@ -470,7 +471,7 @@ class Generator(Frame):
                 result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
         elif resultFormat == ARRAY:
             result = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
-        ez.copyToClipboard(result)
+        copyToClipboard(result)
         if self.settings[self.SHOW_DIALOG]:
             messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
         clearOption = self.settings[self.GENERATE_CLEAR_OPTION]
@@ -484,7 +485,6 @@ root = Tk()
 gui = Generator(root)
 gui.pack()
 root.title('Generator')
-root.geometry('')
 root.mainloop()
 
-ez.py2pyw(__file__)
+py2pyw(__file__)
