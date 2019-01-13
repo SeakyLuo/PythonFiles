@@ -76,7 +76,7 @@ def accurateCalculation(formula = '', sn = False):
 ac = accurateCalculation
 
 def intToList(integer):
-    return [ integer//10**i%10 for i in range(len(str(integer))) ]
+    return list(map(int, str(integer)))
 
 def scientificNotation(num, pr = True):
     '''Abbreviation: scin'''
@@ -397,7 +397,7 @@ def truth_table(formula, output= 'a'):
         print('傻逼关进程啊！')
         return
 
-integer = lambda x:[x, int(x)][x == int(x)]
+integer = lambda x: [x, int(x)][x == int(x)]
 
 def get24(a, b = -1, c = -1, d = -1):
     if 1000 <= a<10000 and b == c == d == -1:

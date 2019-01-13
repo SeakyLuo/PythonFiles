@@ -1,5 +1,5 @@
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, simpledialog
 from json import dumps, loads
 from atexit import register
 from eztk import setEntry, clearEntry, setEntryHint
@@ -39,8 +39,10 @@ class Generator(Frame):
         self.menu = Menu(self)
         self.editMenu = Menu(self.menu, tearoff = 0)
         self.editMenu.add_command(label = 'Random', command = self.randomFill)
+        self.editMenu.add_command(label = 'Multiply', command = self.multiply)
         self.editMenu.add_command(label = 'Unit Matrix', command = self.unitMatrix)
         self.editMenu.add_command(label = 'Transpose', command = self.transpose)
+        self.editMenu.add_separator()
         self.editMenu.add_command(label = 'Generate', command = self.generate)
         self.editMenu.add_separator()
         self.editMenu.add_command(label = 'Clear Size', command = lambda: self.clear(0))
@@ -103,11 +105,8 @@ class Generator(Frame):
         self.settings[self.LAST_USED_DROPDOWN] = self.settings.get(self.LAST_USED_DROPDOWN, self.RESULT_TYPE)
         self.setResultType(self.settings.get(self.RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.get(self.RESULT_FORMAT, LATEX))
-        register(self.saveSettings)
-
-    def saveSettings(self):
-        ez.fwrite(self.settingsFileName, dumps(self.settings))
-
+        register(lambda: ez.fwrite(self.settingsFileName, dumps(self.settings)))
+        
     def getRow(self):
         try:
             return int(self.rowEntry.get())
@@ -212,6 +211,35 @@ class Generator(Frame):
                 if text and (r == c and text != '1') or (r != c and text != '0'):
                     self.setResultType(MATRIX)
                     break
+
+    def multiply(self):
+        multiplier = simpledialog.askfloat(title = 'Multiply', \
+                                           prompt = 'Multiply Each Entry By', \
+                                           minvalue = -self.maxSize, \
+                                           maxvalue = self.maxSize)
+        if not multiplier or multiplier == 1:
+            return
+        for entry in self.entries.values():
+            text = entry.get()
+            if text.isnumeric():
+                new_text = ezs.integer(eval(text) * multiplier)
+            else:
+                coef = ''
+                countDot = 0
+                for ch in text:
+                    if ch.isnumeric():
+                        coef += ch
+                    elif ch == '.':
+                        if countDot == 1:
+                            coef = ''
+                            break
+                        countDot = 1
+                        coef += ch
+                    else:
+                        break
+                new_text = str(ezs.integer(eval(coef) * multiplier)) + text[len(coef):] if coef else \
+                           str(ezs.integer(multiplier)) + text
+            setEntry(entry, new_text)            
 
     def moveFocus(self, event):
         key = event.keysym
