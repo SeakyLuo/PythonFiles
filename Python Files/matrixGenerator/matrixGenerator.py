@@ -2,7 +2,7 @@ from tkinter import *
 from tkinter import messagebox
 from json import dumps, loads
 from atexit import register
-from eztk import setEntry, clearEntry
+from eztk import setEntry, clearEntry, setEntryHint
 from random import randrange
 from numpy import linalg
 import ez, ezs, eztk, os
@@ -44,8 +44,8 @@ class Generator(Frame):
         self.editMenu.add_command(label = 'Clear Entries', command = lambda: self.clear(1))
         self.editMenu.add_command(label = 'Clear All', command = lambda: self.clear(0, 1))
         self.matMenu = Menu(self.menu, tearoff = 0)
-        self.matMenu.add_command(label = 'Lower Triangular', command = self.lowerTriangular)
-        self.matMenu.add_command(label = 'Upper Triangular', command = self.upperTriangular)
+        self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
+        self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
         self.detMenu = Menu(self.menu, tearoff = 0)
         self.detMenu.add_command(label = 'Calculate', command = self.calculateDet)
         self.vecMenu = Menu(self.menu, tearoff = 0)
@@ -63,24 +63,26 @@ class Generator(Frame):
         
         ## generate widgets
         self.master.config(menu = self.menu)
+        self.resultTypeLabel = Label(self, text = 'Result Type:')
         self.RESULT_TYPE = 'ResultType'
         self.resultType = StringVar(self)
         self.resultTypeDropdown = OptionMenu(self, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
+        self.resultFormatLabel = Label(self, text = 'Result Format:')
         self.RESULT_FORMAT = "ResultFormat"
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
         
-        self.rowLabel = Label(self, text = 'Rows: ')
+        self.rowLabel = Label(self, text = 'Rows:')
         self.rowEntry = Entry(self)
-        self.rowEntry.focus()
-        self.colLabel = Label(self, text = 'Columns: ')
+        self.colLabel = Label(self, text = 'Columns:')
         self.colEntry = Entry(self)
+        self.rowEntry.focus()
         for entry in [self.rowEntry, self.colEntry]:
             entry.bind('<KeyPress>', self.moveFocus)
             entry.bind('<KeyRelease>', self.onRowColChange)
 
         ## place widgets
-        for i, w in enumerate([self.resultTypeDropdown, self.resultFormatDropdown]):
+        for i, w in enumerate([self.resultTypeLabel, self.resultTypeDropdown, self.resultFormatLabel, self.resultFormatDropdown]):
             w.grid(row = 0, column = i, sticky = NSEW)
         for i, w in enumerate([self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
@@ -94,10 +96,16 @@ class Generator(Frame):
         ez.fwrite(self.settingsFileName, dumps(self.settings))
 
     def getRow(self):
-        return int(self.rowEntry.get() or 0)
+        try:
+            return int(self.rowEntry.get())
+        except ValueError:
+            return 0
 
     def getCol(self):
-        return int(self.colEntry.get() or 0)
+        try:
+            return int(self.colEntry.get())
+        except ValueError:
+            return 0
 
     def setRow(self, num):
         setEntry(self.rowEntry, num)
@@ -280,20 +288,12 @@ class Generator(Frame):
             for entry in self.entries.values():
                 setEntry(entry, randrange(1, 10))
 
-    def lowerTriangular(self):
+    def triangularMatrix(self, mode):
+        '''Mode: 0 for lower, 1 for upper'''
         isIdentity = self.resultType.get() == IDENTITY_MATRIX
+        f = lambda i, j: i < j if mode == 0 else i > j
         for i, j in self.entries:
-            if i < j:
-                setEntry(self.entries[(i ,j)], 0)
-            elif isIdentity:
-                setEntry(self.entries[(i ,j)], 1)
-        if isIdentity:
-            self.setResultType(MATRIX)
-
-    def upperTriangular(self):
-        isIdentity = self.resultType.get() == IDENTITY_MATRIX
-        for i, j in self.entries:
-            if i > j:
+            if f(i, j):
                 setEntry(self.entries[(i ,j)], 0)
             elif isIdentity:
                 setEntry(self.entries[(i ,j)], 1)
