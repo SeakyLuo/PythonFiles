@@ -279,9 +279,9 @@ class Generator(Frame):
         if row != col:            
             if resultType == VECTOR:
                 self.setResultType(MATRIX)
-            self.generateEntries(col, row)
             self.setRow(col)
             self.setCol(row)
+            self.generateEntries(col, row)
         for i in range(row):
             for j in range(col):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
@@ -335,15 +335,18 @@ class Generator(Frame):
     def permutationMatrix(self):
         row = self.getRow()
         col = self.getCol()
-        self.setResultType(MATRIX)
-        if not row or row != col:
-            if col == 1: # if Vector
+        if not row or not col:
+            if row:
                 col = row
+            elif col:
+                row = col
             else:
-                col = row = randrange(self.maxSize)
-            self.setRow(row)
-            self.setCol(col)
-            self.generateEntries(row, col)
+                row = col = randrange(self.maxSize)            
+            self.syncRowCol(row)
+        elif row != col:
+            row = col = max(row, col)
+            self.syncRowCol(row)
+        self.setResultType(MATRIX)
         cols = list(range(col))
         for i in range(row):
             c = cols.pop(randrange(len(cols)))
