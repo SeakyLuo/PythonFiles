@@ -54,13 +54,13 @@ class Generator(Frame):
         self.vecMenu = Menu(self.menu, tearoff = 0)
         self.COLUMN_VECTOR = 'ColumnVector'
         self.colVecVar = BooleanVar(self, value = self.settings.get(self.COLUMN_VECTOR, True))
-        self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.setdefault(self.COLUMN_VECTOR, self.colVecVar.get()))
+        self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.__setitem__(self.COLUMN_VECTOR, self.colVecVar.get()))
         self.imatMenu = Menu(self.menu, tearoff = 0)
         self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
         self.settingsMenu = Menu(self.menu, tearoff = 0)
         self.SHOW_DIALOG = 'ShowDialog'
         self.showDialogVar = BooleanVar(self, value = self.settings.get(self.SHOW_DIALOG, True))
-        self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, command = lambda :self.settings.setdefault(self.SHOW_DIALOG, self.showDialogVar.get()))
+        self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, command = lambda :self.settings.__setitem__(self.SHOW_DIALOG, self.showDialogVar.get()))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = SHORTCUTS))
         for name, menu in zip(['Edit'] + resultTypeOptions + ['Settings'], [self.editMenu, self.matMenu, self.detMenu, self.vecMenu, self.imatMenu, self.settingsMenu]):            
@@ -351,7 +351,7 @@ class Generator(Frame):
         if size != self.getCol() or self.checkEmpty():
             return
         try:
-            result = linalg.det([[int(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)])
+            result = linalg.det([[eval(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)])
             # result = ezs.dc(self.generate())
             str_result = str(result)
             ez.copyToClipboard(str_result)
@@ -360,7 +360,6 @@ class Generator(Frame):
             return result
         except ValueError:
             messagebox.showerror(title = 'Error', message = 'Numerical Entries Only')
-        
         
     def clear(self, *mode):
         if 0 in mode:

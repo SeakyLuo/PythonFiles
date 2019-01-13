@@ -126,7 +126,8 @@ class Simplifier(Tk):
         instxt(self.t1, data)
         self.wrapper()
     def undo(self):
-        if not self.pointer: return
+        if not self.pointer:
+            return
         self.pointer -= 1
         deltxt(self.t1)
         instxt(self.t1, self.history[self.pointer])
@@ -135,7 +136,8 @@ class Simplifier(Tk):
         self.undo()
         self.wrapper()
     def redo(self):
-        if self.pointer == len(self.history) - 1: return
+        if self.pointer == len(self.history) - 1:
+            return
         self.pointer += 1
         deltxt(self.t1)
         instxt(self.t1, self.history[self.pointer])
