@@ -10,7 +10,7 @@ import ezs, os
 
 ## Static Variables
 maxSize = 15
-maxRandomVarLength = 5
+maxRandomVarLength = 10
 
 MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX = 'Matrix', 'Determinant', 'Vector', 'Identity Matrix'
 resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
@@ -61,10 +61,8 @@ shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z',
               MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', \
               CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A', FIND_LOCATION: 'Ctrl+Shift+F'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
-otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+['), \
-                            otherShortcutFormatter('Switch Result Type', 'Ctrl+]'), \
-                            otherShortcutFormatter('Switch Result Format', 'Alt+['), \
-                            otherShortcutFormatter('Switch Result Format', 'Alt+]')])
+otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+[, Ctrl+]'), \
+                            otherShortcutFormatter('Switch Result Format', 'Alt+[, Alt+]')])
 
 class Generator(Frame):
     def __init__(self, master):
@@ -85,17 +83,16 @@ class Generator(Frame):
         ## Result Menu
         self.resultMenu = Menu(self)
         self.matMenu = Menu(self)
+        self.matMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.matMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
-        self.matMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
         self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
         self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
-        self.matMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.detMenu = Menu(self)
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.detMenu, self.calculateClearVar, \
                             lambda :self.settings.__setitem__(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
-                            'Clear After Calculation')
+                            'After Calculation')
         self.vecMenu = Menu(self)
         self.vecOptionVar = StringVar(self)
         for option in vectorOptions:
@@ -104,6 +101,7 @@ class Generator(Frame):
         self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
         self.imatMenu = Menu(self)
         self.imatMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
+        self.imatMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
         for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu, self.imatMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
@@ -145,7 +143,7 @@ class Generator(Frame):
         self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda :self.settings.__setitem__(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
-                            'Clear After Generation')
+                            'After Generation')
         ## Settings Menu
         self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
@@ -693,6 +691,7 @@ class Generator(Frame):
             for key, entry in self.entries.copy().items():
                 entry.grid_forget()
                 del self.entries[key]
+            self.rowEntry.focus()
         self.modifyStates()
 
     def checkEmpty(self):
