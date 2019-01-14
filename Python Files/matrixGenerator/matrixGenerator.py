@@ -31,6 +31,11 @@ SHOW_DIALOG = 'ShowDialog'
 RESULT_TYPE = 'ResultType'
 RESULT_FORMAT = 'ResultFormat'
 LAST_USED_DROPDOWN = 'LastUsedDropdown'
+APPEND_START = 'Append Start'
+APPEND_END = 'Append End'
+FIND_VALUE = 'Find Value'
+FIND_LOCATION = 'Find Location'
+REPLACE = 'Replace'
 CALCULATE = 'Calculate'
 UNIT_MATRIX = 'Unit Matrix'
 PERMUTATION_MATRIX = 'Permutation Matrix'
@@ -52,8 +57,8 @@ settingsFile = 'settings.json'
 
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
-              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', \
-              CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A'}
+              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', \
+              CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A', FIND_LOCATION: 'Ctrl+Shift+F'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+['), \
                             otherShortcutFormatter('Switch Result Type', 'Ctrl+]'), \
@@ -79,8 +84,11 @@ class Generator(Frame):
         ## Result Menu
         self.resultMenu = Menu(self)
         self.matMenu = Menu(self)
+        self.matMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
+        self.matMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
         self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
         self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
+        self.matMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.detMenu = Menu(self)
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
@@ -103,14 +111,21 @@ class Generator(Frame):
         self.editMenu.add_command(label = UNDO, accelerator = shortcuts[UNDO], command = self.undo)
         self.editMenu.add_command(label = REDO, accelerator = shortcuts[REDO], command = self.redo)
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
-        self.editMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
+        self.editMenu.add_command(label = FIND_VALUE, accelerator = shortcuts[FIND_VALUE], command = lambda: self.find(FIND_VALUE))
+        self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
+        self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
         self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
         self.insertMenu = Menu(self)
         self.randomMenu = Menu(self, tearoff = False)
+        self.insertMenu.add_command(label = APPEND_START, command = lambda: self.append(APPEND_START))
+        self.insertMenu.add_command(label = APPEND_END, command = lambda: self.append(APPEND_END))
+        self.insertMenu.add_separator()
+        self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
+        self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
+        self.insertMenu.add_separator()
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
         self.randomMenu.add_separator()
         self.randomMatrixOption = StringVar(self)
@@ -123,9 +138,6 @@ class Generator(Frame):
         self.randomMenu.add_command(label = 'Set Random Max', command = lambda: self.setRandom(max))
         self.randomMenu.add_command(label = 'Set Random Var', command = lambda: self.setRandom('var'))
         self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
-        self.insertMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
-        self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
-        self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
         ## Generate Menu
         self.generateMenu = Menu(self)
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
@@ -181,18 +193,21 @@ class Generator(Frame):
 
         ## Bind
         self.master.bind('<Return>', lambda event: self.generate())
-        self.master.bind('<Control-r>', lambda event: self.randomFill())
-        self.master.bind('<Control-z>', lambda event: self.undo())
-        self.master.bind('<Control-y>', lambda event: self.redo())
-        self.master.bind('<Control-u>', lambda event: self.unitMatrix())
+        self.master.bind('<Control-f>', lambda event: self.find(FIND_VALUE))
+        self.master.bind('<Control-h>', lambda event: self.replace())
         self.master.bind('<Control-m>', lambda event: self.multiply())
-        self.master.bind('<Control-t>', lambda event: self.transpose())
         self.master.bind('<Control-p>', lambda event: self.permutationMatrix())
+        self.master.bind('<Control-r>', lambda event: self.randomFill())
+        self.master.bind('<Control-t>', lambda event: self.transpose())
+        self.master.bind('<Control-u>', lambda event: self.unitMatrix())
+        self.master.bind('<Control-y>', lambda event: self.redo())
+        self.master.bind('<Control-z>', lambda event: self.undo())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
         self.master.bind('<Control-]>', lambda event: self.switchResultType(1))
-        self.master.bind('<Control-E>', lambda event: self.clear(0))
         self.master.bind('<Control-A>', lambda event: self.clear(1))
         self.master.bind('<Control-C>', lambda event: self.calculateDet())
+        self.master.bind('<Control-E>', lambda event: self.clear(0))
+        self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
 
@@ -454,6 +469,48 @@ class Generator(Frame):
         for i, j in self.entries:
             setEntry(self.entries[(i, j)], 1 if i == j else 0)
         self.modifyStates()
+
+    def append(self, position):
+        isStart = position == APPEND_START
+        result = simpledialog.askstring(title = 'Append', \
+                                        prompt = 'Append to the {} of Every Entry.'.format('Start' if isStart else 'End'))
+        if not result:
+            return
+        for entry in self.entries.values():
+            text = entry.get()
+            setEntry(entry, result + text if isStart else text + result)
+
+
+    def find(self, target):
+        if target == FIND_VALUE:
+            result = simpledialog.askstring(title = 'Find', prompt = target)
+            if not result:
+                return
+            for entry in self.entries.values():
+                if result in entry.get():
+                    entry.select_range(0, END)
+        else:
+            while True:
+                result = simpledialog.askstring(title = target, prompt = 'Input location in the form of x,y')
+                if not result:
+                    return
+                try:
+                    x, y = result.replace(' ', '').split(',')
+                    self.entries[(int(x) - 1, int(y) - 1)].select_range(0, END)
+                    return
+                except:
+                    messagebox.showerror('Error', 'Invalid Input')
+
+    def replace(self):
+        target = simpledialog.askstring(title = 'Replace', prompt = 'Replace Target')
+        if not target:
+            return 'break'
+        withValue = simpledialog.askstring(title = 'Replace', prompt = 'Replace With')
+        if not withValue:
+            return 'break'
+        for entry in self.entries.values():
+            setEntry(entry, entry.get().replace(target, withValue))
+        return 'break'
 
     def transpose(self):
         resultType = self.resultType.get()
