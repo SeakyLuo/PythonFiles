@@ -176,6 +176,8 @@ class Generator(Frame):
         for entry in [self.rowEntry, self.colEntry]:
             entry.bind('<KeyPress>', self.moveFocus)
             entry.bind('<KeyRelease>', self.onRowColChange)
+            bindtags = entry.bindtags()
+            entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
         if self.rememberSizeVar.get():
             rememberedSize = self.settings[REMEMBER_SIZE]
             r, c = rememberedSize
@@ -317,6 +319,8 @@ class Generator(Frame):
                 e = Entry(self)
                 e.bind('<KeyRelease>', self.onEntryChange)
                 e.bind('<KeyPress>', self.moveFocus)
+                bindtags = e.bindtags()
+                e.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
                 e.grid(row = i + self.minRows, column = j, sticky = NSEW)
                 self.entries[(i, j)] = e
         for i, j in self.entries.copy():
