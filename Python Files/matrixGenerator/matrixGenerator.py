@@ -21,24 +21,33 @@ NONE = 'None'
 clearOptions = [CLEAR_ENTRIES, CLEAR_ALL, NONE]
 GENERATE_CLEAR_OPTION = 'GenerateClearOption'
 CALCULATE_CLEAR_OPTION = 'CalculateClearOption'
-COLUMN_VECTOR = 'ColumnVector'
+VECTOR_OPTION = 'VectorOption'
+COLUMN_VECTOR = 'Column Vector'
+OVERRIGHTARROW = 'OverRightArrow'
+vectorOptions = [VECTOR, COLUMN_VECTOR, OVERRIGHTARROW]
 REMEMBER_SIZE = 'RememberSize'
 SHOW_DIALOG = 'ShowDialog'
 RESULT_TYPE = 'ResultType'
 RESULT_FORMAT = 'ResultFormat'
 LAST_USED_DROPDOWN = 'LastUsedDropdown'
+CALCULATE = 'Calculate'
 UNIT_MATRIX = 'Unit Matrix'
+PERMUTATION_MATRIX = 'Permutation Matrix'
 MULTIPLY = 'Multiply'
 TRANSPOSE = 'Transpose'
 RANDOM = 'Random'
+RANDOM_MATRIX = 'Random Matrix'
+RANDOM_MIN = 'RandomMin'
+RANDOM_MAX = 'RandomMax'
 GENERATE = 'Generate'
 UNDO = 'Undo'
 REDO = 'Redo'
 settingsFile = 'settings.json'
 
 ## Shortcuts
-shortcuts = { RANDOM: 'Ctrl+R', GENERATE: 'Enter/Return', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
-              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A' }
+shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
+              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', \
+              CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+['), \
                             otherShortcutFormatter('Switch Result Type', 'Ctrl+]'), \
@@ -62,26 +71,29 @@ class Generator(Frame):
         ## Generate Menus
         self.menu = Menu(self)
         ## Result Menu
-        self.resultMenu = Menu(self.menu)
-        self.matMenu = Menu(self.menu)
+        self.resultMenu = Menu(self)
+        self.matMenu = Menu(self)
         self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
         self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
-        self.detMenu = Menu(self.menu)
-        self.detMenu.add_command(label = 'Calculate', command = self.calculateDet)
+        self.detMenu = Menu(self)
+        self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.detMenu, self.calculateClearVar, \
                             lambda :self.settings.__setitem__(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
                             'Clear After Calculation')
-        self.vecMenu = Menu(self.menu)
-        self.colVecVar = BooleanVar(self, value = self.settings.setdefault(COLUMN_VECTOR, True))
-        self.vecMenu.add_checkbutton(label = 'Column Vector', variable = self.colVecVar, command = lambda :self.settings.__setitem__(COLUMN_VECTOR, self.colVecVar.get()))
-        self.imatMenu = Menu(self.menu)
-        self.imatMenu.add_command(label = 'Permutation Matrix', command = self.permutationMatrix)
+        self.vecMenu = Menu(self)
+        self.vecOptionVar = StringVar(self)
+        for option in vectorOptions:
+            self.vecMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
+                                         command = lambda :self.settings.__setitem__(VECTOR_OPTION, self.vecOptionVar.get()))
+        self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
+        self.imatMenu = Menu(self)
+        self.imatMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
         for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu, self.imatMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
         ## Edit Menu
-        self.editMenu = Menu(self.menu)
+        self.editMenu = Menu(self)
         self.editMenu.add_command(label = UNDO, accelerator = shortcuts[UNDO], command = self.undo)
         self.editMenu.add_command(label = REDO, accelerator = shortcuts[REDO], command = self.redo)
         self.editMenu.add_separator()
@@ -92,19 +104,23 @@ class Generator(Frame):
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
         self.insertMenu = Menu(self)
-        self.insertMenu.add_command(label = RANDOM, accelerator = shortcuts[RANDOM], command = self.randomFill)
+        self.randomMenu = Menu(self, tearoff = False)
+        self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
+        self.randomMenu.add_command(label = 'Set Random Min', command = lambda: self.setRandom(min))
+        self.randomMenu.add_command(label = 'Set Random Max', command = lambda: self.setRandom(max))
+        self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
         self.insertMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
         self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
         self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
         ## Generate Menu
-        self.generateMenu = Menu(self.menu)
+        self.generateMenu = Menu(self)
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
         self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda :self.settings.__setitem__(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
                             'Clear After Generation')
         ## Settings Menu
-        self.settingsMenu = Menu(self.menu)
+        self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
                                           command = lambda :self.settings.__setitem__(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
@@ -125,7 +141,6 @@ class Generator(Frame):
         self.resultFormatLabel = Label(self, text = 'Format:')
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
-        self.dropdownTypes = [RESULT_TYPE, RESULT_FORMAT]
 
         self.rowLabel = Label(self, text = 'Rows:')
         self.rowEntry = Entry(self)
@@ -158,15 +173,19 @@ class Generator(Frame):
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
         self.master.bind('<Control-m>', lambda event: self.multiply())
         self.master.bind('<Control-t>', lambda event: self.transpose())
+        self.master.bind('<Control-p>', lambda event: self.permutationMatrix())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
         self.master.bind('<Control-]>', lambda event: self.switchResultType(1))
         self.master.bind('<Control-E>', lambda event: self.clear(0))
         self.master.bind('<Control-A>', lambda event: self.clear(1))
+        self.master.bind('<Control-C>', lambda event: self.calculateDet())
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
 
         ## Set Values
         self.settings.setdefault(LAST_USED_DROPDOWN, LATEX)
+        self.settings.setdefault(RANDOM_MIN, 1)
+        self.settings.setdefault(RANDOM_MAX, maxSize)
         self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
         register(lambda: fwrite(settingsFile, dumps(self.settings)))
@@ -363,43 +382,47 @@ class Generator(Frame):
                         return False
             return True
         def getResultType(matrix):
-            if matrix in [[[1]], [['1']]]:
+            if len(matrix) == 1 and len(matrix[0]) == 1:
                 return MATRIX
             elif len(matrix[0]) == 1:
                 return VECTOR
             else:
                 return IDENTITY_MATRIX if isIdentity(matrix) else MATRIX
-        try:
-            title = 'Insert'
-            prompt = f'Input Your Matrix in {fromFormat} Form'
-            result = simpledialog.askstring(title = title, prompt = prompt)
-            if not result:
-                return
-            if fromFormat == LATEX:
-                if 'matrix' in result:
-                    matrix = [row.split('&') for row in find(result).between('}', '\\end').split('\\\\')]
-                    if 'bmatrix' in result:
-                        self.setResultType(getResultType(matrix))
-                    elif 'vmatrix' in result:
-                        self.setResultType(DETERMINANT)
+        while True:
+            try:
+                title = 'Insert'
+                prompt = f'Input Your Matrix in {fromFormat} Form'
+                result = simpledialog.askstring(title = title, prompt = prompt)
+                if not result:
+                    return
+                if fromFormat == LATEX:
+                    if 'matrix' in result:
+                        matrix = [row.split('&') for row in find(result).between('}', '\\end').split('\\\\')]
+                        if 'bmatrix' in result:
+                            self.setResultType(getResultType(matrix))
+                        elif 'vmatrix' in result:
+                            self.setResultType(DETERMINANT)
+                    else:
+                        matrix = [[i] for i in find(result).between('{', '}').split(',')]
+                        self.setResultType(VECTOR)
+                elif fromFormat == ARRAY:
+                    matrix = eval(result)
+                    if type(matrix) != list and type(matrix[0]) != list:
+                        raise Exception()
+                    self.setResultType(getResultType(matrix))
                 else:
-                    matrix = [[i] for i in find(result).between('{', '}').split(',')]
-                    self.setResultType(VECTOR)
-            elif fromFormat == ARRAY:
-                matrix = eval(result)
-                self.setResultType(getResultType(matrix))
-            else:
-                raise Exception()
-            r = len(matrix)
-            c = len(matrix[0])
-            self.setRow(r)
-            self.setCol(c)
-            self.generateEntries(r, c)
-            for i in range(r):
-                for j in range(c):
-                    setEntry(self.entries[(i, j)], matrix[i][j])
-        except:
-            messagebox.showerror(title = 'Error!', message = 'Invalid Input')
+                    raise Exception()
+                r = len(matrix)
+                c = len(matrix[0])
+                self.setRow(r)
+                self.setCol(c)
+                self.generateEntries(r, c)
+                for i in range(r):
+                    for j in range(c):
+                        setEntry(self.entries[(i, j)], matrix[i][j])
+                return
+            except:
+                messagebox.showerror(title = 'Error', message = 'Invalid Input')
 
     def switchResultType(self, move):
         self.setResultType(resultTypeOptions[(resultTypeOptions.index(self.resultType.get()) + move) % len(resultTypeOptions)])
@@ -435,6 +458,18 @@ class Generator(Frame):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
         self.modifyStates()
 
+    def setRandom(self, bound):
+        '''bound should be either min or max'''
+        isMin = bound == min
+        lower = -100 if isMin else self.settings[RANDOM_MIN] + 1
+        upper = self.settings[RANDOM_MAX] - 1 if isMin else 100
+        result = simpledialog.askinteger(title = 'Set Random', \
+                                         prompt = f'Input an Integer between {lower} and {upper}', \
+                                         initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
+                                         minvalue = lower, maxvalue = upper)
+        if result:
+            self.settings[RANDOM_MIN if isMin else RANDOM_MAX] = result
+
     def randomFill(self):
         resultType = self.resultType.get()
         ## Use ezs random matrix instead
@@ -460,7 +495,7 @@ class Generator(Frame):
             self.fillIdentityMatrix()
         else:
             for entry in self.entries.values():
-                setEntry(entry, randrange(1, 10))
+                setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
         self.modifyStates()
 
     def triangularMatrix(self, mode):
@@ -503,8 +538,8 @@ class Generator(Frame):
         if size != self.getCol() or self.checkEmpty():
             return
         try:
-            result = linalg.det([[eval(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)])
-            # result = ezs.dc(self.generate())
+            result = ezs.integer(linalg.det([[eval(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)]))
+            # result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
             copyToClipboard(str_result)
             if self.settings[SHOW_DIALOG]:
@@ -556,8 +591,11 @@ class Generator(Frame):
         resultType = self.resultType.get()
         resultFormat = self.resultFormat.get()
         if resultFormat == LATEX:
-            if resultType == VECTOR and not self.colVecVar.get():
-                result = ezs.vl(','.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), True, False)
+            vecOption = self.vecOptionVar.get()
+            if resultType == VECTOR and vecOption != COLUMN_VECTOR:
+                result = ezs.vl(','.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), \
+                                vecOption == OVERRIGHTARROW, \
+                                False)
             else:
                 result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
         elif resultFormat == ARRAY:
