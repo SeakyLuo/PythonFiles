@@ -8,6 +8,8 @@ class Simplifier(Tk):
     def __init__(self, *args, **kwargs):
         Tk.__init__(self, *args, **kwargs)
         self.title('Simplifier')
+        self.bind('<Control-z>', lambda event: self.undo())
+        self.bind('<Control-y>', lambda event: self.redo())
         self.btxt = 'button.txt'
         try: open(self.btxt, 'x').close()
         except FileExistsError: pass
@@ -31,8 +33,6 @@ class Simplifier(Tk):
         self.t1 = Text(self.input)
         self.scrollb1 = Scrollbar(self.input, command = self.t1.yview)
         self.t1.bind('<KeyRelease>', self.monitor)
-        self.t1.bind('<Control-z>', lambda event: self.undo())
-        self.t1.bind('<Control-y>', lambda event: self.redo())
         self.t2 = Text(self.output)
         self.scrollb2 = Scrollbar(self.output, command = self.t2.yview)
         self.w0 = Label(self.widgetbar, text = 'In↑Out↓')
