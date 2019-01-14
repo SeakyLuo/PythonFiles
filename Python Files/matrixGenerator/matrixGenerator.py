@@ -491,17 +491,25 @@ class Generator(Frame):
 
 
     def find(self, target):
+        result = ''
         if target == FIND_VALUE:
-            result = simpledialog.askstring(title = 'Find', prompt = target)
-            if not result:
-                return 'break'
-            for entry in self.entries.values():
-                if result in entry.get():
-                    entry.select_range(0, END)
+            while True:
+                result = simpledialog.askstring(title = 'Find', prompt = target, initialvalue = result)
+                if not result:
+                    return 'break'
+                found = False
+                for entry in self.entries.values():
+                    if result in entry.get():
+                        entry.select_range(0, END)
+                        found = True
+                if not found:
+                    messagebox.showerror('Error', 'Not Found')
+                else:
+                    break
             return 'break'
         else:
             while True:
-                result = simpledialog.askstring(title = target, prompt = 'Input location in the form of x,y')
+                result = simpledialog.askstring(title = target, prompt = 'Input location in the form of x,y', initialvalue = result)
                 if not result:
                     return 'break'
                 try:
@@ -510,11 +518,22 @@ class Generator(Frame):
                     return 'break'
                 except:
                     messagebox.showerror('Error', 'Invalid Input')
+                    continue
+                break
 
     def replace(self):
-        target = simpledialog.askstring(title = 'Replace', prompt = 'Replace Target')
-        if not target:
-            return 'break'
+        target = ''
+        while True:
+            target = simpledialog.askstring(title = 'Replace', prompt = 'Replace Target', initialvalue = target)
+            if not target:
+                return 'break'
+            for entry in self.entries.values():
+                if target in entry.get():
+                    break
+            else:
+                messagebox.showerror('Error', 'Not Found')
+                continue
+            break
         withValue = simpledialog.askstring(title = 'Replace', prompt = 'Replace With')
         if not withValue:
             return 'break'
