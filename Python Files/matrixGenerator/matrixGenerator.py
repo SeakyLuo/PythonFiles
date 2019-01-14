@@ -17,6 +17,7 @@ resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
 LATEX, ARRAY = 'LaTeX', 'Array'
 resultFormatOptions = [LATEX, ARRAY]
 LEFT, RIGHT, UP, DOWN = 'Left', 'Right', 'Up', 'Down'
+directions = [LEFT, RIGHT, UP, DOWN]
 CLEAR_ENTRIES, CLEAR_ALL = 'Clear Entries', 'Clear All'
 NONE = 'None'
 clearOptions = [CLEAR_ENTRIES, CLEAR_ALL, NONE]
@@ -74,7 +75,7 @@ class Generator(Frame):
         self.minCols = self.maxCols = 4
         self.entries = {}
         self.statePointer = 0
-        self.states = [] ## (resultType, entries)
+        self.states = [] ## (resultType, entries, focusEntry)
 
         ## Settings
         self.settings = loads(fread(settingsFile)) if os.path.exists(settingsFile) else {}
@@ -174,7 +175,7 @@ class Generator(Frame):
         self.colEntry = Entry(self)
         self.rowEntry.focus()
         for entry in [self.rowEntry, self.colEntry]:
-            entry.bind('<KeyPress>', self.moveFocus)
+            self.bindMoveFocus(entry)
             entry.bind('<KeyRelease>', self.onRowColChange)
             bindtags = entry.bindtags()
             entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
@@ -317,8 +318,8 @@ class Generator(Frame):
                 if (i, j) in self.entries:
                     continue
                 e = Entry(self)
+                self.bindMoveFocus(e)
                 e.bind('<KeyRelease>', self.onEntryChange)
-                e.bind('<KeyPress>', self.moveFocus)
                 bindtags = e.bindtags()
                 e.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
                 e.grid(row = i + self.minRows, column = j, sticky = NSEW)
@@ -397,6 +398,10 @@ class Generator(Frame):
             if type(w) == Entry:
                 w.focus()
                 break
+
+    def bindMoveFocus(self, entry):
+        for key in ['<Up>', '<Down>', '<Left>', '<Right>']:
+            entry.bind(key, self.moveFocus)
 
     def findByGrid(self, row, column):
         for child in self.children.values():
@@ -489,19 +494,20 @@ class Generator(Frame):
         if target == FIND_VALUE:
             result = simpledialog.askstring(title = 'Find', prompt = target)
             if not result:
-                return
+                return 'break'
             for entry in self.entries.values():
                 if result in entry.get():
                     entry.select_range(0, END)
+            return 'break'
         else:
             while True:
                 result = simpledialog.askstring(title = target, prompt = 'Input location in the form of x,y')
                 if not result:
-                    return
+                    return 'break'
                 try:
                     x, y = result.replace(' ', '').split(',')
                     self.entries[(int(x) - 1, int(y) - 1)].select_range(0, END)
-                    return
+                    return 'break'
                 except:
                     messagebox.showerror('Error', 'Invalid Input')
 
@@ -718,7 +724,7 @@ class Generator(Frame):
         self.resumeState()
 
     def resumeState(self):
-        resultType, entries = self.states[self.statePointer]
+        resultType, entries, focus = self.states[self.statePointer]
         r = len(entries)
         c = len(entries[0])
         self.setRow(r)
@@ -728,17 +734,27 @@ class Generator(Frame):
         for i, row in enumerate(entries):
             for j, entry in enumerate(row):
                 setEntry(self.entries[(i, j)], entry)
+        if focus == 0:
+            self.rowEntry.focus()
+        elif focus == 2:
+            self.colEntry.focus()
+        else:
+            focus -= 3
+            self.entries[divmod(focus, c)].focus()
 
     def modifyStates(self):
         row = self.getRow()
         col = self.getCol()
         if not row and not col:
             return
-        state = (self.resultType.get(), [[self.entries[(i, j)].get() for j in range(col)] for i in range(row)])
-        if self.states and state == self.states[self.statePointer]:
+        state = (self.resultType.get(), [[self.entries[(i, j)].get() for j in range(col)] for i in range(row)], self.getFocusEntry())
+        if self.states and state[:-1] == self.states[self.statePointer][:-1]:
             return
         self.states = self.states[:self.statePointer + 1] + [state]
         self.statePointer = len(self.states) - 1
+
+    def getFocusEntry(self):
+        return int(find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
 
 root = Tk()
 gui = Generator(root)
