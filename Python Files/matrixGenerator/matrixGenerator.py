@@ -589,7 +589,7 @@ class Generator(Frame):
 
     def setupClearMenu(self, master, variable, command, label = 'Clear Options'):
         clearMenu = Menu(master = master, tearoff = False)
-        for option in clearOptions[1:]:
+        for option in clearOptions:
             clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)
         variable.set(self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         master.add_cascade(label = label, menu = clearMenu)
