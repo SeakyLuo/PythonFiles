@@ -480,7 +480,7 @@ class Generator(Frame):
     def append(self, position):
         isStart = position == APPEND_START
         result = simpledialog.askstring(title = 'Append', \
-                                        prompt = 'Append to the {} of Every Entry.'.format('Start' if isStart else 'End'))
+                                        prompt = 'Append to the {} of Every Entry'.format('Start' if isStart else 'End'))
         if not result:
             return
         for entry in self.entries.values():
@@ -494,7 +494,7 @@ class Generator(Frame):
             while True:
                 result = simpledialog.askstring(title = 'Find', prompt = target, initialvalue = result)
                 if not result:
-                    return 'break'
+                    break
                 found = False
                 for entry in self.entries.values():
                     if result in entry.get():
@@ -504,20 +504,20 @@ class Generator(Frame):
                     messagebox.showerror('Error', 'Not Found')
                 else:
                     break
-            return 'break'
         else:
             while True:
-                result = simpledialog.askstring(title = target, prompt = 'Input location in the form of x,y', initialvalue = result)
+                result = simpledialog.askstring(title = target, prompt = 'Input Location in the Form of x,y', initialvalue = result)
                 if not result:
-                    return 'break'
+                    break
                 try:
                     x, y = result.replace(' ', '').split(',')
                     self.entries[(int(x) - 1, int(y) - 1)].select_range(0, END)
-                    return 'break'
+                    break
                 except:
                     messagebox.showerror('Error', 'Invalid Input')
                     continue
                 break
+        return 'break'
 
     def replace(self):
         target = ''
