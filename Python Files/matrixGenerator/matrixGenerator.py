@@ -10,6 +10,7 @@ import ezs, os
 
 ## Static Variables
 maxSize = 15
+maxRandomVarLength = 5
 
 MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX = 'Matrix', 'Determinant', 'Vector', 'Identity Matrix'
 resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
@@ -37,8 +38,13 @@ MULTIPLY = 'Multiply'
 TRANSPOSE = 'Transpose'
 RANDOM = 'Random'
 RANDOM_MATRIX = 'Random Matrix'
+RANDOM_INT_MATRIX = 'Random Int Matrix'
+RANDOM_VAR_MATRIX = 'Random Var Matrix'
+RANDOM_MATRIX_OPTION = 'RandomMatrixOption'
+randomMatrixOptions = [RANDOM_INT_MATRIX, RANDOM_VAR_MATRIX]
 RANDOM_MIN = 'RandomMin'
 RANDOM_MAX = 'RandomMax'
+RANDOM_VAR = 'RandomVar'
 GENERATE = 'Generate'
 UNDO = 'Undo'
 REDO = 'Redo'
@@ -106,8 +112,16 @@ class Generator(Frame):
         self.insertMenu = Menu(self)
         self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
+        self.randomMenu.add_separator()
+        self.randomMatrixOption = StringVar(self)
+        for option in randomMatrixOptions:
+            self.randomMenu.add_radiobutton(label = option, variable = self.randomMatrixOption, \
+                                            command = lambda: self.settings.__setitem__(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
+        self.randomMatrixOption.set(self.settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
+        self.randomMenu.add_separator()
         self.randomMenu.add_command(label = 'Set Random Min', command = lambda: self.setRandom(min))
         self.randomMenu.add_command(label = 'Set Random Max', command = lambda: self.setRandom(max))
+        self.randomMenu.add_command(label = 'Set Random Var', command = lambda: self.setRandom('var'))
         self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
         self.insertMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
         self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
@@ -186,6 +200,7 @@ class Generator(Frame):
         self.settings.setdefault(LAST_USED_DROPDOWN, LATEX)
         self.settings.setdefault(RANDOM_MIN, 1)
         self.settings.setdefault(RANDOM_MAX, maxSize)
+        self.settings.setdefault(RANDOM_VAR, 'x')
         self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
         register(lambda: fwrite(settingsFile, dumps(self.settings)))
@@ -458,17 +473,32 @@ class Generator(Frame):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
         self.modifyStates()
 
-    def setRandom(self, bound):
-        '''bound should be either min or max'''
-        isMin = bound == min
-        lower = -100 if isMin else self.settings[RANDOM_MIN] + 1
-        upper = self.settings[RANDOM_MAX] - 1 if isMin else 100
-        result = simpledialog.askinteger(title = 'Set Random', \
-                                         prompt = f'Input an Integer between {lower} and {upper}', \
-                                         initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
-                                         minvalue = lower, maxvalue = upper)
-        if result:
-            self.settings[RANDOM_MIN if isMin else RANDOM_MAX] = result
+    def setRandom(self, option):
+        '''bound should be either min or max or var'''
+        if option == 'var':
+            result = self.settings[RANDOM_VAR]
+            while True:
+                result = simpledialog.askstring(title = 'Set Variable', prompt = f'Input a Variable Name With Length <= {maxRandomVarLength}', \
+                                                initialvalue = result)
+                if not result:
+                    return
+                if len(result) > 5:
+                    messagebox.showerror('Error', 'Variable too long')
+                elif not result[0].isalpha():
+                    messagebox.showerror('Error', 'The 1st letter should be alphabetical')
+                else:
+                    self.settings[RANDOM_VAR] = result
+                    return
+        else:
+            isMin = option == min
+            lower = -100 if isMin else self.settings[RANDOM_MIN] + 1
+            upper = self.settings[RANDOM_MAX] - 1 if isMin else 100
+            result = simpledialog.askinteger(title = 'Set Random', \
+                                            prompt = f'Input an Integer between {lower} and {upper}', \
+                                            initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
+                                            minvalue = lower, maxvalue = upper)
+            if result:
+                self.settings[RANDOM_MIN if isMin else RANDOM_MAX] = result
 
     def randomFill(self):
         resultType = self.resultType.get()
@@ -494,8 +524,12 @@ class Generator(Frame):
         if isIdentity:
             self.fillIdentityMatrix()
         else:
+            option = self.settings[RANDOM_MATRIX_OPTION]
             for entry in self.entries.values():
-                setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+                if option == RANDOM_INT_MATRIX:
+                    setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+                elif option == RANDOM_VAR_MATRIX:
+                    setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
         self.modifyStates()
 
     def triangularMatrix(self, mode):
