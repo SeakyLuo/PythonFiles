@@ -553,7 +553,7 @@ def isPrime(n):
     return False
 
 def findPrimeFactors(num, printResult = True, return_dict = False):
-    '''Automatically Regarded as a non-negative number'''
+    '''Automatically regarded as a non-negative number'''
     num = abs(num)
     if isPrime(num) or num in [0, 1]:
         return [num]
@@ -581,10 +581,12 @@ def findPrimeFactors(num, printResult = True, return_dict = False):
 fpf = findPrimeFactors
 
 def findAllFactors(num):
-    return [ i for i in range(1, int(num**0.5) + 1) if num % i == 0 ]
+    smallFactors = [ i for i in range(1, int(num ** 0.5) + 1) if num % i == 0 ]
+    bigFactors = [ num // i for i in reversed(smallFactors)]
+    return smallFactors + bigFactors
 
 def findCofactors(num1, num2):
-    '''Automatically Regarded as non-negative numbers.'''
+    '''Automatically regarded as non-negative numbers.'''
     if num1 == 0:
         return findAllFactors(num2)
     elif num2 == 0:

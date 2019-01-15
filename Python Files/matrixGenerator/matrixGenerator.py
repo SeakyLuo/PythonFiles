@@ -129,6 +129,7 @@ class Generator(Frame):
         self.editMenu.add_separator()
         self.editMenu.add_command(label = 'Sort', command = self.sort)
         self.editMenu.add_command(label = 'Reverse', command = self.reverse)
+        self.editMenu.add_command(label = 'Reshape', command = self.reshape)
         self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
@@ -248,11 +249,15 @@ class Generator(Frame):
         except ValueError:
             return 0
 
-    def setRow(self, num):
-        setEntry(self.rowEntry, num)
+    def setRow(self, row):
+        setEntry(self.rowEntry, row)
 
-    def setCol(self, num):
-        setEntry(self.colEntry, num)
+    def setCol(self, col):
+        setEntry(self.colEntry, col)
+
+    def setRowCol(self, row, col):
+        self.setRow(row)
+        self.setCol(col)
 
     def setResultType(self, resultType):
         if self.resultType.get() == resultType:
@@ -464,8 +469,7 @@ class Generator(Frame):
                     raise Exception()
                 r = len(matrix)
                 c = len(matrix[0])
-                self.setRow(r)
-                self.setCol(c)
+                self.setRowCol(r, c)
                 self.generateEntries(r, c)
                 for i in range(r):
                     for j in range(c):
@@ -481,8 +485,7 @@ class Generator(Frame):
         self.setResultFormat(resultFormatOptions[(resultFormatOptions.index(self.resultFormat.get()) + move) % len(resultFormatOptions)])
 
     def syncRowCol(self, size):
-        self.setRow(size)
-        self.setCol(size)
+        self.setRowCol(size, size)
         self.generateEntries(size, size)
 
     def fillIdentityMatrix(self):
@@ -564,8 +567,7 @@ class Generator(Frame):
         if row != col:
             if resultType == VECTOR:
                 self.setResultType(MATRIX)
-            self.setRow(col)
-            self.setCol(row)
+            self.setRowCol(col, row)
             self.generateEntries(col, row)
         for i in range(row):
             for j in range(col):
@@ -635,18 +637,30 @@ class Generator(Frame):
                 row = randrange(maxSize) + 1
             elif resultType == IDENTITY_MATRIX:
                 row = col = randrange(maxSize) + 1
-            self.setRow(row)
-            self.setCol(col)
+            self.setRowCol(row, col)
             self.generateEntries(row, col)
         if isIdentity:
             self.fillIdentityMatrix()
         else:
             option = self.settings[RANDOM_MATRIX_OPTION]
+            hasEmpty = False
             for entry in self.entries.values():
-                if option == RANDOM_INT_MATRIX:
+                if not entry.get():
+                    hasEmpty = True
                     setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
-                elif option == RANDOM_VAR_MATRIX:
-                    setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
+            if not hasEmpty:
+                for entry in self.entries.values():
+                    if option == RANDOM_INT_MATRIX:
+                        setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+                    elif option == RANDOM_VAR_MATRIX:
+                        setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
+        self.modifyStates()
+
+    def randomReorder(self):
+        values = [entry.get() for entry in self.entries.values()]
+        shuffle(values)
+        for i, entry in enumerate(self.entries.values()):
+            setEntry(entry, values[i])
         self.modifyStates()
 
     def sort(self):
@@ -672,11 +686,37 @@ class Generator(Frame):
             setEntry(e2, t2)
         self.modifyStates()
 
-    def randomReorder(self):
-        values = [entry.get() for entry in self.entries.values()]
-        shuffle(values)
-        for i, entry in enumerate(self.entries.values()):
-            setEntry(entry, values[i])
+    def reshape(self):
+        if self.resultType.get() in [DETERMINANT, IDENTITY_MATRIX]:
+            messagebox.showerror('Error', 'Invalid Option')
+            return
+        r = self.getRow()
+        c = self.getCol()
+        size = r * c
+        if ezs.isPrime(size) or (size > maxSize and len(ezs.findAllFactors(size)) == 4):
+            x, y = c, r
+        else:
+            result = ''
+            while True:
+                result = simpledialog.askstring(title = 'Reshape', prompt = 'Input Shape in the Form of x,y', initialvalue = result)
+                if not result:
+                    return
+                try:
+                    x, y = map(int, result.replace(' ', '').split(','))
+                    if x * y != size:
+                        messagebox.showerror('Error', 'Inconsistent Matrix Size')
+                        continue
+                    if x == r and y == c:
+                        return
+                except:
+                    messagebox.showerror('Error', 'Invalid Input')
+                    continue
+                break
+        values = [self.entries[(i, j)].get() for i in range(r) for j in range(c)]
+        self.setRowCol(x, y)
+        self.generateEntries(x, y)
+        for i, value in enumerate(values):
+            setEntry(self.entries[divmod(i, y)], value)
         self.modifyStates()
 
     def triangularMatrix(self, mode):
@@ -824,8 +864,7 @@ class Generator(Frame):
         resultType, entries, focus = self.states[self.statePointer]
         r = len(entries)
         c = len(entries[0])
-        self.setRow(r)
-        self.setCol(c)
+        self.setRowCol(r, c)
         self.generateEntries(r, c)
         self.setResultType(resultType)
         for i, row in enumerate(entries):
