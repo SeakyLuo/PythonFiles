@@ -3,7 +3,7 @@ from tkinter import messagebox, simpledialog
 from json import dumps, loads
 from atexit import register
 from eztk import setEntry, clearEntry
-from random import randrange
+from random import randrange, shuffle
 from numpy import linalg
 from ez import fread, fwrite, copyToClipboard, py2pyw, find
 import ezs, os
@@ -40,10 +40,12 @@ REPLACE = 'Replace'
 CALCULATE = 'Calculate'
 UNIT_MATRIX = 'Unit Matrix'
 PERMUTATION_MATRIX = 'Permutation Matrix'
+PERMUTATION_VECTOR = 'Permutation Vector'
 MULTIPLY = 'Multiply'
 TRANSPOSE = 'Transpose'
 RANDOM = 'Random'
 RANDOM_MATRIX = 'Random Matrix'
+RANDOM_REORDER = 'Random Reorder'
 RANDOM_INT_MATRIX = 'Random Int Matrix'
 RANDOM_VAR_MATRIX = 'Random Var Matrix'
 RANDOM_MATRIX_OPTION = 'RandomMatrixOption'
@@ -58,7 +60,7 @@ settingsFile = 'settings.json'
 
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
-              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', \
+              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', \
               CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A', FIND_LOCATION: 'Ctrl+Shift+F'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+[, Ctrl+]'), \
@@ -94,11 +96,14 @@ class Generator(Frame):
                             lambda :self.settings.__setitem__(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
                             'After Calculation')
         self.vecMenu = Menu(self)
+        self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.calculateDet)
+        self.vecOptionMenu = Menu(self, tearoff = False)
         self.vecOptionVar = StringVar(self)
         for option in vectorOptions:
-            self.vecMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
-                                         command = lambda :self.settings.__setitem__(VECTOR_OPTION, self.vecOptionVar.get()))
+            self.vecOptionMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
+                                               command = lambda :self.settings.__setitem__(VECTOR_OPTION, self.vecOptionVar.get()))
         self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
+        self.vecMenu.add_cascade(label = 'Vector Option', menu = self.vecOptionMenu)
         self.imatMenu = Menu(self)
         self.imatMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
         self.imatMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
@@ -114,18 +119,23 @@ class Generator(Frame):
         self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
         self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
         self.editMenu.add_separator()
+        self.editMenu.add_command(label = 'Sort', command = self.sort)
+        self.editMenu.add_command(label = 'Reverse', command = self.reverse)
+        self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
         self.insertMenu = Menu(self)
-        self.randomMenu = Menu(self, tearoff = False)
         self.insertMenu.add_command(label = APPEND_START, command = lambda: self.append(APPEND_START))
         self.insertMenu.add_command(label = APPEND_END, command = lambda: self.append(APPEND_END))
         self.insertMenu.add_separator()
         self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
         self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
         self.insertMenu.add_separator()
+        self.insertMenu.add_command(label = '1 to N', command = self.oneToN)
+        self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
+        self.randomMenu.add_command(label = RANDOM_REORDER, command = self.randomReorder)
         self.randomMenu.add_separator()
         self.randomMatrixOption = StringVar(self)
         for option in randomMatrixOptions:
@@ -197,10 +207,11 @@ class Generator(Frame):
         self.master.bind('<Control-f>', lambda event: self.find(FIND_VALUE))
         self.master.bind('<Control-h>', lambda event: self.replace())
         self.master.bind('<Control-m>', lambda event: self.multiply())
-        self.master.bind('<Control-p>', lambda event: self.permutationMatrix())
+        self.master.bind('<Control-p>', lambda event: self.permutationVector() if self.resultType.get() == VECTOR else self.permutationMatrix())
         self.master.bind('<Control-r>', lambda event: self.randomFill())
         self.master.bind('<Control-t>', lambda event: self.transpose())
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
+        self.master.bind('<Control-v>', lambda event: self.permutationVector())
         self.master.bind('<Control-y>', lambda event: self.redo())
         self.master.bind('<Control-z>', lambda event: self.undo())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
@@ -533,10 +544,10 @@ class Generator(Frame):
                 continue
             break
         withValue = simpledialog.askstring(title = 'Replace', prompt = 'Replace With')
-        if not withValue:
-            return 'break'
-        for entry in self.entries.values():
-            setEntry(entry, entry.get().replace(target, withValue))
+        if withValue:
+            for entry in self.entries.values():
+                setEntry(entry, entry.get().replace(target, withValue))
+            self.modifyStates()
         return 'break'
 
     def transpose(self):
@@ -555,6 +566,15 @@ class Generator(Frame):
         for i in range(row):
             for j in range(col):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
+        self.modifyStates()
+
+    def oneToN(self):
+        row = self.getRow()
+        col = self.getCol()
+        if not row or not col or not self.entries:
+            return
+        for i in range(row * col):
+            setEntry(self.entries[divmod(i, row)], i + 1)
         self.modifyStates()
 
     def setRandom(self, option):
@@ -616,6 +636,36 @@ class Generator(Frame):
                     setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
         self.modifyStates()
 
+    def sort(self):
+        row = self.getRow()
+        col = self.getCol()
+        if not row or not col or not self.entries:
+            return
+        values = sorted([eval(entry.get()) if entry.get().isnumeric() else entry.get() for entry in self.entries.values()])
+        for i in range(row * col):
+            setEntry(self.entries[divmod(i, row)], values[i])
+        self.modifyStates()
+
+    def reverse(self):
+        row = self.getRow()
+        col = self.getCol()
+        if not row or not col or not self.entries:
+            return
+        for i in range(row * col // 2):
+            r, c = divmod(i, row)
+            e1, e2 = self.entries[(r, c)], self.entries[(row - r - 1, col - c - 1)]
+            t1, t2 = e2.get(), e1.get()
+            setEntry(e1, t1)
+            setEntry(e2, t2)
+        self.modifyStates()
+
+    def randomReorder(self):
+        values = [entry.get() for entry in self.entries.values()]
+        shuffle(values)
+        for i, entry in enumerate(self.entries.values()):
+            setEntry(entry, values[i])
+        self.modifyStates()
+
     def triangularMatrix(self, mode):
         '''Mode: 0 for lower, 1 for upper'''
         isIdentity = self.resultType.get() == IDENTITY_MATRIX
@@ -644,11 +694,23 @@ class Generator(Frame):
         if not row == col == size:
             self.syncRowCol(size)
         cols = list(range(size))
+        shuffle(cols)
         for i in range(size):
-            c = cols.pop(randrange(len(cols)))
+            c = cols.pop()
             for j in range(size):
                 setEntry(self.entries[(i, j)], 0)
             setEntry(self.entries[(i, c)], 1)
+        self.modifyStates()
+
+    def permutationVector(self):
+        self.setResultType(VECTOR)
+        row = self.getRow()
+        if not row:
+            row = randrange(maxSize) + 1
+        values = list(range(1, row + 1))
+        shuffle(values)
+        for i, entry in enumerate(self.entries.values()):
+            setEntry(entry, values[i])
         self.modifyStates()
 
     def calculateDet(self):
