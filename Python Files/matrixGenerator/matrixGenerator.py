@@ -31,6 +31,9 @@ REMEMBER_SIZE = 'RememberSize'
 SHOW_RESULT = 'Show Result'
 SHOW_CALCULATION_RESULT = 'ShowCalculationResult'
 SHOW_GENERATION_RESULT = 'ShowGenerationResult'
+COPY_RESULT = 'Copy Result'
+COPY_CALCULATION_RESULT = 'CopyCalculationResult'
+COPY_GENERATION_RESULT = 'CopyGenerationResult'
 RESULT_TYPE = 'ResultType'
 RESULT_FORMAT = 'ResultFormat'
 APPEND_START = 'Append Start'
@@ -61,7 +64,7 @@ REDO = 'Redo'
 ## Settings
 settingsFile = 'settings.json'
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, \
-                  SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
+                  SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
 
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
@@ -102,7 +105,7 @@ class Generator(Frame):
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.detMenu, self.calculateClearVar, \
                             lambda :self.settings.__setitem__(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
-                            SHOW_CALCULATION_RESULT, 'After Calculation')
+                            SHOW_CALCULATION_RESULT, COPY_CALCULATION_RESULT, 'After Calculation')
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
@@ -163,7 +166,7 @@ class Generator(Frame):
         self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda :self.settings.__setitem__(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
-                            SHOW_GENERATION_RESULT, 'After Generation')
+                            SHOW_GENERATION_RESULT, COPY_CALCULATION_RESULT, 'After Generation')
         ## Settings Menu
         self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
@@ -774,7 +777,8 @@ class Generator(Frame):
             result = ezs.integer(linalg.det([[eval(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)]))
             # result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
-            copyToClipboard(str_result)
+            if self.settings[COPY_CALCULATION_RESULT]:
+                copyToClipboard(str_result)
             if self.settings[SHOW_CALCULATION_RESULT]:
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
             clearOption = self.calculateClearVar.get()
@@ -786,11 +790,14 @@ class Generator(Frame):
         except ValueError:
             messagebox.showerror(title = 'Error', message = 'Numerical Entries Only')
 
-    def setupClearMenu(self, master, variable, command, settingsOption, label = 'Clear Options'):
+    def setupClearMenu(self, master, variable, command, showResultOption, copyResultOption, label = 'Clear Options'):
         clearMenu = Menu(master = master, tearoff = False)
-        showDialogVar = BooleanVar(self, value = self.settings.setdefault(settingsOption, True))
-        clearMenu.add_checkbutton(label = SHOW_RESULT, variable = showDialogVar, \
-                                  command = lambda :self.settings.__setitem__(settingsOption, showDialogVar.get()))
+        showResultVar = BooleanVar(self, value = self.settings.setdefault(showResultOption, True))
+        clearMenu.add_checkbutton(label = SHOW_RESULT, variable = showResultVar, \
+                                  command = lambda :self.settings.__setitem__(showResultOption, showResultVar.get()))
+        copyResultVar = BooleanVar(self, value = self.settings.setdefault(copyResultOption, True))
+        clearMenu.add_checkbutton(label = COPY_RESULT, variable = copyResultVar, \
+                                  command = lambda :self.settings.__setitem__(copyResultOption, copyResultVar.get()))
         clearMenu.add_separator()
         for option in clearOptions:
             clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)
@@ -838,7 +845,8 @@ class Generator(Frame):
                 result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
         elif resultFormat == ARRAY:
             result = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
-        copyToClipboard(result)
+        if self.settings[COPY_GENERATION_RESULT]:
+            copyToClipboard(result)
         if self.settings[SHOW_GENERATION_RESULT]:
             messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
         clearOption = self.settings[GENERATE_CLEAR_OPTION]
