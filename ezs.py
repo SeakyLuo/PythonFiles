@@ -398,7 +398,12 @@ def truth_table(formula, output= 'a'):
         print('傻逼关进程啊！')
         return
 
-integer = lambda x: [x, int(x)][x == int(x)]
+def integer(number):
+    try:
+        int_n = int(number)
+        return int_n if number == int_n else number
+    except:
+        return number
 
 def get24(a, b = -1, c = -1, d = -1):
     if 1000 <= a<10000 and b == c == d == -1:

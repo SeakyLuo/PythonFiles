@@ -11,6 +11,8 @@ import ezs, os
 ## Static Variables
 maxSize = 15
 maxRandomVarLength = 10
+minValue = -100
+maxValue = 100
 
 MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX = 'Matrix', 'Determinant', 'Vector', 'Identity Matrix'
 resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
@@ -45,6 +47,7 @@ CALCULATE = 'Calculate'
 UNIT_MATRIX = 'Unit Matrix'
 PERMUTATION_MATRIX = 'Permutation Matrix'
 PERMUTATION_VECTOR = 'Permutation Vector'
+ADD = 'Add'
 MULTIPLY = 'Multiply'
 TRANSPOSE = 'Transpose'
 RANDOM = 'Random'
@@ -96,6 +99,7 @@ class Generator(Frame):
         ## Result Menu
         self.resultMenu = Menu(self)
         self.matMenu = Menu(self)
+        self.matMenu.add_command(label = ADD, command = self.add)
         self.matMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.matMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
         self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
@@ -359,17 +363,31 @@ class Generator(Frame):
                     break
         self.modifyStates()
 
+    def add(self):
+        result = simpledialog.askfloat(title = 'Multiply', prompt = 'Add a Value to Each Entry')
+        if not result:
+            return
+        result = ezs.integer(result)
+        for entry in self.entries.values():
+            text = entry.get()
+            if text.isnumeric():
+                new_text = ezs.integer(eval(text) + result)
+            else:
+                new_text = text + f' + {result}'
+            setEntry(entry, new_text)
+        self.modifyStates()
+
     def multiply(self):
-        multiplier = simpledialog.askfloat(title = 'Multiply', \
-                                           prompt = 'Multiply Each Entry By', \
-                                           minvalue = -maxSize, \
-                                           maxvalue = maxSize)
-        if multiplier == None or multiplier == 1:
+        result = simpledialog.askfloat(title = 'Multiply', prompt = 'Multiply Each Entry By')
+        if result == None or result == 1:
+            return
+        if result == 0:
+            self.allZeros()
             return
         for entry in self.entries.values():
             text = entry.get()
             if text.isnumeric():
-                new_text = ezs.integer(eval(text) * multiplier)
+                new_text = ezs.integer(eval(text) * result)
             else:
                 coef = ''
                 countDot = 0
@@ -384,8 +402,8 @@ class Generator(Frame):
                         coef += ch
                     else:
                         break
-                new_text = str(ezs.integer(eval(coef) * multiplier)) + text[len(coef):] if coef else \
-                           str(ezs.integer(multiplier)) + text
+                new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
+                           str(ezs.integer(result)) + text
             setEntry(entry, new_text)
         self.modifyStates()
 
@@ -617,8 +635,8 @@ class Generator(Frame):
                     return
         else:
             isMin = option == min
-            lower = -100 if isMin else self.settings[RANDOM_MIN] + 1
-            upper = self.settings[RANDOM_MAX] - 1 if isMin else 100
+            lower = minValue if isMin else self.settings[RANDOM_MIN] + 1
+            upper = self.settings[RANDOM_MAX] - 1 if isMin else maxValue
             result = simpledialog.askinteger(title = 'Set Random', \
                                              prompt = f'Input an Integer between {lower} and {upper}', \
                                              initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
