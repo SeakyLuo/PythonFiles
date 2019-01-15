@@ -96,7 +96,7 @@ class Generator(Frame):
                             lambda :self.settings.__setitem__(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
                             'After Calculation')
         self.vecMenu = Menu(self)
-        self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.calculateDet)
+        self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
         self.vecOptionVar = StringVar(self)
         for option in vectorOptions:
