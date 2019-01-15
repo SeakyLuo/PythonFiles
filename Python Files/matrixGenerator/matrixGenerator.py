@@ -55,8 +55,9 @@ RANDOM_MATRIX = 'Random Matrix'
 RANDOM_REORDER = 'Random Reorder'
 RANDOM_INT_MATRIX = 'Random Int Matrix'
 RANDOM_VAR_MATRIX = 'Random Var Matrix'
+RANDOM_MULTIVAR_MATRIX = 'Random Multi-Var Matrix'
 RANDOM_MATRIX_OPTION = 'RandomMatrixOption'
-randomMatrixOptions = [RANDOM_INT_MATRIX, RANDOM_VAR_MATRIX]
+randomMatrixOptions = [RANDOM_INT_MATRIX, RANDOM_VAR_MATRIX, RANDOM_MULTIVAR_MATRIX]
 RANDOM_MIN = 'RandomMin'
 RANDOM_MAX = 'RandomMax'
 RANDOM_VAR = 'RandomVar'
@@ -134,6 +135,9 @@ class Generator(Frame):
         self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
         self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
         self.editMenu.add_separator()
+        self.editMenu.add_command(label = 'Lower Case', command = lambda: self.toCase('l'))
+        self.editMenu.add_command(label = 'Upper Case', command = lambda: self.toCase('u'))
+        self.editMenu.add_separator()
         self.editMenu.add_command(label = 'Sort', command = self.sort)
         self.editMenu.add_command(label = 'Reverse', command = self.reverse)
         self.editMenu.add_command(label = 'Reshape', command = self.reshape)
@@ -150,6 +154,7 @@ class Generator(Frame):
         self.insertMenu.add_separator()
         self.insertMenu.add_command(label = 'All Zeros', command = self.allZeros)
         self.insertMenu.add_command(label = '1 to N', command = self.oneToN)
+        self.insertMenu.add_command(label = 'A to Z', command = self.aToZ)
         self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
         self.randomMenu.add_command(label = RANDOM_REORDER, command = self.randomReorder)
@@ -617,6 +622,19 @@ class Generator(Frame):
             setEntry(self.entries[divmod(i, col)], i + 1)
         self.modifyStates()
 
+    def aToZ(self):
+        row = self.getRow()
+        col = self.getCol()
+        if not row or not col or not self.entries:
+            return
+        if self.resultType.get() == IDENTITY_MATRIX:
+            self.setResultType(MATRIX)
+        ordA = ord('a')
+        for i in range(row * col):
+            count, char = divmod(i, 26)
+            setEntry(self.entries[divmod(i, col)], chr(ordA + char) * (count + 1))
+        self.modifyStates()
+
     def setRandom(self, option):
         '''bound should be either min or max or var'''
         if option == 'var':
@@ -679,6 +697,8 @@ class Generator(Frame):
                         setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
                     elif option == RANDOM_VAR_MATRIX:
                         setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
+                    elif option == RANDOM_MULTIVAR_MATRIX:
+                        setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
         self.modifyStates()
 
     def randomReorder(self):
@@ -686,6 +706,12 @@ class Generator(Frame):
         shuffle(values)
         for i, entry in enumerate(self.entries.values()):
             setEntry(entry, values[i])
+        self.modifyStates()
+
+    def toCase(self, case):
+        '''Case: "l" for lower "u" for upper'''
+        for entry in self.entries.values():
+            setEntry(entry, entry.get().lower() if case == 'l' else entry.get().upper())
         self.modifyStates()
 
     def sort(self):
