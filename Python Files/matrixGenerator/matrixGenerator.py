@@ -592,7 +592,7 @@ class Generator(Frame):
         if self.resultType.get() == IDENTITY_MATRIX:
             self.setResultType(MATRIX)
         for i in range(row * col):
-            setEntry(self.entries[divmod(i, row)], i + 1)
+            setEntry(self.entries[divmod(i, col)], i + 1)
         self.modifyStates()
 
     def setRandom(self, option):
@@ -838,13 +838,11 @@ class Generator(Frame):
         if resultFormat == LATEX:
             vecOption = self.vecOptionVar.get()
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
-                result = ezs.vl(','.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), \
-                                vecOption == OVERRIGHTARROW, \
-                                False)
+                result = ezs.vl(','.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
+                result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)))
         elif resultFormat == ARRAY:
-            result = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
+            result = ezs.ma(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)))
         if self.settings[COPY_GENERATION_RESULT]:
             copyToClipboard(result)
         if self.settings[SHOW_GENERATION_RESULT]:
