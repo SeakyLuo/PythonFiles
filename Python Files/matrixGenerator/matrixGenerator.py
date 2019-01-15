@@ -132,6 +132,7 @@ class Generator(Frame):
         self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
         self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
         self.insertMenu.add_separator()
+        self.insertMenu.add_command(label = 'All Zeros', command = self.allZeros)
         self.insertMenu.add_command(label = '1 to N', command = self.oneToN)
         self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
@@ -494,6 +495,8 @@ class Generator(Frame):
                                         prompt = 'Append to the {} of Every Entry'.format('Start' if isStart else 'End'))
         if not result:
             return
+        if self.resultType.get() == IDENTITY_MATRIX:
+            self.setResultType(MATRIX)
         for entry in self.entries.values():
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
@@ -568,11 +571,20 @@ class Generator(Frame):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
         self.modifyStates()
 
+    def allZeros(self):
+        if self.resultType.get() == IDENTITY_MATRIX:
+            self.setResultType(MATRIX)
+        for entry in self.entries.values():
+            setEntry(entry, 0)
+        self.modifyStates()
+
     def oneToN(self):
         row = self.getRow()
         col = self.getCol()
         if not row or not col or not self.entries:
             return
+        if self.resultType.get() == IDENTITY_MATRIX:
+            self.setResultType(MATRIX)
         for i in range(row * col):
             setEntry(self.entries[divmod(i, row)], i + 1)
         self.modifyStates()
@@ -639,7 +651,7 @@ class Generator(Frame):
     def sort(self):
         row = self.getRow()
         col = self.getCol()
-        if not row or not col or not self.entries:
+        if not row or not col or not self.entries or self.resultType.get() == IDENTITY_MATRIX:
             return
         values = sorted([eval(entry.get()) if entry.get().isnumeric() else entry.get() for entry in self.entries.values()])
         for i in range(row * col):
@@ -649,7 +661,7 @@ class Generator(Frame):
     def reverse(self):
         row = self.getRow()
         col = self.getCol()
-        if not row or not col or not self.entries:
+        if not row or not col or not self.entries or self.resultType.get() == IDENTITY_MATRIX:
             return
         for i in range(row * col // 2):
             r, c = divmod(i, row)
@@ -834,7 +846,10 @@ class Generator(Frame):
         self.statePointer = len(self.states) - 1
 
     def getFocusEntry(self):
-        return int(find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
+        try:
+            return int(find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
+        except:
+            return 0
 
 root = Tk()
 gui = Generator(root)

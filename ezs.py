@@ -429,7 +429,7 @@ def get24(a, b = -1, c = -1, d = -1):
 def permutation(n, m):
     '''factorial(n)/factorial(n-m)
         n!/(n-m)!'''
-    return factorial(n)//factorial(n-m)
+    return factorial(n) // factorial(n-m)
 
 ##abbreviation
 a = permutation
