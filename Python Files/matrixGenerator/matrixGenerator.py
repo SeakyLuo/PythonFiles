@@ -392,7 +392,10 @@ class Generator(Frame):
     def moveFocus(self, event):
         key = event.keysym
         move = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}
-        if type(event.widget) != Entry or key not in move or (key == LEFT and event.widget.index(INSERT) > 0) or (key == RIGHT and event.widget.index(INSERT) == len(event.widget.get()) - 1):
+        cursor_index = event.widget.index(INSERT)
+        if type(event.widget) != Entry or key not in move or \
+           (key == LEFT and cursor_index > 0) or \
+           (key == RIGHT and cursor_index < len(event.widget.get())):
             return
         x, y = move[key]
         info = event.widget.grid_info()
@@ -403,19 +406,20 @@ class Generator(Frame):
             c += y
             if r == self.maxRows:
                 r = 0
-                if self.entries:
-                    c = (c + 1) % self.maxCols
+                c = (c + 1) % self.maxCols if self.entries else c
             elif r == -1:
                 r = self.maxRows - 1
-                if self.entries:
-                    c = (c - 1) % self.maxCols
+                c = (c - 1) % self.maxCols if self.entries else c
             elif c == self.maxCols:
                 c = 0
+                r = (r + 1) % self.maxRows if self.entries else r
             elif c == -1:
                 c = self.maxCols - 1
+                r = (r - 1) % self.maxRows if self.entries else r
             w = self.findByGrid(r, c)
             if type(w) == Entry:
                 w.focus()
+                w.icursor("end" if key == LEFT else 0)
                 break
 
     def bindMoveFocus(self, entry):
