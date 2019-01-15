@@ -166,7 +166,7 @@ class Generator(Frame):
         self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda :self.settings.__setitem__(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
-                            SHOW_GENERATION_RESULT, COPY_CALCULATION_RESULT, 'After Generation')
+                            SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
         ## Settings Menu
         self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
