@@ -28,10 +28,11 @@ COLUMN_VECTOR = 'Column Vector'
 OVERRIGHTARROW = 'OverRightArrow'
 vectorOptions = [VECTOR, COLUMN_VECTOR, OVERRIGHTARROW]
 REMEMBER_SIZE = 'RememberSize'
-SHOW_DIALOG = 'ShowDialog'
+SHOW_RESULT = 'Show Result'
+SHOW_CALCULATION_RESULT = 'ShowCalculationResult'
+SHOW_GENERATION_RESULT = 'ShowGenerationResult'
 RESULT_TYPE = 'ResultType'
 RESULT_FORMAT = 'ResultFormat'
-LAST_USED_DROPDOWN = 'LastUsedDropdown'
 APPEND_START = 'Append Start'
 APPEND_END = 'Append End'
 FIND_VALUE = 'Find Value'
@@ -56,7 +57,11 @@ RANDOM_VAR = 'RandomVar'
 GENERATE = 'Generate'
 UNDO = 'Undo'
 REDO = 'Redo'
+
+## Settings
 settingsFile = 'settings.json'
+settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, \
+                  SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
 
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
@@ -79,6 +84,9 @@ class Generator(Frame):
 
         ## Settings
         self.settings = loads(fread(settingsFile)) if os.path.exists(settingsFile) else {}
+        for key in self.settings.copy():
+            if key not in settingOptions:
+                del self.settings[key]
 
         ## Generate Menus
         self.menu = Menu(self)
@@ -94,7 +102,7 @@ class Generator(Frame):
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.detMenu, self.calculateClearVar, \
                             lambda :self.settings.__setitem__(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
-                            'After Calculation')
+                            SHOW_CALCULATION_RESULT, 'After Calculation')
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
@@ -154,15 +162,12 @@ class Generator(Frame):
         self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda :self.settings.__setitem__(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
-                            'After Generation')
+                            SHOW_GENERATION_RESULT, 'After Generation')
         ## Settings Menu
         self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
                                           command = lambda :self.settings.__setitem__(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
-        self.showDialogVar = BooleanVar(self, value = self.settings.setdefault(SHOW_DIALOG, True))
-        self.settingsMenu.add_checkbutton(label = 'Show Dialog', variable = self.showDialogVar, \
-                                          command = lambda :self.settings.__setitem__(SHOW_DIALOG, self.showDialogVar.get()))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Result', 'Edit', 'Insert', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.generateMenu, self.settingsMenu]):
@@ -212,7 +217,6 @@ class Generator(Frame):
         self.master.bind('<Control-r>', lambda event: self.randomFill())
         self.master.bind('<Control-t>', lambda event: self.transpose())
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
-        self.master.bind('<Control-v>', lambda event: self.permutationVector())
         self.master.bind('<Control-y>', lambda event: self.redo())
         self.master.bind('<Control-z>', lambda event: self.undo())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
@@ -225,7 +229,6 @@ class Generator(Frame):
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
 
         ## Set Values
-        self.settings.setdefault(LAST_USED_DROPDOWN, LATEX)
         self.settings.setdefault(RANDOM_MIN, 1)
         self.settings.setdefault(RANDOM_MAX, maxSize)
         self.settings.setdefault(RANDOM_VAR, 'x')
@@ -259,7 +262,6 @@ class Generator(Frame):
 
     def onResultTypeChange(self):
         resultType = self.resultType.get()
-        self.settings[LAST_USED_DROPDOWN] = RESULT_TYPE
         self.settings[RESULT_TYPE] = resultType
         row = self.getRow()
         col = self.getCol()
@@ -291,7 +293,6 @@ class Generator(Frame):
         self.onResultFormatChange()
 
     def onResultFormatChange(self):
-        self.settings[LAST_USED_DROPDOWN] = RESULT_FORMAT
         self.settings[RESULT_FORMAT] = self.resultFormat.get()
 
     def onRowColChange(self, event):
@@ -355,7 +356,7 @@ class Generator(Frame):
                                            prompt = 'Multiply Each Entry By', \
                                            minvalue = -maxSize, \
                                            maxvalue = maxSize)
-        if not multiplier or multiplier == 1:
+        if multiplier == None or multiplier == 1:
             return
         for entry in self.entries.values():
             text = entry.get()
@@ -601,7 +602,7 @@ class Generator(Frame):
                 if len(result) > 5:
                     messagebox.showerror('Error', 'Variable too long')
                 elif not result[0].isalpha():
-                    messagebox.showerror('Error', 'The 1st letter should be alphabetical')
+                    messagebox.showerror('Error', 'The first letter should be alphabetical')
                 else:
                     self.settings[RANDOM_VAR] = result
                     return
@@ -610,10 +611,10 @@ class Generator(Frame):
             lower = -100 if isMin else self.settings[RANDOM_MIN] + 1
             upper = self.settings[RANDOM_MAX] - 1 if isMin else 100
             result = simpledialog.askinteger(title = 'Set Random', \
-                                            prompt = f'Input an Integer between {lower} and {upper}', \
-                                            initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
-                                            minvalue = lower, maxvalue = upper)
-            if result:
+                                             prompt = f'Input an Integer between {lower} and {upper}', \
+                                             initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
+                                             minvalue = lower, maxvalue = upper)
+            if result != None:
                 self.settings[RANDOM_MIN if isMin else RANDOM_MAX] = result
 
     def randomFill(self):
@@ -734,7 +735,7 @@ class Generator(Frame):
             # result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
             copyToClipboard(str_result)
-            if self.settings[SHOW_DIALOG]:
+            if self.settings[SHOW_CALCULATION_RESULT]:
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
             clearOption = self.calculateClearVar.get()
             if clearOption == CLEAR_ENTRIES:
@@ -745,8 +746,12 @@ class Generator(Frame):
         except ValueError:
             messagebox.showerror(title = 'Error', message = 'Numerical Entries Only')
 
-    def setupClearMenu(self, master, variable, command, label = 'Clear Options'):
+    def setupClearMenu(self, master, variable, command, settingsOption, label = 'Clear Options'):
         clearMenu = Menu(master = master, tearoff = False)
+        showDialogVar = BooleanVar(self, value = self.settings.setdefault(settingsOption, True))
+        clearMenu.add_checkbutton(label = SHOW_RESULT, variable = showDialogVar, \
+                                  command = lambda :self.settings.__setitem__(settingsOption, showDialogVar.get()))
+        clearMenu.add_separator()
         for option in clearOptions:
             clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)
         variable.set(self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
@@ -794,7 +799,7 @@ class Generator(Frame):
         elif resultFormat == ARRAY:
             result = ezs.mw(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), False)
         copyToClipboard(result)
-        if self.settings[SHOW_DIALOG]:
+        if self.settings[SHOW_GENERATION_RESULT]:
             messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
         clearOption = self.settings[GENERATE_CLEAR_OPTION]
         if clearOption == CLEAR_ENTRIES:
