@@ -753,26 +753,28 @@ class Generator(Frame):
         row = self.getRow()
         col = self.getCol()
         if not row or not col or not self.entries:
-            return
+            return 'break'
         if self.resultType.get() == IDENTITY_MATRIX:
             self.setResultType(MATRIX)
         values = sorted([eval(entry.get()) if entry.get().isnumeric() else entry.get() for entry in self.entries.values()])
         for i in range(row * col):
-            setEntry(self.entries[divmod(i, row)], values[i])
+            setEntry(self.entries[divmod(i, col)], values[i])
         self.modifyStates()
+        return 'break'
 
     def reverse(self):
         row = self.getRow()
         col = self.getCol()
         if not row or not col or not self.entries or self.resultType.get() == IDENTITY_MATRIX:
-            return
+            return 'break'
         for i in range(row * col // 2):
-            r, c = divmod(i, row)
+            r, c = divmod(i, col)
             e1, e2 = self.entries[(r, c)], self.entries[(row - r - 1, col - c - 1)]
             t1, t2 = e2.get(), e1.get()
             setEntry(e1, t1)
             setEntry(e2, t2)
         self.modifyStates()
+        return 'break'
 
     def reshape(self):
         if self.resultType.get() in [DETERMINANT, IDENTITY_MATRIX]:
