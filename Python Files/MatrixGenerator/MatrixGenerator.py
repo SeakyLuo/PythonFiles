@@ -14,6 +14,8 @@ maxRandomVarLength = 10
 minValue = -100
 maxValue = 100
 
+defaultVar = 'x'
+
 MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX = 'Matrix', 'Determinant', 'Vector', 'Identity Matrix'
 resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
 LATEX, ARRAY = 'LaTeX', 'Array'
@@ -276,7 +278,7 @@ class Generator(Frame):
         ## Set Values
         self.settings.setdefault(RANDOM_MIN, 1)
         self.settings.setdefault(RANDOM_MAX, maxSize)
-        self.settings.setdefault(RANDOM_VAR, 'x')
+        self.settings.setdefault(RANDOM_VAR, defaultVar)
         self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
         register(lambda: fwrite(settingsFile, dumps(self.settings)))
@@ -507,9 +509,10 @@ class Generator(Frame):
                 return VECTOR
             else:
                 return IDENTITY_MATRIX if isIdentity(matrix) else MATRIX
+        result = ''
         while True:
             try:
-                result = simpledialog.askstring(title = 'Insert', prompt = f'Input Your Matrix in {fromFormat} Form')
+                result = simpledialog.askstring(title = 'Insert', prompt = f'Input Your Matrix in {fromFormat} Form', initialvalue = result)
                 if not result:
                     return
                 if fromFormat == LATEX:
@@ -539,6 +542,7 @@ class Generator(Frame):
                 return
             except:
                 messagebox.showerror(title = 'Error', message = 'Invalid Input')
+        self.modifyStates()
 
     def switchResultType(self, move):
         self.setResultType(resultTypeOptions[(resultTypeOptions.index(self.resultType.get()) + move) % len(resultTypeOptions)])
@@ -566,7 +570,6 @@ class Generator(Frame):
         for entry in self.entries.values():
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
-
 
     def find(self, target):
         result = ''
@@ -749,8 +752,10 @@ class Generator(Frame):
     def sort(self):
         row = self.getRow()
         col = self.getCol()
-        if not row or not col or not self.entries or self.resultType.get() == IDENTITY_MATRIX:
+        if not row or not col or not self.entries:
             return
+        if self.resultType.get() == IDENTITY_MATRIX:
+            self.setResultType(MATRIX)
         values = sorted([eval(entry.get()) if entry.get().isnumeric() else entry.get() for entry in self.entries.values()])
         for i in range(row * col):
             setEntry(self.entries[divmod(i, row)], values[i])
@@ -806,9 +811,9 @@ class Generator(Frame):
         isIdentity = self.resultType.get() == IDENTITY_MATRIX
         for i, j in self.entries:
             if i < j if mode == LOWER else i > j:
-                setEntry(self.entries[(i ,j)], 0)
+                setEntry(self.entries[(i, j)], 0)
             elif isIdentity:
-                setEntry(self.entries[(i ,j)], 1)
+                setEntry(self.entries[(i, j)], 1)
         if isIdentity:
             self.setResultType(MATRIX)
         self.modifyStates()
