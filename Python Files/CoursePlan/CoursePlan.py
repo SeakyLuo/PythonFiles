@@ -12,7 +12,7 @@ def evaluateTime(time):
     '''Time format 12:30'''
     colon = time.find(':')
     h = eval(time[:colon])
-    if h<8:
+    if h < 8:
         h += 12
     m = time[colon+1:]
     if m[0] == '0':
@@ -100,7 +100,7 @@ class coursePlan(Frame):
               bd = 0, width = 2*self.labelWidth, height = 1).grid(row = len(self.boxList), column = 6, columnspan = 4, sticky = NSEW)
         sortButton = Button(self, text = 'Sort', command = self.sort)
         self.configureButton(sortButton, clbggclr)
-        sortButton.grid(row = len(self.boxList), column = 10)       
+        sortButton.grid(row = len(self.boxList), column = 10)
         dropAllButton = Button(self, text = 'DropAll', command = self.dropAll)
         self.configureButton(dropAllButton, clbggclr)
         dropAllButton.grid(row = len(self.boxList), column = 11)
@@ -245,7 +245,7 @@ class coursePlan(Frame):
             box.delete(0, END)
         self.focusOut('<FocusOut>')
         self.nameBox.focus()
-        
+
     def copy(self, button):
         index = evalInfo(button.grid_info()['row'])-len(self.boxList)-1
         info = self.courseInfo[index]
@@ -290,7 +290,7 @@ class coursePlan(Frame):
             for j, wid in enumerate(widgets):
                 wid.grid_forget()
                 wid.grid(row = rowNum, column = 6+j+(j != 0)*2, columnspan = 1+(j == 0)*2, sticky = NSEW)
-                
+
     def dropAll(self):
         for lst in self.courseLabels:
             for label in lst:
