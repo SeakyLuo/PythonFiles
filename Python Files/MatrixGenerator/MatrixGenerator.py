@@ -389,12 +389,14 @@ class Generator(Frame):
                 e.bind('<KeyRelease>', self.onEntryChange)
                 bindtags = e.bindtags()
                 e.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
-                e.grid(row = i + self.minRows, column = j, sticky = NSEW)
+                e.grid(row = self.minRows + i, column = j, sticky = NSEW)
                 self.entries[(i, j)] = e
         for i, j in self.entries.copy():
             if i not in range(row) or j not in range(col):
                 self.entries[(i, j)].grid_forget()
                 del self.entries[(i, j)]
+        self.maxRows = self.minRows + row
+        self.maxCols = max(self.minCols, col)
 
     def onEntryChange(self, event):
         resultType = self.resultType.get()
@@ -467,8 +469,7 @@ class Generator(Frame):
             return
         x, y = move[key]
         info = event.widget.grid_info()
-        r = info['row']
-        c = info['column']
+        r, c = info['row'], info['column']
         while True:
             r += x
             c += y
@@ -485,7 +486,9 @@ class Generator(Frame):
                 c = self.maxCols - 1
                 r = (r - 1) % self.maxRows if self.entries else r
             w = self.findByGrid(r, c)
-            if type(w) == Entry:
+            if w == event.widget:
+                break
+            elif type(w) == Entry and w['state'] != DISABLED:
                 w.focus()
                 w.icursor("end" if key == LEFT else 0)
                 break
