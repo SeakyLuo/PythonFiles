@@ -168,7 +168,7 @@ def similar(obj1, obj2, capital = True):
         len_o2 = len(o2)
         score = len_o2/len_o1
         if score == 1:
-            result = sum((i == j)+(i != j)*(i.lower() == j.lower())*0.9 for i, j in zip(o1, o2))/len_o1
+            result = sum((i == j)+(i != j)*(i.lower() == j.lower()) * 0.9 for i, j in zip(o1, o2)) / len_o1
             return eval(format(result, '.4f'))
         if len_o2 <= 15 and score > 0.6:
             ps = list(reversed(find(o2).power_set() + [o2]))
@@ -178,7 +178,7 @@ def similar(obj1, obj2, capital = True):
                 if sub in o1 and maxLen < subLen:
                     maxLen = subLen
                 try:
-                    if i < 2**len(o2) - 2 and maxLen > len(ps[i+1]):
+                    if i < 2 ** len(o2) - 2 and maxLen > len(ps[i + 1]):
                         break
                 except IndexError:
                     break
@@ -298,17 +298,17 @@ class have:
         return False
 
     def multiple(self, obj2):
-        '''Check whether self.obj is the multiple of obj2'''
+        '''Check whether obj is the multiple of obj2'''
         if self.type not in [str, list, tuple]:
             raise DataTypeError
         if self.type != type(obj2):
             raise Exception('Only data of the same type can be compared!')
-        length1 = len(l1)
-        length2 = len(l2)
-        if length1%length2 != 0:
+        length1 = len(obj)
+        length2 = len(obj2)
+        if length1 % length2:
             return False
         for i in range(0, length1, length2):
-            if l1[i:i+length2] != l2:
+            if obj[i:i + length2] != obj2:
                 return False
         return True
 
