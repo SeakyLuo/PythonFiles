@@ -5,7 +5,7 @@ from atexit import register
 from eztk import setEntry, clearEntry
 from random import randrange, shuffle
 from numpy import linalg
-from ez import fread, fwrite, copyToClipboard, py2pyw, find
+from ez import fread, fwrite, copyToClipboard, py2pyw, find, tryEval
 import ezs, os
 
 ## Static Variables
@@ -410,52 +410,60 @@ class Generator(Frame):
         self.modifyStates()
 
     def add(self):
-        result = simpledialog.askfloat(title = 'Multiply', prompt = 'Add a Value to Each Entry')
+        result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
         if not result:
             return
-        result = ezs.integer(result)
+        result = ezs.integer(tryEval(result))
         for entry in self.entries.values():
-            text = entry.get()
+            text = tryEval(entry.get())
             if not text:
                 new_text = text
-            elif text.isnumeric():
-                new_text = ezs.integer(eval(text) + result)
+            elif ezs.isNumeric(text) and ezs.isNumeric(result):
+                new_text = ezs.integer(text + result)
             else:
-                new_text = text + f' + {result}'
+                new_text = f'{text} + {result}'
             setEntry(entry, new_text)
         self.modifyStates()
 
     def multiply(self):
-        result = simpledialog.askfloat(title = 'Multiply', prompt = 'Multiply Each Entry By')
+        result = ezs.integer(tryEval(simpledialog.askstring(title = 'Multiply', prompt = 'Multiply Each Entry By')))
         if result == None or result == 1:
             return
         if result == 0:
             self.allZeros()
             return
+        isResultNumeric = ezs.isNumeric(result)
         for entry in self.entries.values():
-            text = entry.get()
-            if text.isnumeric():
-                new_text = ezs.integer(eval(text) * result)
-            else:
-                if '+' in text or '-' in text:
-                    result = ezs.integer(result)
-                    new_text = f'{result}({text})'
+            text = tryEval(entry.get())
+            isTextNumeric = ezs.isNumeric(text)
+            if isResultNumeric:
+                if isTextNumeric:
+                    new_text = ezs.integer(text * result)
                 else:
-                    coef = ''
-                    countDot = 0
-                    for ch in text:
-                        if ch.isnumeric():
-                            coef += ch
-                        elif ch == '.':
-                            if countDot == 1:
-                                coef = ''
+                    if '+' in text or '-' in text:
+                        new_text = f'{result}({text})'
+                    else:
+                        coef = ''
+                        countDot = 0
+                        for ch in text:
+                            if ch.isnumeric():
+                                coef += ch
+                            elif ch == '.':
+                                if countDot == 1:
+                                    coef = ''
+                                    break
+                                countDot = 1
+                                coef += ch
+                            else:
                                 break
-                            countDot = 1
-                            coef += ch
-                        else:
-                            break
-                    new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
-                               str(ezs.integer(result)) + text
+                        new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
+                                str(ezs.integer(result)) + text
+            else:
+                if '+' in result or '-' in result:
+                    new_text = f'{text}({result})'
+                else:
+                    new_text = f'{text}{result}'
+
             setEntry(entry, new_text)
         self.modifyStates()
 
@@ -961,10 +969,7 @@ class Generator(Frame):
             for j in range(c):
                 text = self.entries[(i, j)].get()
                 if evaluate:
-                    try:
-                        text = eval(text)
-                    except:
-                        pass
+                    text = tryEval(text)
                 entries.append(text)
         return entries
 

@@ -405,6 +405,9 @@ def integer(number):
     except:
         return number
 
+def isNumeric(obj):
+    return type(obj) in [int, float]
+
 def get24(a, b = -1, c = -1, d = -1):
     if 1000 <= a<10000 and b == c == d == -1:
         a, b, c, d = map(int, str(a))

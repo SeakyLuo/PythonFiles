@@ -8,6 +8,12 @@ from win32 import win32clipboard
 desktop = 'C:\\Users\\Seaky\\Desktop\\'
 DataTypeError = Exception('This data type is not supported!')
 
+def tryEval(string):
+    try:
+        return eval(string)
+    except:
+        return string
+
 def translate(string, to_l = 'zh', from_l = 'en'):
     if not string: return ''
     import urllib.request, urllib.parse
