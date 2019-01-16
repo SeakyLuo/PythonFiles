@@ -3,6 +3,7 @@ import random
 import datetime
 import os
 import time
+from win32 import win32clipboard
 
 desktop = 'C:\\Users\\Seaky\\Desktop\\'
 DataTypeError = Exception('This data type is not supported!')
@@ -50,7 +51,6 @@ def chdt():
 
 def copyToClipboard(text):
     ''' Copy text to clipboard'''
-    from win32 import win32clipboard
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
     win32clipboard.SetClipboardText(text)
@@ -77,10 +77,10 @@ def findFilePath(filename, path = ''):
         Find the first occurence only.
         Use smaller range to have faster searching speed.'''
     if path == '':
-        c = findPathFile(filename, 'C:\\')
+        c = findFilePath(filename, 'C:\\')
         if c:
             return c
-        d = findPathFile(filename, 'D:\\')
+        d = findFilePath(filename, 'D:\\')
         if d:
             return d
         return False
@@ -303,12 +303,12 @@ class have:
             raise DataTypeError
         if self.type != type(obj2):
             raise Exception('Only data of the same type can be compared!')
-        length1 = len(obj)
+        length1 = len(self.obj)
         length2 = len(obj2)
         if length1 % length2:
             return False
         for i in range(0, length1, length2):
-            if obj[i:i + length2] != obj2:
+            if self.obj[i:i + length2] != obj2:
                 return False
         return True
 
@@ -576,11 +576,11 @@ def createList(sort = False, reverse = False, string = False): # create same ele
             else:
                 lst.append(eval(item))
         break
-    listOrTupleOrSetOrDict = input('Please type your list, tuple, set or dict here. If you want no input just press the \'Enter\' button:\n>>> ')
-    if listOrTupleOrSetOrDict != '':
-        while type(eval(listOrTupleOrSet)) not in [list, tuple, set, dict]:
-            listOrTupleOrSetOrDict = input('Your input in not a list, tuple, set or dict! Please type again!\n>>> ')
-        lst.append(listOrTupleOrSetOrDict)
+    userInput = input('Please type your list, tuple, set or dict here. If you want no input just press the \'Enter\' button:\n>>> ')
+    if userInput:
+        while type(eval(userInput)) not in [list, tuple, set, dict]:
+            userInput = input('Your input in not a list, tuple, set or dict! Please type again!\n>>> ')
+        lst.append(userInput)
     if sort:
         lst.sort()
     if reverse:
