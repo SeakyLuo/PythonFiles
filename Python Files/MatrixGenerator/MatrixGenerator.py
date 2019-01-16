@@ -28,9 +28,10 @@ clearOptions = [CLEAR_ENTRIES, CLEAR_ALL, NONE]
 GENERATE_CLEAR_OPTION = 'GenerateClearOption'
 CALCULATE_CLEAR_OPTION = 'CalculateClearOption'
 VECTOR_OPTION = 'VectorOption'
+ARRAY_VECTOR = 'ArrayVector'
 COLUMN_VECTOR = 'Column Vector'
 OVERRIGHTARROW = 'OverRightArrow'
-vectorOptions = [VECTOR, COLUMN_VECTOR, OVERRIGHTARROW]
+vectorOptions = [COLUMN_VECTOR, OVERRIGHTARROW,  VECTOR]
 REMEMBER_SIZE = 'RememberSize'
 SHOW_RESULT = 'Show Result'
 SHOW_CALCULATION_RESULT = 'ShowCalculationResult'
@@ -132,6 +133,10 @@ class Generator(Frame):
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
+        self.arrayVecVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_VECTOR, False))
+        self.vecOptionMenu.add_checkbutton(label = 'Array Vector', variable = self.arrayVecVar, \
+                                           command = lambda: self.settings.__setitem__(ARRAY_VECTOR, self.arrayVecVar.get()))
+        self.vecOptionMenu.add_separator()
         self.vecOptionVar = StringVar(self)
         for option in vectorOptions:
             self.vecOptionMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
@@ -198,7 +203,7 @@ class Generator(Frame):
         self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
-                                          command = lambda :self.settings.__setitem__(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
+                                          command = lambda: self.settings.__setitem__(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Result', 'Edit', 'Insert', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.generateMenu, self.settingsMenu]):
@@ -430,21 +435,25 @@ class Generator(Frame):
             if text.isnumeric():
                 new_text = ezs.integer(eval(text) * result)
             else:
-                coef = ''
-                countDot = 0
-                for ch in text:
-                    if ch.isnumeric():
-                        coef += ch
-                    elif ch == '.':
-                        if countDot == 1:
-                            coef = ''
+                if '+' in text or '-' in text:
+                    result = ezs.integer(result)
+                    new_text = f'{result}({text})'
+                else:
+                    coef = ''
+                    countDot = 0
+                    for ch in text:
+                        if ch.isnumeric():
+                            coef += ch
+                        elif ch == '.':
+                            if countDot == 1:
+                                coef = ''
+                                break
+                            countDot = 1
+                            coef += ch
+                        else:
                             break
-                        countDot = 1
-                        coef += ch
-                    else:
-                        break
-                new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
-                           str(ezs.integer(result)) + text
+                    new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
+                               str(ezs.integer(result)) + text
             setEntry(entry, new_text)
         self.modifyStates()
 
@@ -756,7 +765,7 @@ class Generator(Frame):
             return 'break'
         if self.resultType.get() == IDENTITY_MATRIX:
             self.setResultType(MATRIX)
-        values = sorted([eval(entry.get()) if entry.get().isnumeric() else entry.get() for entry in self.entries.values()])
+        values = sorted(self.collectEntries(row, col))
         for i in range(row * col):
             setEntry(self.entries[divmod(i, col)], values[i])
         self.modifyStates()
@@ -924,11 +933,14 @@ class Generator(Frame):
         if resultFormat == LATEX:
             vecOption = self.vecOptionVar.get()
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
-                result = ezs.vl(','.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)), vecOption == OVERRIGHTARROW)
+                result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)))
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)))
         elif resultFormat == ARRAY:
-            result = ezs.ma(r, c, ' '.join(self.entries[(i, j)].get() for i in range(r) for j in range(c)))
+            if resultType == VECTOR and self.settings[ARRAY_VECTOR]:
+                result = str(self.collectEntries(r, c))
+            else:
+                result = ezs.ma(r, c, ' '.join(self.collectEntries(r, c, False)))
         if self.settings[COPY_GENERATION_RESULT]:
             copyToClipboard(result)
         if self.settings[SHOW_GENERATION_RESULT]:
@@ -939,6 +951,19 @@ class Generator(Frame):
         elif clearOption == CLEAR_ALL:
             self.clear(1)
         return result
+
+    def collectEntries(self, r, c, evaluate = True):
+        entries = []
+        for i in range(r):
+            for j in range(c):
+                text = self.entries[(i, j)].get()
+                if evaluate:
+                    try:
+                        text = eval(text)
+                    except:
+                        pass
+                entries.append(text)
+        return entries
 
     def undo(self):
         if not self.statePointer:
