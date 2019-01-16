@@ -509,9 +509,7 @@ class Generator(Frame):
                 return IDENTITY_MATRIX if isIdentity(matrix) else MATRIX
         while True:
             try:
-                title = 'Insert'
-                prompt = f'Input Your Matrix in {fromFormat} Form'
-                result = simpledialog.askstring(title = title, prompt = prompt)
+                result = simpledialog.askstring(title = 'Insert', prompt = f'Input Your Matrix in {fromFormat} Form')
                 if not result:
                     return
                 if fromFormat == LATEX:
