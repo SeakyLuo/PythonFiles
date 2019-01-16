@@ -13,7 +13,7 @@ def translate(string, to_l = 'zh', from_l = 'en'):
     header = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
     flag = 'class = "t0">'
     query = urllib.parse.quote(string, encoding = 'utf-8')
-    url = "https://translate.google.cn/m?hl = %s&sl = %s&q = %s" % (to_l, from_l, query)
+    url = "https://translate.google.cn/m?hl=%s&sl=%s&q=%s" % (to_l, from_l, query)
     request = urllib.request.Request(url, headers = header)
     page = urllib.request.urlopen(request).read().decode('utf-8')
     target = page[page.find(flag) + len(flag):]
@@ -323,7 +323,7 @@ class find:
         else:
             self.obj = obj
         self.empty = self.obj.__new__(self.type)
-            
+
     def after(self, occurrence):
         '''Return the obj after the occurrence.'''
         if self.type == str:
