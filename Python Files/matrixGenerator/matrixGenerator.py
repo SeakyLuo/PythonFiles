@@ -64,6 +64,20 @@ RANDOM_VAR = 'RandomVar'
 GENERATE = 'Generate'
 UNDO = 'Undo'
 REDO = 'Redo'
+SORT = 'Sort'
+REVERSE = 'Reverse'
+RESHAPE = 'Reshape'
+LOWER = 'Lower'
+UPPER = 'Upper'
+LOWER_TRIANGULAR = 'Lower Triangle'
+UPPER_TRIANGULAR = 'Upper Triangle'
+LOWER_CASE = 'Lower Case'
+UPPER_CASE = 'Upper Case'
+ALL_ZEROS = 'All Zeros'
+ONE_TO_N = '1 to N'
+A_TO_Z = 'A to Z'
+FROM_ARRAY = 'From ' + ARRAY
+FROM_LATEX = 'From ' + LATEX
 
 ## Settings
 settingsFile = 'settings.json'
@@ -73,7 +87,9 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
               MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', \
-              CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', CLEAR_ALL: 'Ctrl+Shift+A', FIND_LOCATION: 'Ctrl+Shift+F'}
+              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
+              ALL_ZEROS: 'Alt+0', ONE_TO_N: 'Alt+1', A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', UPPER_CASE: 'Alt+U', ADD: 'Alt+=', \
+              FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+[, Ctrl+]'), \
                             otherShortcutFormatter('Switch Result Format', 'Alt+[, Alt+]')])
@@ -100,11 +116,11 @@ class Generator(Frame):
         ## Result Menu
         self.resultMenu = Menu(self)
         self.matMenu = Menu(self)
-        self.matMenu.add_command(label = ADD, command = self.add)
+        self.matMenu.add_command(label = ADD, accelerator = shortcuts[ADD], command = self.add)
         self.matMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.matMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
-        self.matMenu.add_command(label = 'Lower Triangular', command = lambda: self.triangularMatrix(0))
-        self.matMenu.add_command(label = 'Upper Triangular', command = lambda: self.triangularMatrix(1))
+        self.matMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
+        self.matMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
         self.detMenu = Menu(self)
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
@@ -135,29 +151,29 @@ class Generator(Frame):
         self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
         self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = 'Lower Case', command = lambda: self.toCase('l'))
-        self.editMenu.add_command(label = 'Upper Case', command = lambda: self.toCase('u'))
+        self.editMenu.add_command(label = LOWER_CASE, accelerator = shortcuts[LOWER_CASE], command = lambda: self.toCase(LOWER_CASE))
+        self.editMenu.add_command(label = UPPER_CASE, accelerator = shortcuts[UPPER_CASE], command = lambda: self.toCase(UPPER_CASE))
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = 'Sort', command = self.sort)
-        self.editMenu.add_command(label = 'Reverse', command = self.reverse)
-        self.editMenu.add_command(label = 'Reshape', command = self.reshape)
+        self.editMenu.add_command(label = SORT, accelerator = shortcuts[SORT], command = self.sort)
+        self.editMenu.add_command(label = REVERSE, accelerator = shortcuts[REVERSE], command = self.reverse)
+        self.editMenu.add_command(label = RESHAPE, accelerator = shortcuts[RESHAPE], command = self.reshape)
         self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
         self.insertMenu = Menu(self)
-        self.insertMenu.add_command(label = APPEND_START, command = lambda: self.append(APPEND_START))
-        self.insertMenu.add_command(label = APPEND_END, command = lambda: self.append(APPEND_END))
+        self.insertMenu.add_command(label = APPEND_START, accelerator = shortcuts[APPEND_START], command = lambda: self.append(APPEND_START))
+        self.insertMenu.add_command(label = APPEND_END, accelerator = shortcuts[APPEND_END], command = lambda: self.append(APPEND_END))
         self.insertMenu.add_separator()
-        self.insertMenu.add_command(label = 'From ' + LATEX, command = lambda: self.insert(LATEX))
-        self.insertMenu.add_command(label = 'From ' + ARRAY, command = lambda: self.insert(ARRAY))
+        self.insertMenu.add_command(label = FROM_LATEX, accelerator = shortcuts[FROM_LATEX], command = lambda: self.insert(LATEX))
+        self.insertMenu.add_command(label = FROM_ARRAY, accelerator = shortcuts[FROM_ARRAY], command = lambda: self.insert(ARRAY))
         self.insertMenu.add_separator()
-        self.insertMenu.add_command(label = 'All Zeros', command = self.allZeros)
-        self.insertMenu.add_command(label = '1 to N', command = self.oneToN)
-        self.insertMenu.add_command(label = 'A to Z', command = self.aToZ)
+        self.insertMenu.add_command(label = ALL_ZEROS, accelerator = shortcuts[ALL_ZEROS], command = self.allZeros)
+        self.insertMenu.add_command(label = ONE_TO_N, accelerator = shortcuts[ONE_TO_N], command = self.oneToN)
+        self.insertMenu.add_command(label = A_TO_Z, accelerator = shortcuts[A_TO_Z], command = self.aToZ)
         self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
-        self.randomMenu.add_command(label = RANDOM_REORDER, command = self.randomReorder)
+        self.randomMenu.add_command(label = RANDOM_REORDER, accelerator = shortcuts[RANDOM_REORDER], command = self.randomReorder)
         self.randomMenu.add_separator()
         self.randomMatrixOption = StringVar(self)
         for option in randomMatrixOptions:
@@ -226,7 +242,7 @@ class Generator(Frame):
         self.master.bind('<Control-f>', lambda event: self.find(FIND_VALUE))
         self.master.bind('<Control-h>', lambda event: self.replace())
         self.master.bind('<Control-m>', lambda event: self.multiply())
-        self.master.bind('<Control-p>', lambda event: self.permutationVector() if self.resultType.get() == VECTOR else self.permutationMatrix())
+        self.master.bind('<Control-p>', lambda event: self.permutationVector() if self.resultType.get() == VECTOR or self.getCol() == 1 else self.permutationMatrix())
         self.master.bind('<Control-r>', lambda event: self.randomFill())
         self.master.bind('<Control-t>', lambda event: self.transpose())
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
@@ -238,8 +254,24 @@ class Generator(Frame):
         self.master.bind('<Control-C>', lambda event: self.calculateDet())
         self.master.bind('<Control-E>', lambda event: self.clear(0))
         self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
+        self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
+        self.master.bind('<Control-R>', lambda event: self.randomReorder())
+        self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
+        self.master.bind('<Alt-0>', lambda event: self.allZeros())
+        self.master.bind('<Alt-1>', lambda event: self.oneToN())
+        self.master.bind('<Alt-a>', lambda event: self.aToZ())
+        self.master.bind('<Alt-e>', lambda event: self.append(APPEND_END))
+        self.master.bind('<Alt-l>', lambda event: self.toCase(LOWER))
+        self.master.bind('<Alt-r>', lambda event: self.reshape())
+        self.master.bind('<Alt-s>', lambda event: self.append(APPEND_START))
+        self.master.bind('<Alt-u>', lambda event: self.toCase(UPPER))
+        self.master.bind('<Alt-=>', lambda event: self.add())
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
+        self.master.bind('<Alt-A>', lambda event: self.insert(ARRAY))
+        self.master.bind('<Alt-L>', lambda event: self.insert(LATEX))
+        self.master.bind('<Alt-R>', lambda event: self.reverse())
+        self.master.bind('<Alt-S>', lambda event: self.sort())
 
         ## Set Values
         self.settings.setdefault(RANDOM_MIN, 1)
@@ -375,7 +407,9 @@ class Generator(Frame):
         result = ezs.integer(result)
         for entry in self.entries.values():
             text = entry.get()
-            if text.isnumeric():
+            if not text:
+                new_text = text
+            elif text.isnumeric():
                 new_text = ezs.integer(eval(text) + result)
             else:
                 new_text = text + f' + {result}'
@@ -709,9 +743,9 @@ class Generator(Frame):
         self.modifyStates()
 
     def toCase(self, case):
-        '''Case: "l" for lower "u" for upper'''
+        '''Case: LOWER or UPPER'''
         for entry in self.entries.values():
-            setEntry(entry, entry.get().lower() if case == 'l' else entry.get().upper())
+            setEntry(entry, entry.get().lower() if case == LOWER else entry.get().upper())
         self.modifyStates()
 
     def sort(self):
@@ -771,10 +805,9 @@ class Generator(Frame):
         self.modifyStates()
 
     def triangularMatrix(self, mode):
-        '''Mode: 0 for lower, 1 for upper'''
         isIdentity = self.resultType.get() == IDENTITY_MATRIX
         for i, j in self.entries:
-            if i < j if mode == 0 else i > j:
+            if i < j if mode == LOWER else i > j:
                 setEntry(self.entries[(i ,j)], 0)
             elif isIdentity:
                 setEntry(self.entries[(i ,j)], 1)
