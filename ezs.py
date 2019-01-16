@@ -8,7 +8,7 @@ def npMatrixToLatex(matrix, printResult = True, copy = True):
     '''matrix can be any 2d iterable'''
     r = len(matrix)
     c = len(matrix[0])
-    result = ml(r, c, ' '.join(str(entry) for row in matrix for entry in row), False)
+    result = ml(r, c, ' '.join(str(entry) for row in matrix for entry in row))
     if copy:
         ez.cpc(result)
     if printResult:
@@ -57,7 +57,7 @@ def accurateCalculation(formula = '', scin = False):
 
     if formula:
         result = get_result()
-        if sn:
+        if scin:
             result = scin(result, 0)
         return result
     while True:
