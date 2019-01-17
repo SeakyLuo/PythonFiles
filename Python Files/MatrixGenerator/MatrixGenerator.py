@@ -549,11 +549,17 @@ class Generator(Frame):
                         matrix = [[i] for i in ez.find(result).between('{', '}').split(',')]
                         self.setResultType(VECTOR)
                 elif fromFormat == ARRAY:
-                    matrix = eval(result)
-                    if type(matrix) not in [list, tuple]:
-                        raise Exception()
+                    matrix = ez.tryEval(result)
+                    if type(matrix) == str:
+                        matrix = matrix.replace(',', ' ').split()
                     if matrix == ez.flatten(matrix):
                         matrix = [matrix]
+                    else:
+                        try:
+                            len(matrix)
+                            len(matrix[0])
+                        except:
+                            matrix = [[matrix]]
                     self.setResultType(getResultType(matrix))
                 else:
                     raise Exception()
