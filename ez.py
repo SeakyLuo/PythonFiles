@@ -42,10 +42,9 @@ class Settings:
 
     def load(self):
         try:
-            self.settings = loads(fread(self.settingsFile))
-        except (FileNotFoundError, TypeError):
+            self.settings = loads(fread(self.settingsFile, False))
+        except (FileNotFoundError, TypeError) as e:
             self.settings = {}
-        return self.settings
 
     def save(self):
         fwrite(self.settingsFile, dumps(self.settings))

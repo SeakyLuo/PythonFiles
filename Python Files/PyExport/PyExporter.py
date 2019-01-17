@@ -23,12 +23,11 @@ class Exporter(Frame):
         self.lastDirLabel['text'] = 'Last Used Directory:\n' + text
 
     def export(self):
-        file = filedialog.askopenfile(initialdir = self.settings[LAST_DIR], \
-                                      title = 'Select a Python File', \
-                                      filetypes = [('Python files','*.py')])
-        if file == None:
+        filename = filedialog.askopenfilename(initialdir = self.settings[LAST_DIR], \
+                                              title = 'Select a Python File', \
+                                              filetypes = [('Python files','*.py')])
+        if not filename:
             return
-        filename = file.name
         path = os.path.dirname(filename)
         self.settings[LAST_DIR] = path
         self.setLastDirLabel(path)
