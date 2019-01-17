@@ -3,6 +3,7 @@ import random
 import datetime
 import os
 import time
+import subprocess
 from win32 import win32clipboard
 
 desktop = 'C:\\Users\\Seaky\\Desktop\\'
@@ -30,21 +31,31 @@ def translate(string, to_l = 'zh', from_l = 'en'):
     target = sub(target, "&#39;", "'")
     return target
 
-def py2pyw(directory, reminder = False):
-    ''' Converts a py file or a folder of py files to pyw files.'''
+def handlepy(directory, func, reminder = False):
+    ''' Do something, meaning that func(directory), to a py file or a folder of py files.
+        func must has exactly one argument filename.
+        '''
     if os.path.isfile(directory) and endwith(directory, '.py'):
         if reminder:
             print('File detected')
-        fwrite(directory + 'w', fread(directory, False))
+        func(directory)
     elif os.path.isdir(directory):
         if reminder:
             print('Folder detected')
         for file in os.listdir(directory):
             if endwith(file, '.py'):
-                filename = os.path.join(directory, file)
-                fwrite(filename + 'w', fread(filename, False))
+                func(os.path.join(directory, file))
     else:
         raise Exception('Invalid directory!')
+
+def exportpy(directory, reminder = False):
+    '''Exports a GUI python app'''
+    handlepy(directory, func = lambda filename: subprocess.run(['pyinstaller', filename]), reminder = reminder)
+
+
+def py2pyw(directory, reminder = False):
+    ''' Converts a py file or a folder of py files to pyw files.'''
+    handlepy(directory, func = lambda filename: fwrite(filename + 'w', fread(filename, False)), reminder = reminder)
 
 def rmlnk(path = None):
     ''' Remove "- 快捷方式"'''

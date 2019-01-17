@@ -1057,3 +1057,4 @@ root.title('Matrix Generator')
 root.mainloop()
 
 ez.py2pyw(__file__)
+# ez.exportpy(__file__)
