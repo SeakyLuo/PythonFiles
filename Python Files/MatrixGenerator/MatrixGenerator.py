@@ -81,6 +81,7 @@ ONE_TO_N = '1 to N'
 A_TO_Z = 'A to Z'
 FROM_ARRAY = 'From ' + ARRAY
 FROM_LATEX = 'From ' + LATEX
+EXIT = 'Exit'
 
 ## Settings
 settingsFile = 'settings.json'
@@ -88,14 +89,14 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
                   SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
 
 ## Shortcuts
-shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
+shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', ADD: 'Ctrl+=', \
               CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
               ALL_ZEROS: 'Alt+0', ONE_TO_N: 'Alt+1', A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', UPPER_CASE: 'Alt+U', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
-otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+[, Ctrl+]'), \
-                            otherShortcutFormatter('Switch Result Format', 'Alt+[, Alt+]')])
+otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for command, shortcut in \
+                            [('Switch Result Type', 'Ctrl+[, Ctrl+]'), ('Switch Result Format', 'Alt+[, Alt+]'), ('Exit', 'Ctrl+W')]])
 
 class Generator(Frame):
     def __init__(self, master):
@@ -253,6 +254,7 @@ class Generator(Frame):
         self.master.bind('<Control-r>', lambda event: self.randomFill())
         self.master.bind('<Control-t>', lambda event: self.transpose())
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
+        self.master.bind('<Control-w>', lambda event: self.master.destroy())
         self.master.bind('<Control-y>', lambda event: self.redo())
         self.master.bind('<Control-z>', lambda event: self.undo())
         self.master.bind('<Control-=>', lambda event: self.add())
