@@ -90,13 +90,19 @@ def handlepy(directory, func, reminder = False):
     else:
         raise Exception('Invalid directory!')
 
-def exportpy(directory, reminder = False):
+def exportpy(directory, withConsole, reminder = False):
     '''Exports a GUI python app.'''
+    ## Add '-noconfirm' ?
+    path = os.path.dirname(directory)
+    args = ['pyinstaller', '--onefile', '--distpath', path, '--workpath', path, '--specpath', path, '--noconsole']
+    if not withConsole:
+        args.pop()
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
-                    args = (directory, lambda filename: subprocess.run(['pyinstaller', '--noconsole', filename]), reminder)).start()
+                     args = (directory, lambda filename: subprocess.run(args + [filename]), reminder)).start()
 
 def py2pyw(directory, reminder = False):
     ''' Converts a py file or a folder of py files to pyw files.'''
+    path = os.path.dirname(directory)
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
                      args = (directory, lambda filename: fwrite(filename + 'w', fread(filename, False)), reminder)).start()
 
@@ -166,7 +172,7 @@ def timer(func, iterations = 1000, *args):
     t = time.time()
     for i in range(int(iterations)):
         func(*args)
-    return time.time()-t
+    return time.time() - t
 
 def fread(filename, evaluate = True, coding = 'utf8'):
     '''Read the file that has the filename.
