@@ -5,9 +5,43 @@ import os
 import time
 import subprocess, threading
 from win32 import win32clipboard
+from atexit import register
+from json import loads, dumps
 
 desktop = 'C:\\Users\\Seaky\\Desktop\\'
 DataTypeError = Exception('This data type is not supported!')
+
+class Settings:
+    def __init__(self, file, settingsFileName = 'settings.json'):
+        self.path = os.path.dirname(file)
+        self.settingsFileName = settingsFileName
+        self.settingsFile = os.path.join(self.path, settingsFileName)
+        self.load()
+        register(self.save)
+
+    def setdefault(self, key, value):
+        return self.settings.setdefault(key, value)
+
+    def setitem(self, key, value):
+        self.__setitem__(key, value)
+
+    def setSettingOptions(self, settingOptions):
+        for key in self.settings.copy():
+            if key not in settingOptions:
+                del self.settings[key]
+
+    def __getitem__(self, key):
+        return self.settings[key]
+
+    def __setitem__(self, key, value):
+        self.settings[key] = value
+
+    def load(self):
+        self.settings = loads(fread(self.settingsFile)) if os.path.exists(self.settingsFile) else {}
+        return self.settings
+
+    def save(self):
+        fwrite(self.settingsFile, dumps(self.settings))
 
 def tryEval(string):
     '''Use eval() without dealing with exceptions.'''
