@@ -86,8 +86,8 @@ def handlepy(directory, func, reminder = False):
 
 def exportpy(directory, reminder = False):
     '''Exports a GUI python app'''
-    handlepy(directory, func = lambda filename: subprocess.run(['pyinstaller', '--noconsole', filename]), reminder = reminder)
-
+    threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
+                    args = (directory, lambda filename: subprocess.run(['pyinstaller', '--noconsole', filename]), reminder)).start()
 
 def py2pyw(directory, reminder = False):
     ''' Converts a py file or a folder of py files to pyw files.'''
