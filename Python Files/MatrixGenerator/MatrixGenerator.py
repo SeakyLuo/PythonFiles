@@ -5,8 +5,7 @@ from atexit import register
 from eztk import setEntry, clearEntry
 from random import randrange, shuffle
 from numpy import linalg
-from ez import fread, fwrite, copyToClipboard, py2pyw, find, tryEval
-import ezs, os
+import ez, ezs, os
 
 ## Static Variables
 maxSize = 15
@@ -110,7 +109,7 @@ class Generator(Frame):
         self.states = [] ## (resultType, entries, focusEntry)
 
         ## Settings
-        self.settings = loads(fread(settingsFile)) if os.path.exists(settingsFile) else {}
+        self.settings = loads(ez.fread(settingsFile)) if os.path.exists(settingsFile) else {}
         for key in self.settings.copy():
             if key not in settingOptions:
                 del self.settings[key]
@@ -288,7 +287,7 @@ class Generator(Frame):
         self.settings.setdefault(RANDOM_VAR, defaultVar)
         self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
-        register(lambda: fwrite(settingsFile, dumps(self.settings)))
+        register(lambda: ez.fwrite(settingsFile, dumps(self.settings)))
 
     def getRow(self):
         try:
@@ -415,9 +414,9 @@ class Generator(Frame):
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
         if not result:
             return
-        result = ezs.integer(tryEval(result))
+        result = ezs.integer(ez.tryEval(result))
         for entry in self.entries.values():
-            text = tryEval(entry.get())
+            text = ez.tryEval(entry.get())
             if not text:
                 new_text = result
             elif ezs.isNumeric(text) and ezs.isNumeric(result):
@@ -428,7 +427,7 @@ class Generator(Frame):
         self.modifyStates()
 
     def multiply(self):
-        result = ezs.integer(tryEval(simpledialog.askstring(title = 'Multiply', prompt = 'Multiply Each Entry By')))
+        result = ezs.integer(ez.tryEval(simpledialog.askstring(title = 'Multiply', prompt = 'Multiply Each Entry By')))
         if result == None or result == 1:
             return
         if result == 0:
@@ -436,7 +435,7 @@ class Generator(Frame):
             return
         isResultNumeric = ezs.isNumeric(result)
         for entry in self.entries.values():
-            text = tryEval(entry.get())
+            text = ez.tryEval(entry.get())
             if text:
                 isTextNumeric = ezs.isNumeric(text)
                 if isResultNumeric:
@@ -541,18 +540,20 @@ class Generator(Frame):
                     return
                 if fromFormat == LATEX:
                     if 'matrix' in result:
-                        matrix = [row.split('&') for row in find(result).between('}', '\\end').split('\\\\')]
+                        matrix = [row.split('&') for row in ez.find(result).between('}', '\\end').split('\\\\')]
                         if 'bmatrix' in result:
                             self.setResultType(getResultType(matrix))
                         elif 'vmatrix' in result:
                             self.setResultType(DETERMINANT)
                     else:
-                        matrix = [[i] for i in find(result).between('{', '}').split(',')]
+                        matrix = [[i] for i in ez.find(result).between('{', '}').split(',')]
                         self.setResultType(VECTOR)
                 elif fromFormat == ARRAY:
                     matrix = eval(result)
-                    if type(matrix) != list and type(matrix[0]) != list:
+                    if type(matrix) not in [list, tuple]:
                         raise Exception()
+                    if matrix == ez.flatten(matrix):
+                        matrix = [matrix]
                     self.setResultType(getResultType(matrix))
                 else:
                     raise Exception()
@@ -888,7 +889,7 @@ class Generator(Frame):
             # result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
             if self.settings[COPY_CALCULATION_RESULT]:
-                copyToClipboard(str_result)
+                ez.copyToClipboard(str_result)
             if self.settings[SHOW_CALCULATION_RESULT]:
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
             clearOption = self.calculateClearVar.get()
@@ -957,7 +958,7 @@ class Generator(Frame):
             else:
                 result = ezs.ma(r, c, ' '.join(self.collectEntries(r, c, False)))
         if self.settings[COPY_GENERATION_RESULT]:
-            copyToClipboard(result)
+            ez.copyToClipboard(result)
         if self.settings[SHOW_GENERATION_RESULT]:
             messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
         clearOption = self.settings[GENERATE_CLEAR_OPTION]
@@ -973,7 +974,7 @@ class Generator(Frame):
             for j in range(c):
                 text = self.entries[(i, j)].get()
                 if evaluate:
-                    text = tryEval(text)
+                    text = ez.tryEval(text)
                 entries.append(text)
         return entries
 
@@ -1020,7 +1021,7 @@ class Generator(Frame):
 
     def getFocusEntry(self):
         try:
-            return int(find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
+            return int(ez.find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
         except:
             return 0
 
@@ -1030,4 +1031,4 @@ gui.pack()
 root.title('Matrix Generator')
 root.mainloop()
 
-py2pyw(__file__)
+ez.py2pyw(__file__)
