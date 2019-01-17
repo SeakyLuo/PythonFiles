@@ -89,9 +89,9 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', \
-              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', \
+              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', ADD: 'Ctrl+=', \
               CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
-              ALL_ZEROS: 'Alt+0', ONE_TO_N: 'Alt+1', A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', UPPER_CASE: 'Alt+U', ADD: 'Alt+=', \
+              ALL_ZEROS: 'Alt+0', ONE_TO_N: 'Alt+1', A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', UPPER_CASE: 'Alt+U', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter('Switch Result Type', 'Ctrl+[, Ctrl+]'), \
@@ -255,6 +255,7 @@ class Generator(Frame):
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
         self.master.bind('<Control-y>', lambda event: self.redo())
         self.master.bind('<Control-z>', lambda event: self.undo())
+        self.master.bind('<Control-=>', lambda event: self.add())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
         self.master.bind('<Control-]>', lambda event: self.switchResultType(1))
         self.master.bind('<Control-A>', lambda event: self.clear(1))
@@ -272,7 +273,6 @@ class Generator(Frame):
         self.master.bind('<Alt-r>', lambda event: self.reshape())
         self.master.bind('<Alt-s>', lambda event: self.append(APPEND_START))
         self.master.bind('<Alt-u>', lambda event: self.toCase(UPPER))
-        self.master.bind('<Alt-=>', lambda event: self.add())
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
         self.master.bind('<Alt-A>', lambda event: self.insert(ARRAY))
@@ -417,7 +417,7 @@ class Generator(Frame):
         for entry in self.entries.values():
             text = tryEval(entry.get())
             if not text:
-                new_text = text
+                new_text = result
             elif ezs.isNumeric(text) and ezs.isNumeric(result):
                 new_text = ezs.integer(text + result)
             else:
@@ -435,35 +435,37 @@ class Generator(Frame):
         isResultNumeric = ezs.isNumeric(result)
         for entry in self.entries.values():
             text = tryEval(entry.get())
-            isTextNumeric = ezs.isNumeric(text)
-            if isResultNumeric:
-                if isTextNumeric:
-                    new_text = ezs.integer(text * result)
-                else:
-                    if '+' in text or '-' in text:
-                        new_text = f'{result}({text})'
+            if text:
+                isTextNumeric = ezs.isNumeric(text)
+                if isResultNumeric:
+                    if isTextNumeric:
+                        new_text = ezs.integer(text * result)
                     else:
-                        coef = ''
-                        countDot = 0
-                        for ch in text:
-                            if ch.isnumeric():
-                                coef += ch
-                            elif ch == '.':
-                                if countDot == 1:
-                                    coef = ''
+                        if '+' in text or '-' in text:
+                            new_text = f'{result}({text})'
+                        else:
+                            coef = ''
+                            countDot = 0
+                            for ch in text:
+                                if ch.isnumeric():
+                                    coef += ch
+                                elif ch == '.':
+                                    if countDot == 1:
+                                        coef = ''
+                                        break
+                                    countDot = 1
+                                    coef += ch
+                                else:
                                     break
-                                countDot = 1
-                                coef += ch
-                            else:
-                                break
-                        new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
-                                str(ezs.integer(result)) + text
-            else:
-                if '+' in result or '-' in result:
-                    new_text = f'{text}({result})'
+                            new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
+                                    str(ezs.integer(result)) + text
                 else:
-                    new_text = f'{text}{result}'
-
+                    if '+' in result or '-' in result:
+                        new_text = f'{text}({result})'
+                    else:
+                        new_text = f'{text}{result}'
+            else:
+                new_text = 0
             setEntry(entry, new_text)
         self.modifyStates()
 
@@ -1023,7 +1025,7 @@ class Generator(Frame):
 root = Tk()
 gui = Generator(root)
 gui.pack()
-root.title('Generator')
+root.title('Matrix Generator')
 root.mainloop()
 
 py2pyw(__file__)
