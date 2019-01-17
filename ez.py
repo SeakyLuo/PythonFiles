@@ -3,7 +3,7 @@ import random
 import datetime
 import os
 import time
-import subprocess
+import subprocess, threading
 from win32 import win32clipboard
 
 desktop = 'C:\\Users\\Seaky\\Desktop\\'
@@ -50,12 +50,13 @@ def handlepy(directory, func, reminder = False):
 
 def exportpy(directory, reminder = False):
     '''Exports a GUI python app'''
-    handlepy(directory, func = lambda filename: subprocess.run(['pyinstaller', filename]), reminder = reminder)
+    handlepy(directory, func = lambda filename: subprocess.run(['pyinstaller', '--noconsole', filename]), reminder = reminder)
 
 
 def py2pyw(directory, reminder = False):
     ''' Converts a py file or a folder of py files to pyw files.'''
-    handlepy(directory, func = lambda filename: fwrite(filename + 'w', fread(filename, False)), reminder = reminder)
+    threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
+                     args = (directory, lambda filename: fwrite(filename + 'w', fread(filename, False)), reminder)).start()
 
 def rmlnk(path = None):
     ''' Remove "- 快捷方式"'''

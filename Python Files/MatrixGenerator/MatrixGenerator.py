@@ -1051,10 +1051,8 @@ class Generator(Frame):
             return 0
 
 root = Tk()
-gui = Generator(root)
-gui.pack()
+app = Generator(root)
+app.pack()
 root.title('Matrix Generator')
-root.mainloop()
-
 ez.py2pyw(__file__)
-# ez.exportpy(__file__)
+root.mainloop()

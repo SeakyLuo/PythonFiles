@@ -44,7 +44,7 @@ def weekIndex(datetime):
         weekindex += 1
     return weekindex
 
-class coursePlan(Frame):
+class CoursePlan(Frame):
     def __init__(self,  master):
         Frame.__init__(self,  master)
         self['bg'] = 'MintCream'
@@ -375,10 +375,8 @@ class coursePlan(Frame):
             self.instructorBox['fg'] = 'grey39'
 
 root = Tk()
-cp = coursePlan(root)
-cp.pack()
+app = CoursePlan(root)
+app.pack()
 root.title('Schedule')
-root.mainloop()
-
 ez.py2pyw(__file__)
-# ez.exportpy(__file__)
+root.mainloop()
