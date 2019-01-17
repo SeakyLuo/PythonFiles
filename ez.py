@@ -12,6 +12,7 @@ desktop = 'C:\\Users\\Seaky\\Desktop\\'
 DataTypeError = Exception('This data type is not supported!')
 
 class Settings:
+    '''Recommend passing __file__ to file'''
     def __init__(self, file, settingsFileName = 'settings.json'):
         self.path = os.path.dirname(file)
         self.settingsFileName = settingsFileName
@@ -30,6 +31,9 @@ class Settings:
             if key not in settingOptions:
                 del self.settings[key]
 
+    def get(self, key, default):
+        return self.settings.get(key, default)
+
     def __getitem__(self, key):
         return self.settings[key]
 
@@ -37,7 +41,10 @@ class Settings:
         self.settings[key] = value
 
     def load(self):
-        self.settings = loads(fread(self.settingsFile)) if os.path.exists(self.settingsFile) else {}
+        try:
+            self.settings = loads(fread(self.settingsFile))
+        except (FileNotFoundError, TypeError):
+            self.settings = {}
         return self.settings
 
     def save(self):
@@ -85,7 +92,7 @@ def handlepy(directory, func, reminder = False):
         raise Exception('Invalid directory!')
 
 def exportpy(directory, reminder = False):
-    '''Exports a GUI python app'''
+    '''Exports a GUI python app.'''
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
                     args = (directory, lambda filename: subprocess.run(['pyinstaller', '--noconsole', filename]), reminder)).start()
 

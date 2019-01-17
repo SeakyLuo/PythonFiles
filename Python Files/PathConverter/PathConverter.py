@@ -22,7 +22,7 @@ class Converter(Frame):
         self.pathOptionVar = StringVar(self)
         for i, option in enumerate(PATH_OPTIONS):
             Radiobutton(self, text = option, variable = self.pathOptionVar, value = option, \
-                              command = lambda: self.settings.setitem(PATH_OPTION, self.pathOptionVar.get())).grid(row = 0, column = i + 1)
+                              command = self.onRadioChange).grid(row = 0, column = i + 1)
         self.pathOptionVar.set(self.settings.setdefault(PATH_OPTION, PATH_OPTIONS[0]))
         self.inputLabel = Label(self, text = 'Input:')
         self.outputLabel = Label(self, text = 'Output:')
@@ -33,10 +33,16 @@ class Converter(Frame):
         for i, (label, entry, var) in enumerate(zip([self.inputLabel, self.outputLabel], [self.inputEntry, self.outputEntry], [self.inputVar, self.outputVar])):
             label.grid(row = i + 1, column = 0)
             entry.grid(row = i + 1, column = 1, columnspan = 2)
-            var.trace('w', lambda *arg: self.onEntryChange())
+            var.trace('w', lambda *arg: self.onChange())
 
-    def onEntryChange(self):
+    def onRadioChange(self):
+        self.settings[PATH_OPTION] = self.pathOptionVar.get()
+        self.onChange()
+
+    def onChange(self):
         text = self.inputEntry.get().replace('\\', self.settings[PATH_OPTION])
+        if not text:
+            return
         setEntry(self.outputEntry, text)
         if self.settings[AUTO_COPY]:
             ez.copyToClipboard(text)
