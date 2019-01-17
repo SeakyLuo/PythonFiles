@@ -99,8 +99,8 @@ otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for comman
 
 class Generator(Frame):
     def __init__(self, master):
-        Frame.__init__(self, master)
         ## init variables
+        Frame.__init__(self, master)
         self.master = master
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4

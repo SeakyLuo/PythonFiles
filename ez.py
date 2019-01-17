@@ -44,6 +44,8 @@ def handlepy(directory, func, reminder = False):
             print('Folder detected')
         for file in os.listdir(directory):
             if endwith(file, '.py'):
+                if reminder:
+                    print(file)
                 func(os.path.join(directory, file))
     else:
         raise Exception('Invalid directory!')
