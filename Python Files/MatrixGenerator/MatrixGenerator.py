@@ -730,7 +730,6 @@ class Generator(Frame):
 
     def randomFill(self):
         resultType = self.resultType.get()
-        ## Use ezs random matrix instead
         row = self.getRow()
         col = self.getCol()
         isIdentity = resultType == IDENTITY_MATRIX
@@ -744,7 +743,7 @@ class Generator(Frame):
                 row = col = randrange(maxSize) + 1
             elif resultType == VECTOR:
                 row = randrange(maxSize) + 1
-            elif resultType == IDENTITY_MATRIX:
+            elif isIdentity:
                 row = col = randrange(maxSize) + 1
             self.setRowCol(row, col)
             self.generateEntries(row, col)
@@ -752,19 +751,20 @@ class Generator(Frame):
             self.fillIdentityMatrix()
         else:
             option = self.settings[RANDOM_MATRIX_OPTION]
+            if option == RANDOM_INT_MATRIX:
+                setEntryFunc = lambda entry: setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+            elif option == RANDOM_VAR_MATRIX:
+                setEntryFunc = lambda entry: setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
+            elif option == RANDOM_MULTIVAR_MATRIX:
+                setEntryFunc = lambda entry: setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
             hasEmpty = False
             for entry in self.entries.values():
                 if not entry.get():
                     hasEmpty = True
-                    setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+                    setEntryFunc(entry)
             if not hasEmpty:
                 for entry in self.entries.values():
-                    if option == RANDOM_INT_MATRIX:
-                        setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
-                    elif option == RANDOM_VAR_MATRIX:
-                        setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
-                    elif option == RANDOM_MULTIVAR_MATRIX:
-                        setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
+                    setEntryFunc(entry)
         self.modifyStates()
 
     def randomReorder(self):
@@ -787,7 +787,26 @@ class Generator(Frame):
             return 'break'
         if self.resultType.get() == IDENTITY_MATRIX:
             self.setResultType(MATRIX)
-        values = sorted(self.collectEntries(row, col))
+        varFormat = True
+        vars = []
+        for i in range(row):
+            for j in range(col):
+                text = self.entries[(i, j)].get()
+                fText = ez.find(text)
+                varNumber = ez.tryEval(fText.between('_{', '}'))
+                varType = type(varNumber)
+                if varType == str:
+                    varFormat = False
+                    break
+                elif varType == int:
+                    vars.append((fText.before('_'), varNumber))
+        if varFormat:
+            values = [f'{var}_' + '{' + str(number) + '}' for var, number in sorted(vars)]
+        else:
+            try:
+                values = sorted(self.collectEntries(row, col))
+            except:
+                values = sorted(self.collectEntries(row, col, False))
         for i in range(row * col):
             setEntry(self.entries[divmod(i, col)], values[i])
         self.modifyStates()

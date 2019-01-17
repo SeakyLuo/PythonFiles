@@ -9,12 +9,14 @@ desktop = 'C:\\Users\\Seaky\\Desktop\\'
 DataTypeError = Exception('This data type is not supported!')
 
 def tryEval(string):
+    '''Use eval() without dealing with exceptions.'''
     try:
         return eval(string)
     except:
         return string
 
 def translate(string, to_l = 'zh', from_l = 'en'):
+    '''Translate string from from_l language to to_l language'''
     if not string: return ''
     import urllib.request, urllib.parse
     header = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
@@ -147,7 +149,7 @@ def advancedSplit(obj, *sep):
         return obj.split(*sep)
     word = ''
     lst = []
-    for i, ch in enumerate(obj):
+    for ch in obj:
         word+= ch
         f = find(word).any(*sep)
         if f:
@@ -232,6 +234,7 @@ def predir():
     os.chdir(path[:find(path).last('\\')])
 
 class have:
+    '''A helper class which checks whether object contains something.'''
     def __init__(self, obj):
         self.support = [str, list, dict, frozenset, set, tuple]
         self.obj = obj
@@ -268,7 +271,7 @@ class have:
                 return True
         return False
 
-    def sub(self, element):
+    def in_sub(self, element):
         '''Check whether the element is in the subset of obj.'''
         if self.type == str:
             raise DataTypeError
@@ -319,6 +322,7 @@ class have:
         return True
 
 class find:
+    '''A helper class which finds something in the object.'''
     def __init__(self, obj):
         self.support = [str, list, dict, tuple, set]
         self.type = type(obj)
@@ -330,12 +334,20 @@ class find:
             self.obj = obj
         self.empty = self.obj.__new__(self.type)
 
+    def before(self, occurrence):
+        '''Return the obj before the occurrence.'''
+        if self.type == str:
+            return self.obj[:self.obj.index(occurrence)]
+        elif self.type in [list, tuple]:
+            return self.obj[:self.obj.index(occurrence)]
+        raise DataTypeError
+
     def after(self, occurrence):
         '''Return the obj after the occurrence.'''
         if self.type == str:
-            return self.obj[self.obj.index(occurrence)+len(occurrence):]
+            return self.obj[self.obj.index(occurrence) + len(occurrence):]
         elif self.type in [list, tuple]:
-            return self.obj[self.obj.index(occurrence)+1:]
+            return self.obj[self.obj.index(occurrence) + 1:]
         raise DataTypeError
 
     def all(self, occurrence):
@@ -542,65 +554,6 @@ def substitute(obj, *args):
 
 ##abbreviation
 sub = substitute
-
-def createList(sort = False, reverse = False, string = False): # create same elements
-    print('By using this function you can create a list without typing punctuations.')
-    lst = []
-    string = input('Please type STRING items seperated with space below like \'a b c\'. If you don\'t want strings please press the \'Enter\' button:\n>>> ')
-    sl = string.split() # sl means string list
-    for item in sl:
-        lst.append(item)
-    number = input('Please type NUMBERS seperated with space below like \'1 1.5 10\' or a range like \'1, 10, 2\'. If you don\'t want numbers please press the \'Enter\' button:\n>>> ')
-    while True:
-        sn = number.split()  # sn means split number list
-        for item in sn:
-            l = item.split(', ')
-            if len(l)>3:
-                number = input('You typed in '+str(len(l)-3)+' more \', \' !Please type again!\n>>> ')
-                lst = []
-                break
-            elif len(l) == 3: #quickly built a list that contains numbers from m to n
-                if int(l[0])>int(l[1]):
-                    for i in range(int(l[0]), int(l[1]), -abs(int(l[2]))):
-                        lst.append(i)
-                else:
-                    for i in range(int(l[0]), int(l[1])+1, int(l[2])):
-                        lst.append(i)
-            elif len(l) == 2:
-                if int(l[0])>int(l[1]):
-                    for i in range(int(l[0]), int(l[1]), -1):
-                        lst.append(i)
-                else:
-                    for i in range(int(l[0]), int(l[1])+1):
-                        lst.append(i)
-            elif not item.isnumeric() and item.find('-') == 0:
-                lst.append(eval(item))
-            elif not item.isnumeric() and item.find(', ') == -1:
-                print('The input should be NUMBERS!\n')
-                createList()
-                return
-            else:
-                lst.append(eval(item))
-        break
-    userInput = input('Please type your list, tuple, set or dict here. If you want no input just press the \'Enter\' button:\n>>> ')
-    if userInput:
-        while type(eval(userInput)) not in [list, tuple, set, dict]:
-            userInput = input('Your input in not a list, tuple, set or dict! Please type again!\n>>> ')
-        lst.append(userInput)
-    if sort:
-        lst.sort()
-    if reverse:
-        lst.reverse()
-    if string:
-        s = ''
-        for item in lst:
-            s+= str(item)+' '
-        print('\''+s[:-1]+'\'')
-    else:
-        print(lst)
-
-##abbreviation
-cl = createList
 
 def formatted():
     '''请叫我套路生成器'''
