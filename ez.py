@@ -3,7 +3,7 @@ import random
 import datetime
 import os
 import time
-import subprocess, threading
+import subprocess, threading, zipfile, ntpath, shutil
 from win32 import win32clipboard
 from atexit import register
 from json import loads, dumps
@@ -97,12 +97,22 @@ def exportpy(directory, withConsole, reminder = False):
     args = ['pyinstaller', '--onefile', '--distpath', path, '--workpath', path, '--specpath', path, '--noconsole']
     if not withConsole:
         args.pop()
+    def export(filename):
+        subprocess.run(args + [filename])
+        path, file = ntpath.split(filename)
+        prefix = find(file).before('.py')
+        with zipfile.ZipFile(prefix + '.zip', 'w') as zip:
+            for f in [prefix + '.exe', prefix + '.spec']:
+                zip.write(f)
+                os.remove(f)
+            for f in os.listdir(prefix):
+                zip.write(os.path.join(prefix, f))
+            shutil.rmtree(prefix)
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
-                     args = (directory, lambda filename: subprocess.run(args + [filename]), reminder)).start()
+                     args = (directory, export, reminder)).start()
 
 def py2pyw(directory, reminder = False):
     ''' Converts a py file or a folder of py files to pyw files.'''
-    path = os.path.dirname(directory)
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
                      args = (directory, lambda filename: fwrite(filename + 'w', fread(filename, False)), reminder)).start()
 

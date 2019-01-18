@@ -34,6 +34,7 @@ class Converter(Frame):
             label.grid(row = i + 1, column = 0)
             entry.grid(row = i + 1, column = 1, columnspan = 2)
             var.trace('w', lambda *arg: self.onChange())
+        self.inputEntry.focus()
 
     def onRadioChange(self):
         self.settings[PATH_OPTION] = self.pathOptionVar.get()
