@@ -95,19 +95,23 @@ def exportpy(directory, withConsole, reminder = False):
     ## Add '-noconfirm' ?
     path = os.path.dirname(directory)
     args = ['pyinstaller', '--onefile', '--distpath', path, '--workpath', path, '--specpath', path, '--noconsole']
-    if not withConsole:
+    if withConsole:
         args.pop()
     def export(filename):
         subprocess.run(args + [filename])
+        currDir = os.getcwd()
         path, file = ntpath.split(filename)
+        os.chdir(path)
         prefix = find(file).before('.py')
-        with zipfile.ZipFile(prefix + '.zip', 'w') as zip:
+        zipname = prefix + '.zip'
+        with zipfile.ZipFile(zipname, 'w') as zip:
             for f in [prefix + '.exe', prefix + '.spec']:
                 zip.write(f)
                 os.remove(f)
             for f in os.listdir(prefix):
                 zip.write(os.path.join(prefix, f))
             shutil.rmtree(prefix)
+        os.chdir(currDir)
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
                      args = (directory, export, reminder)).start()
 
