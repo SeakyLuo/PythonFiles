@@ -343,12 +343,16 @@ class Generator(Frame):
         text = entry.get()
         if not text:
             return
+        value = ez.tryEval(text)
         if not text.isnumeric():
-            text = text[:-1]
-            setEntry(entry, text)
-        elif int(text) > maxSize:
-            text = str(maxSize)
-            setEntry(entry, text)
+            new_text = ''
+            for ch in text:
+                if ch.isnumeric():
+                    new_text += ''
+                else:
+                    break
+            value = int(new_text) if new_text else 0
+        setEntry(entry, min(value, maxSize))
         resultType = self.resultType.get()
         r = self.getRow()
         c = self.getCol()
@@ -581,30 +585,45 @@ class Generator(Frame):
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
 
-    def find(self, target):
+    def find(self, findType):
         result = ''
-        if target == FIND_VALUE:
+        if findType == FIND_VALUE:
+            result = simpledialog.askstring(title = 'Find', prompt = findType, initialvalue = result)
+            while result:
+                entries = []
+                resultLen = len(result)
+                for i in range(self.getRow()):
+                    for j in range(self.getCol()):
+                        text = self.entries[(i, j)].get()
+                        index = text.find(result)
+                        if index > -1:
+                            entries.append(((i, j), (index, index + resultLen)))
+                index = 0
+                target = result
+                while target:
+                    if entries:
+                        loc, indices = entries[index]
+                        entry = self.entries[loc]
+                        entry.focus()
+                        entry.select_range(indices[0], indices[1])
+                        entry.icursor(indices[1])
+                        index = (index + 1) % len(entries)
+                    else:
+                        messagebox.showerror('Error', 'Not Found')
+                    target = simpledialog.askstring(title = 'Find', prompt = findType, initialvalue = result)
+                    if target != result:
+                        result = target
+                        break
+        elif findType == FIND_LOCATION:
             while True:
-                result = simpledialog.askstring(title = 'Find', prompt = target, initialvalue = result)
-                if not result:
-                    break
-                found = False
-                for entry in self.entries.values():
-                    if result in entry.get():
-                        entry.select_range(0, END)
-                        found = True
-                if not found:
-                    messagebox.showerror('Error', 'Not Found')
-                else:
-                    break
-        else:
-            while True:
-                result = simpledialog.askstring(title = target, prompt = 'Input Location in the Form of x,y', initialvalue = result)
+                result = simpledialog.askstring(title = findType, prompt = 'Input Location in the Form of x,y', initialvalue = result)
                 if not result:
                     break
                 try:
                     x, y = result.replace(' ', '').split(',')
-                    self.entries[(int(x) - 1, int(y) - 1)].select_range(0, END)
+                    entry = self.entries[(int(x) - 1, int(y) - 1)]
+                    entry.focus()
+                    entry.select_range(0, END)
                     break
                 except:
                     messagebox.showerror('Error', 'Invalid Input')
@@ -867,7 +886,7 @@ class Generator(Frame):
         if size != self.getCol() or self.checkEmpty():
             return
         try:
-            result = ezs.integer(linalg.det([[eval(self.entries[(i, j)].get()) for j in range(size)] for i in range(size)]))
+            result = ezs.integer(linalg.det(self.collectEntries(size, size)))
             # result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
             if self.settings[COPY_CALCULATION_RESULT]:
@@ -993,7 +1012,9 @@ class Generator(Frame):
         col = self.getCol()
         if not row and not col:
             return
-        state = (self.resultType.get(), [[self.entries[(i, j)].get() for j in range(col)] for i in range(row)], self.getFocusEntry())
+        state = (self.resultType.get(), \
+                 self.collectEntries(row, col), \
+                 self.getFocusEntry())
         if self.states and state[:-1] == self.states[self.statePointer][:-1]:
             return
         self.states = self.states[:self.statePointer + 1] + [state]
