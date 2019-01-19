@@ -14,7 +14,7 @@ maxValue = 100
 defaultVar = 'x'
 
 MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX = 'Matrix', 'Determinant', 'Vector', 'Identity Matrix'
-resultTypeOptions = [MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX]
+resultTypeOptions = [MATRIX, DETERMINANT, VECTOR]
 LATEX, ARRAY = 'LaTeX', 'Array'
 resultFormatOptions = [LATEX, ARRAY]
 LEFT, RIGHT, UP, DOWN = 'Left', 'Right', 'Up', 'Down'
@@ -38,6 +38,7 @@ COPY_CALCULATION_RESULT = 'CopyCalculationResult'
 COPY_GENERATION_RESULT = 'CopyGenerationResult'
 RESULT_TYPE = 'ResultType'
 RESULT_FORMAT = 'ResultFormat'
+ZERO_MATRIX = 'Zero Matrix'
 APPEND_START = 'Append Start'
 APPEND_END = 'Append End'
 FIND_VALUE = 'Find Value'
@@ -73,7 +74,6 @@ LOWER_TRIANGULAR = 'Lower Triangular'
 UPPER_TRIANGULAR = 'Upper Triangular'
 LOWER_CASE = 'Lower Case'
 UPPER_CASE = 'Upper Case'
-ALL_ZEROS = 'All Zeros'
 ONE_TO_N = '1 to N'
 A_TO_Z = 'A to Z'
 FROM_ARRAY = 'From ' + ARRAY
@@ -85,14 +85,14 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
                   SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
 
 ## Shortcuts
-shortcuts = { GENERATE: 'Enter/Return', RANDOM_MATRIX: 'Ctrl+R', UNDO: 'Ctrl+Z', REDO: 'Ctrl+Y', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
-              MULTIPLY: 'Ctrl+M', TRANSPOSE: 'Ctrl+T', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', ADD: 'Ctrl+=', \
+shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
+              MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
               CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
-              ALL_ZEROS: 'Alt+0', ONE_TO_N: 'Alt+1', A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', UPPER_CASE: 'Alt+U', \
+              A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for command, shortcut in \
-                            [('Switch Result Type', 'Ctrl+[, Ctrl+]'), ('Switch Result Format', 'Alt+[, Alt+]'), ('Exit', 'Ctrl+W')]])
+                            [('Switch Result Type', 'Ctrl+[ Ctrl+]'), ('Switch Result Format', 'Alt+[ Alt+]'), ('Exit', 'Ctrl+W')]])
 
 class Generator(Frame):
     def __init__(self, master):
@@ -114,11 +114,10 @@ class Generator(Frame):
         ## Result Menu
         self.resultMenu = Menu(self)
         self.matMenu = Menu(self)
-        self.matMenu.add_command(label = ADD, accelerator = shortcuts[ADD], command = self.add)
-        self.matMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
-        self.matMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
-        self.matMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
-        self.matMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
+        self.matMenu.add_command(label = IDENTITY_MATRIX, accelerator = shortcuts[IDENTITY_MATRIX], command = self.fillIdentityMatrix)
+        self.matMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
+        self.matMenu.add_command(label = ZERO_MATRIX, accelerator = shortcuts[ZERO_MATRIX], command = self.fillZeroMatrix)
+        self.matMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
         self.detMenu = Menu(self)
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
@@ -137,11 +136,8 @@ class Generator(Frame):
             self.vecOptionMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
                                                command = lambda: self.settings.setitem(VECTOR_OPTION, self.vecOptionVar.get()))
         self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
-        self.vecMenu.add_cascade(label = 'Vector Option', menu = self.vecOptionMenu)
-        self.imatMenu = Menu(self)
-        self.imatMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
-        self.imatMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
-        for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu, self.imatMenu]):
+        self.vecMenu.add_cascade(label = 'Vector Options', menu = self.vecOptionMenu)
+        for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
         ## Edit Menu
@@ -156,10 +152,6 @@ class Generator(Frame):
         self.editMenu.add_command(label = LOWER_CASE, accelerator = shortcuts[LOWER_CASE], command = lambda: self.toCase(LOWER_CASE))
         self.editMenu.add_command(label = UPPER_CASE, accelerator = shortcuts[UPPER_CASE], command = lambda: self.toCase(UPPER_CASE))
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = SORT, accelerator = shortcuts[SORT], command = self.sort)
-        self.editMenu.add_command(label = REVERSE, accelerator = shortcuts[REVERSE], command = self.reverse)
-        self.editMenu.add_command(label = RESHAPE, accelerator = shortcuts[RESHAPE], command = self.reshape)
-        self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
@@ -170,7 +162,6 @@ class Generator(Frame):
         self.insertMenu.add_command(label = FROM_LATEX, accelerator = shortcuts[FROM_LATEX], command = lambda: self.insert(LATEX))
         self.insertMenu.add_command(label = FROM_ARRAY, accelerator = shortcuts[FROM_ARRAY], command = lambda: self.insert(ARRAY))
         self.insertMenu.add_separator()
-        self.insertMenu.add_command(label = ALL_ZEROS, accelerator = shortcuts[ALL_ZEROS], command = self.allZeros)
         self.insertMenu.add_command(label = ONE_TO_N, accelerator = shortcuts[ONE_TO_N], command = self.oneToN)
         self.insertMenu.add_command(label = A_TO_Z, accelerator = shortcuts[A_TO_Z], command = self.aToZ)
         self.randomMenu = Menu(self, tearoff = False)
@@ -187,6 +178,19 @@ class Generator(Frame):
         self.randomMenu.add_command(label = 'Set Random Max', command = lambda: self.setRandom(max))
         self.randomMenu.add_command(label = 'Set Random Var', command = lambda: self.setRandom('var'))
         self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
+        ## Modify Menu
+        self.modifyMenu = Menu(self)
+        self.modifyMenu.add_command(label = ADD, accelerator = shortcuts[ADD], command = self.add)
+        self.modifyMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
+        self.modifyMenu.add_separator()
+        self.modifyMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
+        self.modifyMenu.add_command(label = RESHAPE, accelerator = shortcuts[RESHAPE], command = self.reshape)
+        self.modifyMenu.add_separator()
+        self.modifyMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
+        self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
+        self.modifyMenu.add_separator()
+        self.modifyMenu.add_command(label = SORT, accelerator = shortcuts[SORT], command = self.sort)
+        self.modifyMenu.add_command(label = REVERSE, accelerator = shortcuts[REVERSE], command = self.reverse)
         ## Generate Menu
         self.generateMenu = Menu(self)
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
@@ -201,7 +205,7 @@ class Generator(Frame):
                                           command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
-        for name, menu in zip(['Result', 'Edit', 'Insert', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.generateMenu, self.settingsMenu]):
+        for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.settingsMenu]):
             menu['tearoff'] = False
             self.menu.add_cascade(label = name, menu = menu)
         self.master.config(menu = self.menu)
@@ -220,9 +224,6 @@ class Generator(Frame):
         self.colEntry = Entry(self)
         self.rowEntry.focus()
         for entry in [self.rowEntry, self.colEntry]:
-            var = StringVar(self)
-            entry['textvariable'] = var
-            # var.trace('w', lambda *args: self.onRowColChange(entry))
             self.bindMoveFocus(entry)
             entry.bind('<KeyRelease>', lambda event: self.onRowColChange(entry))
             bindtags = entry.bindtags()
@@ -243,12 +244,13 @@ class Generator(Frame):
 
         ## Bind
         self.master.bind('<Return>', lambda event: self.generate())
+        self.master.bind('<Control-0>', lambda event: self.fillZeroMatrix())
         self.master.bind('<Control-f>', lambda event: self.find(FIND_VALUE))
         self.master.bind('<Control-h>', lambda event: self.replace())
+        self.master.bind('<Control-i>', lambda event: self.fillIdentityMatrix())
         self.master.bind('<Control-m>', lambda event: self.multiply())
         self.master.bind('<Control-p>', lambda event: self.permutationVector() if self.resultType.get() == VECTOR or self.getCol() == 1 else self.permutationMatrix())
         self.master.bind('<Control-r>', lambda event: self.randomFill())
-        self.master.bind('<Control-t>', lambda event: self.transpose())
         self.master.bind('<Control-u>', lambda event: self.unitMatrix())
         self.master.bind('<Control-w>', lambda event: self.master.destroy())
         self.master.bind('<Control-y>', lambda event: self.redo())
@@ -263,13 +265,13 @@ class Generator(Frame):
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
         self.master.bind('<Control-R>', lambda event: self.randomReorder())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
-        self.master.bind('<Alt-0>', lambda event: self.allZeros())
-        self.master.bind('<Alt-1>', lambda event: self.oneToN())
         self.master.bind('<Alt-a>', lambda event: self.aToZ())
         self.master.bind('<Alt-e>', lambda event: self.append(APPEND_END))
         self.master.bind('<Alt-l>', lambda event: self.toCase(LOWER))
+        self.master.bind('<Alt-n>', lambda event: self.oneToN())
         self.master.bind('<Alt-r>', lambda event: self.reshape())
         self.master.bind('<Alt-s>', lambda event: self.append(APPEND_START))
+        self.master.bind('<Alt-t>', lambda event: self.transpose())
         self.master.bind('<Alt-u>', lambda event: self.toCase(UPPER))
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
@@ -286,16 +288,12 @@ class Generator(Frame):
         self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
 
     def getRow(self):
-        try:
-            return int(self.rowEntry.get())
-        except ValueError:
-            return 0
+        try: return int(self.rowEntry.get())
+        except ValueError: return 0
 
     def getCol(self):
-        try:
-            return int(self.colEntry.get())
-        except ValueError:
-            return 0
+        try: return int(self.colEntry.get())
+        except ValueError: return 0
 
     def setRow(self, row):
         setEntry(self.rowEntry, row)
@@ -331,13 +329,6 @@ class Generator(Frame):
             self.colEntry['state'] = DISABLED
             if row:
                 self.generateEntries(row, 1)
-        elif resultType == IDENTITY_MATRIX:
-            self.colEntry['state'] = NORMAL
-            size = max(row, col)
-            if size:
-                row = col = size
-                self.syncRowCol(size)
-                self.fillIdentityMatrix()
 
     def setResultFormat(self, resultFormat):
         if self.resultFormat.get() == resultFormat:
@@ -368,24 +359,20 @@ class Generator(Frame):
         self.maxRows = r + self.minRows
         self.maxCols = max(c, self.maxCols)
         self.generateEntries(r, c)
-        if resultType == IDENTITY_MATRIX:
-            self.fillIdentityMatrix()
         if self.rememberSizeVar.get():
             self.settings[REMEMBER_SIZE] = (r, c)
         self.modifyStates()
 
     def generateEntries(self, row, col):
-        if not row or not col or (row == self.getRow() and col = self.getCol()):
+        if not row or not col:
             return
         for i in range(row):
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
-                var = StringVar(self)
-                # var.trace('w', lambda *args: self.onEntryChange())
-                entry = Entry(self, textvariable = var)
+                entry = Entry(self)
                 self.bindMoveFocus(entry)
-                # entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
+                entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
                 bindtags = entry.bindtags()
                 entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
                 entry.grid(row = self.minRows + i, column = j, sticky = NSEW)
@@ -398,14 +385,7 @@ class Generator(Frame):
         self.maxCols = max(self.minCols, col)
 
     def onEntryChange(self):
-        if self.resultType.get() == IDENTITY_MATRIX:
-            for r, c in self.entries:
-                entry = self.entries[(r, c)]
-                text = entry.get()
-                if text and (r == c and text != '1') or (r != c and text != '0'):
-                    self.setResultType(MATRIX)
-                    break
-            self.modifyStates()
+        self.modifyStates()
 
     def add(self):
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
@@ -428,7 +408,7 @@ class Generator(Frame):
         if result == None or result == 1:
             return
         if result == 0:
-            self.allZeros()
+            self.fillZeroMatrix()
             return
         isResultNumeric = ezs.isNumeric(result)
         for entry in self.entries.values():
@@ -583,6 +563,10 @@ class Generator(Frame):
         self.generateEntries(size, size)
 
     def fillIdentityMatrix(self):
+        row = self.getRow()
+        col = self.getCol()
+        if row != col:
+            self.syncRowCol(max(row, col))
         for i, j in self.entries:
             setEntry(self.entries[(i, j)], 1 if i == j else 0)
         self.modifyStates()
@@ -593,8 +577,6 @@ class Generator(Frame):
                                         prompt = 'Append to the {} of Every Entry'.format('Start' if isStart else 'End'))
         if not result:
             return
-        if self.resultType.get() == IDENTITY_MATRIX:
-            self.setResultType(MATRIX)
         for entry in self.entries.values():
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
@@ -667,9 +649,7 @@ class Generator(Frame):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
         self.modifyStates()
 
-    def allZeros(self):
-        if self.resultType.get() == IDENTITY_MATRIX:
-            self.setResultType(MATRIX)
+    def fillZeroMatrix(self):
         for entry in self.entries.values():
             setEntry(entry, 0)
         self.modifyStates()
@@ -679,8 +659,6 @@ class Generator(Frame):
         col = self.getCol()
         if not row or not col or not self.entries:
             return
-        if self.resultType.get() == IDENTITY_MATRIX:
-            self.setResultType(MATRIX)
         for i in range(row * col):
             setEntry(self.entries[divmod(i, col)], i + 1)
         self.modifyStates()
@@ -690,8 +668,6 @@ class Generator(Frame):
         col = self.getCol()
         if not row or not col or not self.entries:
             return
-        if self.resultType.get() == IDENTITY_MATRIX:
-            self.setResultType(MATRIX)
         ordA = ord('a')
         for i in range(row * col):
             count, char = divmod(i, 26)
@@ -729,8 +705,7 @@ class Generator(Frame):
         resultType = self.resultType.get()
         row = self.getRow()
         col = self.getCol()
-        isIdentity = resultType == IDENTITY_MATRIX
-        if not row or not col or isIdentity:
+        if not row or not col:
             if resultType == MATRIX:
                 if not row:
                     row = randrange(maxSize) + 1
@@ -740,28 +715,23 @@ class Generator(Frame):
                 row = col = randrange(maxSize) + 1
             elif resultType == VECTOR:
                 row = randrange(maxSize) + 1
-            elif isIdentity:
-                row = col = randrange(maxSize) + 1
             self.setRowCol(row, col)
             self.generateEntries(row, col)
-        if isIdentity:
-            self.fillIdentityMatrix()
-        else:
-            option = self.settings[RANDOM_MATRIX_OPTION]
-            if option == RANDOM_INT_MATRIX:
-                setEntryFunc = lambda entry: setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
-            elif option == RANDOM_VAR_MATRIX:
-                setEntryFunc = lambda entry: setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
-            elif option == RANDOM_MULTIVAR_MATRIX:
-                setEntryFunc = lambda entry: setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
-            hasEmpty = False
+        option = self.settings[RANDOM_MATRIX_OPTION]
+        if option == RANDOM_INT_MATRIX:
+            setEntryFunc = lambda entry: setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+        elif option == RANDOM_VAR_MATRIX:
+            setEntryFunc = lambda entry: setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
+        elif option == RANDOM_MULTIVAR_MATRIX:
+            setEntryFunc = lambda entry: setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
+        hasEmpty = False
+        for entry in self.entries.values():
+            if not entry.get():
+                hasEmpty = True
+                setEntryFunc(entry)
+        if not hasEmpty:
             for entry in self.entries.values():
-                if not entry.get():
-                    hasEmpty = True
-                    setEntryFunc(entry)
-            if not hasEmpty:
-                for entry in self.entries.values():
-                    setEntryFunc(entry)
+                setEntryFunc(entry)
         self.modifyStates()
 
     def randomReorder(self):
@@ -782,8 +752,6 @@ class Generator(Frame):
         col = self.getCol()
         if not row or not col or not self.entries:
             return 'break'
-        if self.resultType.get() == IDENTITY_MATRIX:
-            self.setResultType(MATRIX)
         varFormat = True
         vars = []
         for i in range(row):
@@ -812,7 +780,7 @@ class Generator(Frame):
     def reverse(self):
         row = self.getRow()
         col = self.getCol()
-        if not row or not col or not self.entries or self.resultType.get() == IDENTITY_MATRIX:
+        if not row or not col or not self.entries:
             return 'break'
         for i in range(row * col // 2):
             r, c = divmod(i, col)
@@ -857,22 +825,14 @@ class Generator(Frame):
         self.modifyStates()
 
     def triangularMatrix(self, mode):
-        isIdentity = self.resultType.get() == IDENTITY_MATRIX
         for i, j in self.entries:
             if i < j if mode == LOWER else i > j:
                 setEntry(self.entries[(i, j)], 0)
-            elif isIdentity:
-                setEntry(self.entries[(i, j)], 1)
-        if isIdentity:
-            self.setResultType(MATRIX)
         self.modifyStates()
 
     def unitMatrix(self):
-        if self.resultType.get() == IDENTITY_MATRIX:
-            self.fillIdentityMatrix()
-        else:
-            for entry in self.entries.values():
-                setEntry(entry, 1)
+        for entry in self.entries.values():
+            setEntry(entry, 1)
         self.modifyStates()
 
     def permutationMatrix(self):
@@ -940,8 +900,6 @@ class Generator(Frame):
     def clear(self, mode = 0):
         '''0 for clear entries, 1 for clear all'''
         if mode >= 0:
-            if self.resultType.get() == IDENTITY_MATRIX and mode == 0:
-                return
             for entry in self.entries.values():
                 clearEntry(entry)
         if mode >= 1:

@@ -11,11 +11,12 @@ class Generator(Frame):
         self.rowEntry = Entry(self)
         self.colLabel = Label(self, text = 'Columns:')
         self.colEntry = Entry(self)
+        self.v1 = StringVar(self)
+        self.v2 = StringVar(self)
         self.rowEntry.focus()
-        for entry in [self.rowEntry, self.colEntry]:
-            var = StringVar(self)
-            # var.trace('w', lambda *args: self.generateEntries(self.getRow(), self.getCol()))
-            var.trace('w', lambda *args: print("Debug1"))
+        for entry, var in zip([self.rowEntry, self.colEntry], [self.v1, self.v2]):
+            var.trace('w', lambda *args: self.generateEntries(self.getRow(), self.getCol()))
+            # var.trace('w', lambda *args: print("Debug1"))
             entry['textvariable'] = var
 
         ## Place Widgets
