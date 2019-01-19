@@ -4,9 +4,10 @@ from eztk import setEntry, clearEntry
 from random import randrange, shuffle
 from numpy import linalg
 import ez, ezs, os
+from Dialogs import *
 
 ## Constant Variables
-maxSize = 15
+maxSize = 16
 maxRandomVarLength = 10
 minValue = -100
 maxValue = 100
@@ -104,6 +105,11 @@ class Generator(Frame):
         self.entries = {}
         self.statePointer = 0
         self.states = [] ## (resultType, entries, focusEntry)
+        ## Find Dialog
+        self.findDialog = None
+        self.findResult = []
+        self.prevFindTarget = ''
+        self.findIndex = ''
 
         ## Settings
         self.settings = ez.Settings(__file__)
@@ -225,7 +231,7 @@ class Generator(Frame):
         self.rowEntry.focus()
         for entry in [self.rowEntry, self.colEntry]:
             self.bindMoveFocus(entry)
-            entry.bind('<KeyRelease>', lambda event: self.onRowColChange(entry))
+            entry.bind('<KeyRelease>', self.onRowColChange)
             bindtags = entry.bindtags()
             entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
         if self.rememberSizeVar.get():
@@ -339,8 +345,8 @@ class Generator(Frame):
     def onResultFormatChange(self):
         self.settings[RESULT_FORMAT] = self.resultFormat.get()
 
-    def onRowColChange(self, entry):
-        text = entry.get()
+    def onRowColChange(self, event):
+        text = event.widget.get()
         if not text:
             return
         value = ez.tryEval(text)
@@ -352,7 +358,7 @@ class Generator(Frame):
                 else:
                     break
             value = int(new_text) if new_text else 0
-        setEntry(entry, min(value, maxSize))
+        setEntry(event.widget, min(value, maxSize))
         resultType = self.resultType.get()
         r = self.getRow()
         c = self.getCol()
@@ -585,36 +591,48 @@ class Generator(Frame):
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
 
+    def onFindNext(self, target, direction):
+        if not target:
+            messagebox.showerror('Error', 'Empty Target!')
+            self.findDialog.show()
+            return
+        if self.findIndex == -1 or target != self.prevFindTarget:
+            self.prevFindTarget = target
+            self.findResult = []
+            targetLen = len(target)
+            for i in range(self.getRow()):
+                for j in range(self.getCol()):
+                    text = self.entries[(i, j)].get()
+                    index = text.find(target)
+                    if index > -1:
+                        self.findResult.append(((i, j), index, index + targetLen))
+            if self.findResult:
+                self.findIndex = 0
+            else:
+                messagebox.showerror('Error', 'Not Found')
+                self.findDialog.show()
+                return
+        location, start, end = self.findResult[self.findIndex]
+        entry = self.entries[location]
+        entry.select_range(start, end)
+        entry.icursor(end)
+        self.findIndex = (self.findIndex + 1 if direction == DOWN else -1) % len(self.findResult)
+
+    def onFindClose(self):
+        self.findDialog = None
+
     def find(self, findType):
-        result = ''
         if findType == FIND_VALUE:
-            result = simpledialog.askstring(title = 'Find', prompt = findType, initialvalue = result)
-            while result:
-                entries = []
-                resultLen = len(result)
-                for i in range(self.getRow()):
-                    for j in range(self.getCol()):
-                        text = self.entries[(i, j)].get()
-                        index = text.find(result)
-                        if index > -1:
-                            entries.append(((i, j), (index, index + resultLen)))
-                index = 0
-                target = result
-                while target:
-                    if entries:
-                        loc, indices = entries[index]
-                        entry = self.entries[loc]
-                        entry.focus()
-                        entry.select_range(indices[0], indices[1])
-                        entry.icursor(indices[1])
-                        index = (index + 1) % len(entries)
-                    else:
-                        messagebox.showerror('Error', 'Not Found')
-                    target = simpledialog.askstring(title = 'Find', prompt = findType, initialvalue = result)
-                    if target != result:
-                        result = target
-                        break
+            self.findIndex = -1
+            if self.findDialog:
+                self.findDialog.show()
+            else:
+                self.findDialog = FindDialog()
+                self.findDialog.setOnFindNextListner(self.onFindNext)
+                self.findDialog.setOnCloseListener(self.onFindClose)
+                self.findDialog.setInitialValue(self.prevFindTarget)
         elif findType == FIND_LOCATION:
+            result = ''
             while True:
                 result = simpledialog.askstring(title = findType, prompt = 'Input Location in the Form of x,y', initialvalue = result)
                 if not result:
