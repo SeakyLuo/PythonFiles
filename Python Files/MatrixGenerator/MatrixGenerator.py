@@ -81,7 +81,6 @@ FROM_LATEX = 'From ' + LATEX
 EXIT = 'Exit'
 
 ## Settings
-settingsFile = 'settings.json'
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, \
                   SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
 
@@ -107,7 +106,7 @@ class Generator(Frame):
         self.states = [] ## (resultType, entries, focusEntry)
 
         ## Settings
-        self.settings = ez.Settings(__file__, settingsFile)
+        self.settings = ez.Settings(__file__)
         self.settings.setSettingOptions(settingOptions)
 
         ## Generate Menus
@@ -221,8 +220,12 @@ class Generator(Frame):
         self.colEntry = Entry(self)
         self.rowEntry.focus()
         for entry in [self.rowEntry, self.colEntry]:
+            var = StringVar(self.master)
+            entry['textvariable'] = var
+            # var.trace('w', lambda *args: self.onRowColChange(entry))
+            var.trace('w', lambda *args: print("debug"))
             self.bindMoveFocus(entry)
-            entry.bind('<KeyRelease>', self.onRowColChange)
+            # entry.bind('<KeyRelease>', lambda event: self.onRowColChange(entry))
             bindtags = entry.bindtags()
             entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
         if self.rememberSizeVar.get():
@@ -347,16 +350,16 @@ class Generator(Frame):
     def onResultFormatChange(self):
         self.settings[RESULT_FORMAT] = self.resultFormat.get()
 
-    def onRowColChange(self, event):
-        text = event.widget.get()
+    def onRowColChange(self, entry):
+        text = entry.get()
         if not text:
             return
         if not text.isnumeric():
             text = text[:-1]
-            setEntry(event.widget, text)
+            setEntry(entry, text)
         elif int(text) > maxSize:
             text = str(maxSize)
-            setEntry(event.widget, text)
+            setEntry(entry, text)
         resultType = self.resultType.get()
         r = self.getRow()
         c = self.getCol()
@@ -380,13 +383,15 @@ class Generator(Frame):
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
-                e = Entry(self)
-                self.bindMoveFocus(e)
-                e.bind('<KeyRelease>', self.onEntryChange)
-                bindtags = e.bindtags()
-                e.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
-                e.grid(row = self.minRows + i, column = j, sticky = NSEW)
-                self.entries[(i, j)] = e
+                var = StringVar(self)
+                var.trace('w', lambda *args: self.onEntryChange())
+                entry = Entry(self, textvariable = var)
+                self.bindMoveFocus(entry)
+                # entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
+                bindtags = entry.bindtags()
+                entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
+                entry.grid(row = self.minRows + i, column = j, sticky = NSEW)
+                self.entries[(i, j)] = entry
         for i, j in self.entries.copy():
             if i not in range(row) or j not in range(col):
                 self.entries[(i, j)].grid_forget()
@@ -394,16 +399,15 @@ class Generator(Frame):
         self.maxRows = self.minRows + row
         self.maxCols = max(self.minCols, col)
 
-    def onEntryChange(self, event):
-        resultType = self.resultType.get()
-        if resultType == IDENTITY_MATRIX:
+    def onEntryChange(self):
+        if self.resultType.get() == IDENTITY_MATRIX:
             for r, c in self.entries:
                 entry = self.entries[(r, c)]
                 text = entry.get()
                 if text and (r == c and text != '1') or (r != c and text != '0'):
                     self.setResultType(MATRIX)
                     break
-        self.modifyStates()
+            self.modifyStates()
 
     def add(self):
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')

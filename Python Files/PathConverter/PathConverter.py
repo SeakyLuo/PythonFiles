@@ -33,7 +33,7 @@ class Converter(Frame):
         for i, (label, entry, var) in enumerate(zip([self.inputLabel, self.outputLabel], [self.inputEntry, self.outputEntry], [self.inputVar, self.outputVar])):
             label.grid(row = i + 1, column = 0)
             entry.grid(row = i + 1, column = 1, columnspan = 2)
-            var.trace('w', lambda *arg: self.onChange())
+            var.trace('w', lambda *args: self.onChange())
         self.inputEntry.focus()
 
     def onRadioChange(self):
