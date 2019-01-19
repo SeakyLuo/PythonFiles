@@ -103,13 +103,17 @@ class Generator(Frame):
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4
         self.entries = {}
-        self.statePointer = 0
+        self.stateIndex = 0
         self.states = [] ## (resultType, entries, focusEntry)
         ## Find Dialog
         self.findDialog = None
         self.findResult = []
-        self.prevFindTarget = ''
-        self.findIndex = ''
+        self.prevFind = ''
+        self.findIndex = -1
+        ## Replace Dialog
+        self.replaceDialog = None
+        self.prevReplace = ''
+        self.currentDialog = None
 
         ## Settings
         self.settings = ez.Settings(__file__)
@@ -292,6 +296,7 @@ class Generator(Frame):
         self.settings.setdefault(RANDOM_VAR, defaultVar)
         self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
         self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
+        self.modifyStates()
 
     def getRow(self):
         try: return int(self.rowEntry.get())
@@ -354,7 +359,7 @@ class Generator(Frame):
             new_text = ''
             for ch in text:
                 if ch.isnumeric():
-                    new_text += ''
+                    new_text += ch
                 else:
                     break
             value = int(new_text) if new_text else 0
@@ -591,13 +596,17 @@ class Generator(Frame):
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
 
-    def onFindNext(self, target, direction):
+    def setFindDirection(self, direction):
+        if self.findResult:
+            self.findIndex = (self.findIndex + 1 if direction == DOWN else -1) % len(self.findResult)
+
+    def onFind(self, target, direction):
         if not target:
-            messagebox.showerror('Error', 'Empty Target!')
-            self.findDialog.show()
+            messagebox.showerror('Error', 'Empty Find!')
+            self.currentDialog.show()
             return
-        if self.findIndex == -1 or target != self.prevFindTarget:
-            self.prevFindTarget = target
+        if self.findIndex == -1 or target != self.prevFind:
+            self.prevFind = target
             self.findResult = []
             targetLen = len(target)
             for i in range(self.getRow()):
@@ -610,13 +619,14 @@ class Generator(Frame):
                 self.findIndex = 0
             else:
                 messagebox.showerror('Error', 'Not Found')
-                self.findDialog.show()
+                self.currentDialog.show()
                 return
         location, start, end = self.findResult[self.findIndex]
         entry = self.entries[location]
+        entry.focus()
         entry.select_range(start, end)
         entry.icursor(end)
-        self.findIndex = (self.findIndex + 1 if direction == DOWN else -1) % len(self.findResult)
+        self.setFindDirection(direction)
 
     def onFindClose(self):
         self.findDialog = None
@@ -628,9 +638,11 @@ class Generator(Frame):
                 self.findDialog.show()
             else:
                 self.findDialog = FindDialog()
-                self.findDialog.setOnFindNextListner(self.onFindNext)
+                self.findDialog.setOnFindListner(self.onFind)
                 self.findDialog.setOnCloseListener(self.onFindClose)
-                self.findDialog.setInitialValue(self.prevFindTarget)
+                # self.master.focus_get().selection_get() or self.prevFind
+                self.findDialog.setFind(self.prevFind)
+            self.currentDialog = self.findDialog
         elif findType == FIND_LOCATION:
             result = ''
             while True:
@@ -649,24 +661,47 @@ class Generator(Frame):
                 break
         return 'break'
 
+    def onReplace(self, find, replace, direction):
+        if self.findIndex == -1:
+            self.onFind(find, direction)
+        self.prevReplace = replace
+        self.setFindDirection(DOWN if direction == UP else UP)
+        print(self.findResult)
+        entry = self.entries[self.findResult[self.findIndex][0]]
+        print(entry.get().replace(find, replace))
+        setEntry(entry, entry.get().replace(find, replace))
+        self.setFindDirection(direction)
+        self.modifyStates()
+
+    def onReplaceFind(self, find, replace, direction):
+        self.onFind(find, direction)
+        self.onReplace(find, replace, direction)
+        self.onFind(find, direction)
+
+    def onReplaceAll(self, find, replace):
+        self.prevFind = find
+        self.prevReplace = replace
+        for entry in self.entries.values():
+            setEntry(entry, entry.get().replace(find, replace))
+        self.modifyStates()
+
+    def onReplaceClose(self):
+        self.replaceDialog = None
+
     def replace(self):
-        target = ''
-        while True:
-            target = simpledialog.askstring(title = 'Replace', prompt = 'Replace Target', initialvalue = target)
-            if not target:
-                return 'break'
-            for entry in self.entries.values():
-                if target in entry.get():
-                    break
-            else:
-                messagebox.showerror('Error', 'Not Found')
-                continue
-            break
-        withValue = simpledialog.askstring(title = 'Replace', prompt = 'Replace With')
-        if withValue:
-            for entry in self.entries.values():
-                setEntry(entry, entry.get().replace(target, withValue))
-            self.modifyStates()
+        if self.replaceDialog:
+            self.replaceDialog.show()
+        else:
+            self.replaceDialog = ReplaceDialog()
+            self.replaceDialog.setOnFindListner(self.onFind)
+            self.replaceDialog.setOnReplaceListener(self.onReplace)
+            self.replaceDialog.setOnReplaceFindListener(self.onReplaceFind)
+            self.replaceDialog.setOnReplaceAllListener(self.onReplaceAll)
+            self.replaceDialog.setOnCloseListener(self.onReplaceClose)
+            # self.master.focus_get().selection_get() or self.prevFind
+            self.replaceDialog.setFind(self.prevFind)
+            self.replaceDialog.setReplace(self.prevReplace)
+        self.currentDialog = self.replaceDialog
         return 'break'
 
     def transpose(self):
@@ -904,7 +939,7 @@ class Generator(Frame):
         if size != self.getCol() or self.checkEmpty():
             return
         try:
-            result = ezs.integer(linalg.det(self.collectEntries(size, size)))
+            result = ezs.integer(linalg.det(self.collectEntries(size, size, True, True)))
             # result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
             if self.settings[COPY_CALCULATION_RESULT]:
@@ -985,30 +1020,35 @@ class Generator(Frame):
             self.clear(1)
         return result
 
-    def collectEntries(self, r, c, evaluate = True):
+    def collectEntries(self, r, c, evaluate = True, nested = False):
         entries = []
         for i in range(r):
+            if nested:
+                lst = []
             for j in range(c):
                 text = self.entries[(i, j)].get()
-                if evaluate:
-                    text = ez.tryEval(text)
-                entries.append(text)
+                if evaluate: text = ez.tryEval(text)
+                if nested: lst.append(text)
+                else: entries.append(text)
+            if nested:
+                entries.append(lst)
         return entries
 
     def undo(self):
-        if not self.statePointer:
+        if self.stateIndex == 0:
             return
-        self.statePointer -= 1
+        self.stateIndex -= 1
         self.resumeState()
 
     def redo(self):
-        if self.statePointer == len(self.states) - 1:
+        if self.stateIndex == len(self.states) - 1:
             return
-        self.statePointer += 1
+        self.stateIndex += 1
         self.resumeState()
 
     def resumeState(self):
-        resultType, entries, focus = self.states[self.statePointer]
+        resultType, entries, focus = self.states[self.stateIndex]
+        print(self.states)
         r = len(entries)
         c = len(entries[0])
         self.setRowCol(r, c)
@@ -1031,18 +1071,16 @@ class Generator(Frame):
         if not row and not col:
             return
         state = (self.resultType.get(), \
-                 self.collectEntries(row, col), \
+                 self.collectEntries(row, col, False, True), \
                  self.getFocusEntry())
-        if self.states and state[:-1] == self.states[self.statePointer][:-1]:
+        if self.states and state[:-1] == self.states[self.stateIndex][:-1]:
             return
-        self.states = self.states[:self.statePointer + 1] + [state]
-        self.statePointer = len(self.states) - 1
+        self.states = self.states[:self.stateIndex + 1] + [state]
+        self.stateIndex = len(self.states) - 1
 
     def getFocusEntry(self):
-        try:
-            return int(ez.find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
-        except:
-            return 0
+        try: return int(ez.find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
+        except: return 0
 
 root = Tk()
 app = Generator(root)
