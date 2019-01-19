@@ -5,7 +5,7 @@ from random import randrange, shuffle
 from numpy import linalg
 import ez, ezs, os
 
-## Static Variables
+## Constant Variables
 maxSize = 15
 maxRandomVarLength = 10
 minValue = -100
@@ -220,17 +220,15 @@ class Generator(Frame):
         self.colEntry = Entry(self)
         self.rowEntry.focus()
         for entry in [self.rowEntry, self.colEntry]:
-            var = StringVar(self.master)
+            var = StringVar(self)
             entry['textvariable'] = var
             # var.trace('w', lambda *args: self.onRowColChange(entry))
-            var.trace('w', lambda *args: print("debug"))
             self.bindMoveFocus(entry)
-            # entry.bind('<KeyRelease>', lambda event: self.onRowColChange(entry))
+            entry.bind('<KeyRelease>', lambda event: self.onRowColChange(entry))
             bindtags = entry.bindtags()
             entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
         if self.rememberSizeVar.get():
-            rememberedSize = self.settings[REMEMBER_SIZE]
-            r, c = rememberedSize
+            r, c = self.settings[REMEMBER_SIZE]
             if r:
                 setEntry(self.rowEntry, r)
             if c:
@@ -377,14 +375,14 @@ class Generator(Frame):
         self.modifyStates()
 
     def generateEntries(self, row, col):
-        if not row or not col:
+        if not row or not col or (row == self.getRow() and col = self.getCol()):
             return
         for i in range(row):
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
                 var = StringVar(self)
-                var.trace('w', lambda *args: self.onEntryChange())
+                # var.trace('w', lambda *args: self.onEntryChange())
                 entry = Entry(self, textvariable = var)
                 self.bindMoveFocus(entry)
                 # entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
