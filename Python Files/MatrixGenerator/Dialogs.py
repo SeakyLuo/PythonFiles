@@ -56,11 +56,10 @@ class FindDialog(Tk):
 
     def close(self):
         self.__onClose()
-        self.destroy()
+        self.withdraw()
 
     def __onClose(self):
-        if self.closeListener:
-            self.closeListener()
+        if self.closeListener: self.closeListener()
 
     def show(self):
         self.deiconify()
@@ -162,11 +161,10 @@ class ReplaceDialog(Tk):
 
     def close(self):
         self.__onClose()
-        self.destroy()
+        self.withdraw()
 
     def __onClose(self):
-        if self.closeListener:
-            self.closeListener()
+        if self.closeListener: self.closeListener()
 
     def show(self):
         self.deiconify()

@@ -253,6 +253,7 @@ class Generator(Frame):
             w.grid(row = 1, column = i, sticky = NSEW)
 
         ## Bind
+        self.master.bind('<Destroy>', lambda event: self.onDestroy())
         self.master.bind('<Return>', lambda event: self.generate())
         self.master.bind('<Control-0>', lambda event: self.fillZeroMatrix())
         self.master.bind('<Control-f>', lambda event: self.find(FIND_VALUE))
@@ -598,7 +599,16 @@ class Generator(Frame):
 
     def setFindDirection(self, direction):
         if self.findResult:
-            self.findIndex = (self.findIndex + 1 if direction == DOWN else -1) % len(self.findResult)
+            self.findIndex = (self.findIndex + (1 if direction == DOWN else -1)) % len(self.findResult)
+
+    def setFoundEntry(self):
+        if not self.findResult or self.findIndex == -1: return
+        location, start, end = self.findResult[self.findIndex]
+        entry = self.entries[location]
+        self.master.deiconify()
+        entry.focus()
+        entry.select_range(start, end)
+        entry.icursor(end)\
 
     def onFind(self, target, direction):
         if not target:
@@ -618,14 +628,11 @@ class Generator(Frame):
             if self.findResult:
                 self.findIndex = 0
             else:
+                self.findIndex = -1
                 messagebox.showerror('Error', 'Not Found')
                 self.currentDialog.show()
                 return
-        location, start, end = self.findResult[self.findIndex]
-        entry = self.entries[location]
-        entry.focus()
-        entry.select_range(start, end)
-        entry.icursor(end)
+        self.setFoundEntry()
         self.setFindDirection(direction)
 
     def onFindClose(self):
@@ -637,10 +644,10 @@ class Generator(Frame):
             if self.findDialog:
                 self.findDialog.show()
             else:
+                self.prevFind = self.master.focus_get().selection_get() or self.prevFind
                 self.findDialog = FindDialog()
                 self.findDialog.setOnFindListner(self.onFind)
                 self.findDialog.setOnCloseListener(self.onFindClose)
-                # self.master.focus_get().selection_get() or self.prevFind
                 self.findDialog.setFind(self.prevFind)
             self.currentDialog = self.findDialog
         elif findType == FIND_LOCATION:
@@ -662,25 +669,31 @@ class Generator(Frame):
         return 'break'
 
     def onReplace(self, find, replace, direction):
+        self.prevReplace = replace
         if self.findIndex == -1:
             self.onFind(find, direction)
-        self.prevReplace = replace
+        if self.findIndex == -1:
+            return
         self.setFindDirection(DOWN if direction == UP else UP)
-        print(self.findResult)
-        entry = self.entries[self.findResult[self.findIndex][0]]
-        print(entry.get().replace(find, replace))
+        entry = self.entries[self.findResult.pop(self.findIndex)[0]]
+        if not self.findResult:
+            self.findIndex = -1
         setEntry(entry, entry.get().replace(find, replace))
         self.setFindDirection(direction)
         self.modifyStates()
 
     def onReplaceFind(self, find, replace, direction):
-        self.onFind(find, direction)
         self.onReplace(find, replace, direction)
-        self.onFind(find, direction)
+        self.setFoundEntry()
+        self.setFindDirection(direction)
 
     def onReplaceAll(self, find, replace):
         self.prevFind = find
         self.prevReplace = replace
+        if not find:
+            messagebox.showerror('Error', 'Empty Find!')
+            self.currentDialog.show()
+            return
         for entry in self.entries.values():
             setEntry(entry, entry.get().replace(find, replace))
         self.modifyStates()
@@ -692,13 +705,13 @@ class Generator(Frame):
         if self.replaceDialog:
             self.replaceDialog.show()
         else:
+            self.prevFind = self.master.focus_get().selection_get() or self.prevFind
             self.replaceDialog = ReplaceDialog()
             self.replaceDialog.setOnFindListner(self.onFind)
             self.replaceDialog.setOnReplaceListener(self.onReplace)
             self.replaceDialog.setOnReplaceFindListener(self.onReplaceFind)
             self.replaceDialog.setOnReplaceAllListener(self.onReplaceAll)
             self.replaceDialog.setOnCloseListener(self.onReplaceClose)
-            # self.master.focus_get().selection_get() or self.prevFind
             self.replaceDialog.setFind(self.prevFind)
             self.replaceDialog.setReplace(self.prevReplace)
         self.currentDialog = self.replaceDialog
@@ -1048,7 +1061,6 @@ class Generator(Frame):
 
     def resumeState(self):
         resultType, entries, focus = self.states[self.stateIndex]
-        print(self.states)
         r = len(entries)
         c = len(entries[0])
         self.setRowCol(r, c)
@@ -1081,6 +1093,9 @@ class Generator(Frame):
     def getFocusEntry(self):
         try: return int(ez.find(str(self.master.focus_get())).after('.!generator.!entry') or 0)
         except: return 0
+
+    def onDestroy(self):
+        if self.currentDialog: self.currentDialog.withdraw()
 
 root = Tk()
 app = Generator(root)
