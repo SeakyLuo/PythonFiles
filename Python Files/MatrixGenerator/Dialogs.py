@@ -89,12 +89,15 @@ class ReplaceDialog(Tk):
         self.findEntry.select_range(0, END)
         for i, w in enumerate([self.findLabel, self.findEntry]):
             w.grid(row = 0, column = i, sticky = NSEW)
-        self.findEntry.grid(columnspan = 5)
         self.replaceLabel = Label(self, text = 'Replace With:')
         self.replaceEntry = Entry(self)
         for i, w in enumerate([self.replaceLabel, self.replaceEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
-        self.replaceEntry.grid(columnspan = 5)
+        for entry in [self.findEntry, self.replaceEntry]:
+            entry.grid(columnspan = 5)
+            entry.bind('<Up>', self.moveFocus)
+            entry.bind('<Down>', self.moveFocus)
+
         self.directionLabel = Label(self, text = 'Direction:')
         self.directionVar = StringVar(self)
         self.upRadio = Radiobutton(self, text = UP, value = UP, variable = self.directionVar)
@@ -113,6 +116,12 @@ class ReplaceDialog(Tk):
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.replaceFind())
         self.show()
+
+    def moveFocus(self, event):
+        if event.widget == self.findEntry:
+            self.replaceEntry.focus()
+        else:
+            self.findEntry.focus()
 
     def setFind(self, find):
         self.findEntry.insert(0, find)

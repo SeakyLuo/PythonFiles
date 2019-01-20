@@ -472,6 +472,10 @@ class Generator(Frame):
             setEntry(entry, new_text)
         self.modifyStates()
 
+    def bindMoveFocus(self, entry):
+        for key in ['<Up>', '<Down>', '<Left>', '<Right>']:
+            entry.bind(key, self.moveFocus)
+
     def moveFocus(self, event):
         key = event.keysym
         cursor_index = event.widget.index(INSERT)
@@ -503,10 +507,6 @@ class Generator(Frame):
                 w.focus()
                 w.icursor({LEFT: END, RIGHT: 0, UP: min(cursor_index, len(w.get())), DOWN: min(cursor_index, len(w.get()))}[key])
                 break
-
-    def bindMoveFocus(self, entry):
-        for key in ['<Up>', '<Down>', '<Left>', '<Right>']:
-            entry.bind(key, self.moveFocus)
 
     def findByGrid(self, row, column):
         for child in self.children.values():
@@ -651,7 +651,8 @@ class Generator(Frame):
             if self.findDialog:
                 self.findDialog.show()
             else:
-                self.prevFind = self.master.focus_get().selection_get() or self.prevFind
+                try: self.prevFind = self.master.focus_get().selection_get()
+                except: pass
                 self.findDialog = FindDialog()
                 self.findDialog.setOnFindListner(self.onFind)
                 self.findDialog.setOnCloseListener(self.onFindClose)
@@ -712,7 +713,8 @@ class Generator(Frame):
         if self.replaceDialog:
             self.replaceDialog.show()
         else:
-            self.prevFind = self.master.focus_get().selection_get() or self.prevFind
+            try: self.prevFind = self.master.focus_get().selection_get()
+            except: pass
             self.replaceDialog = ReplaceDialog()
             self.replaceDialog.setOnFindListner(self.onFind)
             self.replaceDialog.setOnReplaceListener(self.onReplace)
