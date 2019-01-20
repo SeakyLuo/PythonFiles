@@ -7,7 +7,7 @@ import threading, subprocess, zipfile, ntpath, shutil
 from json import loads, dumps
 from atexit import register
 
-desktop = 'C:\\Users\\Seaky\\Desktop\\'
+desktop = os.path.join(os.environ['Desktop'], '')
 DataTypeError = Exception('This data type is not supported!')
 
 class Settings:
@@ -40,10 +40,8 @@ class Settings:
         self.settings[key] = value
 
     def load(self):
-        try:
-            self.settings = loads(fread(self.settingsFile, False))
-        except (FileNotFoundError, TypeError) as e:
-            self.settings = {}
+        try: self.settings = loads(fread(self.settingsFile, False))
+        except (FileNotFoundError, TypeError): self.settings = {}
 
     def save(self):
         fwrite(self.settingsFile, dumps(self.settings))
@@ -124,7 +122,7 @@ def rmlnk(path = None):
             os.rename(folder, folder.replace(' - 快捷方式', ''))
 
 def chdt():
-    '''Change current directory to Desktop.'''
+    '''Change current directory to Desktop'''
     os.chdir(desktop)
 
 def copyToClipboard(text):
@@ -170,9 +168,9 @@ def checkfolders(folder1, folder2):
 
 def findFilePath(filename, path = ''):
     '''Default path: All
-        Find the first occurence only.
-        Use smaller range to have faster searching speed.'''
-    if path == '':
+       Find the first occurence only.
+       Use smaller range to have faster searching speed.'''
+    if not path:
         c = findFilePath(filename, 'C:\\')
         if c:
             return c
@@ -441,9 +439,9 @@ class find:
     def all(self, occurrence):
         '''Find all the occurring positions in an obj.'''
         if self.type == str:
-            return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx:idx+len(occurrence)]]
+            return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx:idx+len(occurrence)] ]
         if self.type in [list, tuple]:
-            return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx]]
+            return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx] ]
         raise DataTypeError
 
     def any(self, *args):
@@ -456,13 +454,13 @@ class find:
         if self.type == str:
             for idx in range(len(self.obj)):
                 if occurrence == self.obj[idx:idx+len(occurrence)]:
-                    count+= 1
+                    count += 1
                     if count == 2:
                         return idx
         elif self.type in [list, tuple]:
             for idx in range(len(self.obj)):
                 if occurrence == self.obj[idx]:
-                    count+= 1
+                    count += 1
                     if count == 2:
                         return idx
         raise DataTypeError
@@ -478,7 +476,7 @@ class find:
             else:
                 index1 = 0
             if obj2:
-                index2 = self.obj[index1:].index(obj2)+index1
+                index2 = self.obj[index1:].index(obj2) + index1
             else:
                 index2 = None
             return self.obj[index1+len(obj1):index2]
@@ -529,12 +527,12 @@ class find:
             return -1
         index = self.obj.index(occurrence)
         if self.type == str:
-            for idx in range(len(self.obj)-1, index, -1):
-                if self.obj[idx:idx+len(occurrence)] == occurrence:
+            for idx in range(len(self.obj) - 1, index, -1):
+                if self.obj[idx:idx + len(occurrence)] == occurrence:
                     index = idx
                     break
         elif self.type in [list, tuple]:
-            for idx in range(len(self.obj)-1, index, -1):
+            for idx in range(len(self.obj) - 1, index, -1):
                 if self.obj[idx:] == occurrence:
                     index = idx
                     break
@@ -544,19 +542,15 @@ class find:
         '''Find all the subs of obj except the empty sub and itself.
            This fuction returns a list because set is not ordered.'''
         length = len(self.obj)
-        return [self.obj[j:j+i] for i in range(1, length) for j in range(length+1-i)]
+        return [self.obj[j:j + i] for i in range(1, length) for j in range(length + 1 - i)]
 
 def startwith(string, occurrence):
     '''Check whether the string starts with occurrence.'''
-    if len(string) >= len(occurrence):
-        return string[:len(occurrence)] == occurrence
-    return False
+    return len(string) >= len(occurrence) and string[:len(occurrence)] == occurrence
 
 def endwith(string, occurrence):
     '''Check whether the string ends with occurrence.'''
-    if len(string) >= len(occurrence):
-        return string[-len(occurrence):] == occurrence
-    return False
+    return len(string) >= len(occurrence) and string[-len(occurrence):] == occurrence
 
 flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
 
@@ -600,23 +594,23 @@ def delta_days(day1, day2):
     print(abs(delta))
 
 def substitute(obj, *args):
-    '''Support data type: str, tuple, list, set.
-        Usage: substitute([1, 2, 3, 4], 1, 2, 2, 3) // Returns [3, 3, 3, 4]
-        Abbreviation:sub'''
+    '''obj supported data type: str, tuple, list, set.
+       Usage: substitute([1, 2, 3, 4], 1, 2, 2, 3) // Returns [3, 3, 3, 4]
+       Abbreviation: sub'''
     num = len(args)
     if num == 0:
         return
     if num % 2:
-        raise Exception('Please type in the correct number of subsitution words!')
+        raise Exception('Please type in the correct number of words!')
     typ = type(obj)
     if typ == str:
         new = obj
         for i in range(0, num, 2):
             subed = args[i]
-            if type(subed)  !=  str:
+            if type(subed) != str:
                 subed = str(subed)
             subs = args[i + 1]
-            if type(subs)  !=  str:
+            if type(subs) != str:
                 subs = str(subs)
             new = new.replace(subed, subs)
     else:
@@ -655,25 +649,20 @@ def formatted():
             printstr = ''
             var = input('Please input your variables seperated with only 1 space or comma below. No input will stop this function.\n>>> ')
             varlst = advancedSplit(var)
-            if var == '':
+            if not var:
                 break
             if len(varlst) == 1:
                 varlst *= fmt.count('{}')
             elif len(varlst) != fmt.count('{}'):
-                print('Please type in the correct number of variables!')
+                print('Incorrect number of variables!')
                 continue
             for i in range(len(varlst)):
                 printstr += fmtlst[i]+varlst[i]
             if len(fmtlst) == len(varlst)+1:
                 printstr += fmtlst[-1]
             printlst.append(printstr)
-        seperation = input('How do you want to seperate them? Input your words below to seperate them. No input will be regarded as new line.\n>>> ')
-        print('\nThe format sentence you want is:\n\n')
-        for item in printlst:
-            if seperation != '' and item != printlst[-1]:
-                print(item, end = seperation)
-            else:
-                print(item)
+        seperation = input('Input Sentence Seperator. Default: \'\\n\'.\n>>> ') or '\n'
+        print('\nResult:\n\n' + seperation.join(printlst) + '\n\n')
 
 #abbreviation
 fmt = formatted
