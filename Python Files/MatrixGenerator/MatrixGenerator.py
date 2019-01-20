@@ -2,7 +2,6 @@ from tkinter import *
 from tkinter import messagebox, simpledialog
 from eztk import setEntry, clearEntry
 from random import randrange, shuffle
-from numpy import linalg
 import ez, ezs, os
 from Dialogs import *
 
@@ -1029,8 +1028,11 @@ class Generator(Frame):
         if size != self.getCol() or self.checkEmpty():
             return
         try:
-            result = ezs.integer(linalg.det(self.collectEntries(size, size, True, True)))
-            # result = ezs.integer(ezs.dc(self.generate()))
+            try:
+                from numpy import linalg
+                result = ezs.integer(linalg.det(self.collectEntries(size, size, True, True)))
+            except ModuleNotFoundError:
+                result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
             if self.settings[COPY_CALCULATION_RESULT]:
                 ez.copyToClipboard(str_result)

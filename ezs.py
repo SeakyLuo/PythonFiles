@@ -10,7 +10,7 @@ def npMatrixToLatex(matrix, printResult = True, copy = True):
     c = len(matrix[0])
     result = ml(r, c, ' '.join(str(entry) for row in matrix for entry in row))
     if copy:
-        ez.cpc(result)
+        ez.copyToClipboard(result)
     if printResult:
         print(result)
     else:

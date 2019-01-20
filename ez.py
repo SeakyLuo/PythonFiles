@@ -2,6 +2,7 @@ import os
 import datetime
 import time
 import urllib.request, urllib.parse
+import platform
 import threading, subprocess, zipfile, ntpath, shutil
 from json import loads, dumps
 from atexit import register
@@ -129,12 +130,29 @@ def chdt():
     os.chdir(desktop)
 
 def copyToClipboard(text):
-    ''' Copy text to clipboard'''
-    from win32 import win32clipboard
-    win32clipboard.OpenClipboard()
-    win32clipboard.EmptyClipboard()
-    win32clipboard.SetClipboardText(text)
-    win32clipboard.CloseClipboard()
+    ''' Copy text to clipboard. I don't care about Linux.'''
+    text = str(text)
+    system = platform.system()
+    if system == 'Windows':
+        try:
+            from win32 import win32clipboard
+            win32clipboard.OpenClipboard()
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardText(text, win32clipboard.CF_UNICODETEXT)
+            win32clipboard.CloseClipboard()
+        except ModuleNotFoundError:
+            # Solution: https://stackoverflow.com/questions/579687/how-do-i-copy-a-string-to-the-clipboard-on-windows-using-python/
+            from tkinter import Tk
+            r = Tk()
+            r.withdraw()
+            r.clipboard_clear()
+            r.clipboard_append(text)
+            r.update() # now it stays on the clipboard after the window is closed
+            r.destroy()
+    elif system == 'Darwin':
+        process = subprocess.Popen('pbcopy', env = {'LANG': 'en_US.UTF-8'}, stdin = subprocess.PIPE)
+        process.communicate(text.encode('utf-8'))
+
 ## abbreviation
 cpc = copyToClipboard
 
