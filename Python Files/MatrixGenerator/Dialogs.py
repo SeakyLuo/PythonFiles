@@ -36,7 +36,7 @@ class FindDialog(Tk):
         self.closeBorder = Frame(self, highlightbackground = BUTTON_BORDER)
         self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
         for i, (w, b) in enumerate(zip([self.findButton, self.closeButton], [self.findBorder, self.closeBorder])):
-            b.grid(row = 2, column = i + 1, sticky = NSEW)
+            b.grid(row = 2, column = i + 1)
             w.grid(row = 2, column = i + 1, sticky = NSEW)
             b.config(highlightthickness = 1, bd = 0)
             w['relief'] = FLAT
@@ -137,7 +137,7 @@ class ReplaceDialog(Tk):
         self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
         for i, (w, b) in enumerate(zip([self.findButton, self.replaceButton, self.replaceFindButton, self.replaceAllButton, self.closeButton], \
                                        [self.findBorder, self.replaceBorder, self.replaceFindBorder, self.replaceAllBorder, self.closeBorder])):
-            b.grid(row = 3, column = i + 1, sticky = NSEW)
+            b.grid(row = 3, column = i + 1)
             w.grid(row = 3, column = i + 1, sticky = NSEW)
             b.config(highlightthickness = 1, bd = 0)
             w['relief'] = FLAT
