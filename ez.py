@@ -12,10 +12,10 @@ DataTypeError = Exception('This data type is not supported!')
 
 class Settings:
     '''Recommend passing __file__ to file'''
-    def __init__(self, file, settingsFileName = 'settings.json'):
+    def __init__(self, file, settingsName = 'settings.json'):
         self.path = os.path.dirname(file)
-        self.settingsFileName = settingsFileName
-        self.settingsFile = os.path.join(self.path, settingsFileName)
+        self.settingsName = settingsName
+        self.settingsFile = os.path.join(self.path, self.settingsName)
         self.load()
         register(self.save)
 
@@ -50,10 +50,8 @@ class Settings:
 
 def tryEval(string):
     '''Use eval() without dealing with exceptions.'''
-    try:
-        return eval(string)
-    except:
-        return string
+    try: return eval(string)
+    except: return string
 
 def translate(string, to_l = 'zh', from_l = 'en'):
     '''Translate string from from_l language to to_l language'''
