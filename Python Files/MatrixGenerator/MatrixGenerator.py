@@ -80,9 +80,10 @@ A_TO_Z = 'A to Z'
 FROM_ARRAY = 'From ' + ARRAY
 FROM_LATEX = 'From ' + LATEX
 EXIT = 'Exit'
+ENTRY_WIDTH = 'EntryWidth'
 
 ## Settings
-settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, \
+settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, ENTRY_WIDTH, \
                   SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
 
 ## Shortcuts
@@ -97,13 +98,17 @@ otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for comman
 
 class Generator(Frame):
     def __init__(self, master):
-        ## init variables
         Frame.__init__(self, master)
         self.master = master
+
+        ## Settings
+        self.settings = ez.Settings(__file__)
+        self.settings.setSettingOptions(settingOptions)
+
+        ## init variables
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4
         self.entries = {}
-        self.entryWidth = 20
         self.stateIndex = 0
         self.states = [] ## (resultType, entries, focusEntry)
         ## Find Dialog
@@ -117,10 +122,6 @@ class Generator(Frame):
         self.currentDialog = None
         ## Slider Dialog
         self.sliderDialog = None
-
-        ## Settings
-        self.settings = ez.Settings(__file__)
-        self.settings.setSettingOptions(settingOptions)
 
         ## Generate Menus
         self.menu = Menu(self)
@@ -390,7 +391,7 @@ class Generator(Frame):
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
-                entry = Entry(self, width = self.entryWidth)
+                entry = Entry(self, width = self.settings.setdefault(ENTRY_WIDTH, 20))
                 self.bindMoveFocus(entry)
                 entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
                 bindtags = entry.bindtags()
@@ -1006,7 +1007,7 @@ class Generator(Frame):
         self.sliderDialog = None
 
     def modifyEntryWidth(self, value):
-        self.entryWidth = value
+        self.settings[ENTRY_WIDTH] = value
         for entry in self.entries.values():
             entry['width'] = value
 
@@ -1015,7 +1016,7 @@ class Generator(Frame):
             self.sliderDialog.show()
         else:
             self.sliderDialog = SliderDialog()
-            self.sliderDialog.setSliderValue(self.entryWidth)
+            self.sliderDialog.setSliderValue(self.settings[ENTRY_WIDTH])
             self.sliderDialog.setOnSliderChangeListener(self.modifyEntryWidth)
             self.sliderDialog.setOnDestroyListener(self.onSliderDestroy)
         self.currentDialog = self.sliderDialog
@@ -1119,7 +1120,9 @@ class Generator(Frame):
         except: return 0
 
     def onDestroy(self):
-        if self.currentDialog: self.currentDialog.withdraw()
+        if self.currentDialog:
+            try: self.currentDialog.withdraw()
+            except: pass
 
 root = Tk()
 app = Generator(root)

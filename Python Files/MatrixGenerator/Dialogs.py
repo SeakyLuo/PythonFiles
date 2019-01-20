@@ -205,6 +205,7 @@ class SliderDialog(Tk):
 
     def __onDestroy(self):
         if self.destroyListener: self.destroyListener()
+        self.withdraw()
 
     def setOnDestroyListener(self, listener):
         self.destroyListener = listener
