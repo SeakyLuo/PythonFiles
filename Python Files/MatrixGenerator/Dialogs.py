@@ -3,6 +3,8 @@ from tkinter import messagebox
 
 UP = 'Up'
 DOWN = 'Down'
+SYSTEM_HIGHLIGHT = 'SystemHighlight'
+BUTTON_BORDER = '#b5b5b5'
 
 class FindDialog(Tk):
     def __init__(self, *args, **kwargs):
@@ -27,10 +29,16 @@ class FindDialog(Tk):
         self.directionVar.set(DOWN)
         for i, w in enumerate([self.directionLabel, self.upRadio, self.downRadio]):
             w.grid(row = 1, column = i, sticky = NSEW)
-        self.findButton = Button(self, text = 'Find Next', command = self.find)
-        self.closeButton = Button(self, text = 'Close', command = self.close)
-        for i, w in enumerate([self.findButton, self.closeButton]):
+
+        self.findBorder = Frame(self, highlightbackground = SYSTEM_HIGHLIGHT)
+        self.findButton = Button(self.findBorder, text = 'Find Next', command = self.find)
+        self.closeBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
+        for i, (w, b) in enumerate(zip([self.findButton, self.closeButton], [self.findBorder, self.closeBorder])):
+            b.grid(row = 2, column = i + 1, sticky = NSEW)
             w.grid(row = 2, column = i + 1, sticky = NSEW)
+            b.config(highlightthickness = 1, bd = 0)
+            w['relief'] = FLAT
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.find())
@@ -105,13 +113,22 @@ class ReplaceDialog(Tk):
         self.directionVar.set(DOWN)
         for i, w in enumerate([self.directionLabel, self.upRadio, self.downRadio]):
             w.grid(row = 2, column = i, sticky = NSEW)
-        self.findButton = Button(self, text = 'Find', command = self.find)
-        self.replaceButton = Button(self, text = 'Replace', command = self.replace)
-        self.replaceFindButton = Button(self, text = 'Replace+Find', command = self.replaceFind)
-        self.replaceAllButton = Button(self, text = 'Replace All', command = self.replaceAll)
-        self.closeButton = Button(self, text = 'Close', command = self.close)
-        for i, w in enumerate([self.findButton, self.replaceButton, self.replaceFindButton, self.replaceAllButton, self.closeButton]):
+        self.findBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.findButton = Button(self.findBorder, text = 'Find', command = self.find)
+        self.replaceBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.replaceButton = Button(self.replaceBorder, text = 'Replace', command = self.replace)
+        self.replaceFindBorder = Frame(self, highlightbackground = SYSTEM_HIGHLIGHT)
+        self.replaceFindButton = Button(self.replaceFindBorder, text = 'Replace+Find', command = self.replaceFind)
+        self.replaceAllBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.replaceAllButton = Button(self.replaceAllBorder, text = 'Replace All', command = self.replaceAll)
+        self.closeBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
+        for i, (w, b) in enumerate(zip([self.findButton, self.replaceButton, self.replaceFindButton, self.replaceAllButton, self.closeButton], \
+                                       [self.findBorder, self.replaceBorder, self.replaceFindBorder, self.replaceAllBorder, self.closeBorder])):
+            b.grid(row = 3, column = i + 1, sticky = NSEW)
             w.grid(row = 3, column = i + 1, sticky = NSEW)
+            b.config(highlightthickness = 1, bd = 0)
+            w['relief'] = FLAT
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.replaceFind())
