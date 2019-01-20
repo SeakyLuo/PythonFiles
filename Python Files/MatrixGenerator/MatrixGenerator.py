@@ -465,13 +465,11 @@ class Generator(Frame):
 
     def moveFocus(self, event):
         key = event.keysym
-        move = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}
         cursor_index = event.widget.index(INSERT)
-        if type(event.widget) != Entry or key not in move or \
-           (key == LEFT and cursor_index > 0) or \
+        if (key == LEFT and cursor_index > 0) or \
            (key == RIGHT and cursor_index < len(event.widget.get())):
             return
-        x, y = move[key]
+        x, y = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}[key]
         info = event.widget.grid_info()
         r, c = info['row'], info['column']
         while True:
@@ -494,7 +492,7 @@ class Generator(Frame):
                 break
             elif type(w) == Entry and w['state'] != DISABLED:
                 w.focus()
-                w.icursor("end" if key == LEFT else 0)
+                w.icursor({LEFT: END, RIGHT: 0, UP: min(cursor_index, len(w.get())), DOWN: min(cursor_index, len(w.get()))}[key])
                 break
 
     def bindMoveFocus(self, entry):
