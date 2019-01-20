@@ -137,10 +137,10 @@ class ReplaceDialog(Tk):
         self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
         for i, (w, b) in enumerate(zip([self.findButton, self.replaceButton, self.replaceFindButton, self.replaceAllButton, self.closeButton], \
                                        [self.findBorder, self.replaceBorder, self.replaceFindBorder, self.replaceAllBorder, self.closeBorder])):
-            b.grid(row = 3, column = i + 1)
             w.grid(row = 3, column = i + 1, sticky = NSEW)
-            b.config(highlightthickness = 1, bd = 0)
             w['relief'] = FLAT
+            b.grid(row = 3, column = i + 1)
+            b.config(highlightthickness = 1, bd = 0)
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.replaceFind())
@@ -262,3 +262,72 @@ class SliderDialog(Tk):
         self.deiconify()
         self.lift()
         self.focus_force()
+
+class RangeDialog(Tk):
+    def __init__(self, *args, **kwargs):
+        Tk.__init__(self, *args, **kwargs)
+        self.title('Set Range')
+
+        self.confirmListener = None
+        self.closeListener = None
+
+        self.minLabel = Label(self, text = 'Min: ')
+        self.minVar = IntVar(self)
+        self.minEntry = Entry(self)
+        self.maxLabel = Label(self, text = 'Max: ')
+        self.maxVar = IntVar(self)
+        self.maxEntry = Entry(self)
+        for i, (l, e, v) in enumerate(zip([self.minLabel, self.maxLabel], [self.minEntry, self.maxEntry], [self.minVar, self.maxVar])):
+            l.grid(row = i, column = 0)
+            e.grid(row = i, column = 1, columnspan = 2)
+            e['textvariable'] = v
+            e.bind('<Up>', self.moveFocus)
+            e.bind('<Down>', self.moveFocus)
+        self.confirmBorder = Frame(self, highlightbackground = SYSTEM_HIGHLIGHT)
+        self.confirmButton = Button(self.confirmBorder, text = 'Confirm', command = self.onConfirm)
+        self.closeBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
+        for i, (w, b) in enumerate(zip([self.confirmButton, self.closeButton], [self.confirmBorder, self.closeBorder])):
+            w.grid(row = 2, column = i + 1, sticky = NSEW)
+            w['relief'] = FLAT
+            b.grid(row = 2, column = i + 1)
+            b.config(highlightthickness = 1, bd = 0)
+
+        self.bind('<Destroy>', lambda event: self.__onClose())
+        self.bind('<Return>', lambda event: self.onConfirm())
+        self.show()
+
+    def moveFocus(self, event):
+        if event.widget == self.minEntry:
+            self.replaceEntry.focus()
+        else:
+            self.findEntry.focus()
+
+    def setMinMax(self, minValue, maxValue):
+        self.minVar.set(minValue)
+        self.maxVar.set(maxValue)
+
+    def setOnConfirmListener(self, listener):
+        '''listener should have exactly 2 arguments: min and max'''
+        self.confirmListener = listener
+
+    def onConfirm(self):
+        if self.confirmListener: self.confirmListener(self.minEntry.get(), self.maxEntry.get())
+
+    def setOnCloseListener(self, listener):
+        '''listner should have no arguments.'''
+        self.closeListener = listener
+
+    def close(self):
+        self.__onClose()
+        self.withdraw()
+
+    def __onClose(self):
+        if self.closeListener: self.closeListener()
+
+    def show(self):
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+        self.minEntry.focus()
+        self.minEntry.select_range(0, END)

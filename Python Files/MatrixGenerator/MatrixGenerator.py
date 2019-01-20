@@ -9,8 +9,6 @@ from Dialogs import *
 ## Constant Variables
 maxSize = 25
 maxRandomVarLength = 10
-minValue = -100
-maxValue = 100
 
 defaultVar = 'x'
 
@@ -120,8 +118,9 @@ class Generator(Frame):
         self.replaceDialog = None
         self.prevReplace = ''
         self.replaceDirection = DOWN
-        ## Slider Dialog
+        ## Other Dialogs
         self.sliderDialog = None
+        self.rangeDialog = None
         self.currentDialog = None
 
         ## Generate Menus
@@ -189,9 +188,8 @@ class Generator(Frame):
                                             command = lambda: self.settings.setitem(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
         self.randomMatrixOption.set(self.settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
         self.randomMenu.add_separator()
-        self.randomMenu.add_command(label = 'Set Random Min', command = lambda: self.setRandom(min))
-        self.randomMenu.add_command(label = 'Set Random Max', command = lambda: self.setRandom(max))
-        self.randomMenu.add_command(label = 'Set Random Var', command = lambda: self.setRandom('var'))
+        self.randomMenu.add_command(label = 'Set Random Range', command = self.setRandomRange)
+        self.randomMenu.add_command(label = 'Set Random Var', command = self.setRandomVar)
         self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
         ## Modify Menu
         self.modifyMenu = Menu(self)
@@ -830,32 +828,47 @@ class Generator(Frame):
             setEntry(self.entries[divmod(i, col)], chr(ordA + char) * (count + 1))
         self.modifyStates()
 
-    def setRandom(self, option):
-        '''bound should be either min or max or var'''
-        if option == 'var':
-            result = self.settings[RANDOM_VAR]
-            while True:
-                result = simpledialog.askstring(title = 'Set Variable', prompt = f'Input a Variable Name With Length <= {maxRandomVarLength}', \
-                                                initialvalue = result)
-                if not result:
-                    return
-                if len(result) > 5:
-                    messagebox.showerror('Error', 'Variable too long')
-                elif not result[0].isalpha():
-                    messagebox.showerror('Error', 'The first letter should be alphabetical')
-                else:
-                    self.settings[RANDOM_VAR] = result
-                    return
+    def setRandomVar(self):
+        result = self.settings[RANDOM_VAR]
+        while True:
+            result = simpledialog.askstring(title = 'Set Variable', \
+                                            prompt = f'Input a Variable Name With Length <= {maxRandomVarLength}', \
+                                            initialvalue = result)
+            if not result:
+                return
+            if len(result) > maxRandomVarLength:
+                messagebox.showerror('Error', 'Variable too long')
+            elif not result[0].isalpha():
+                messagebox.showerror('Error', 'The first letter should be alphabetical')
+            else:
+                self.settings[RANDOM_VAR] = result
+                return
+
+    def onConfirmRange(self, minValue, maxValue):
+        try:
+            minValue = int(minValue)
+            maxValue = int(maxValue)
+            if minValue > maxValue:
+                raise Exception()
+            self.settings[RANDOM_MIN] = minValue
+            self.settings[RANDOM_MAX] = maxValue
+            self.rangeDialog.close()
+        except:
+            messagebox.showerror('Error', 'Invalid Input')
+            self.rangeDialog.show()
+            return
+
+    def onRangeClose(self):
+        self.rangeDialog = None
+
+    def setRandomRange(self):
+        if self.rangeDialog:
+            self.rangeDialog.show()
         else:
-            isMin = option == min
-            lower = minValue if isMin else self.settings[RANDOM_MIN] + 1
-            upper = self.settings[RANDOM_MAX] - 1 if isMin else maxValue
-            result = simpledialog.askinteger(title = 'Set Random', \
-                                             prompt = f'Input an Integer between {lower} and {upper}', \
-                                             initialvalue = self.settings[RANDOM_MIN if isMin else RANDOM_MAX],
-                                             minvalue = lower, maxvalue = upper)
-            if result != None:
-                self.settings[RANDOM_MIN if isMin else RANDOM_MAX] = result
+            self.rangeDialog = RangeDialog()
+            self.rangeDialog.setMinMax(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX])
+            self.rangeDialog.setOnConfirmListener(self.onConfirmRange)
+            self.rangeDialog.setOnCloseListener(self.onRangeClose)
 
     def randomFill(self):
         resultType = self.resultType.get()
