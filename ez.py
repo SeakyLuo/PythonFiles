@@ -1,12 +1,10 @@
-import math
-import random
-import datetime
 import os
+import datetime
 import time
-import subprocess, threading, zipfile, ntpath, shutil
-from win32 import win32clipboard
-from atexit import register
+import urllib.request, urllib.parse
+import threading, subprocess, zipfile, ntpath, shutil
 from json import loads, dumps
+from atexit import register
 
 desktop = 'C:\\Users\\Seaky\\Desktop\\'
 DataTypeError = Exception('This data type is not supported!')
@@ -59,7 +57,6 @@ def tryEval(string):
 def translate(string, to_l = 'zh', from_l = 'en'):
     '''Translate string from from_l language to to_l language'''
     if not string: return ''
-    import urllib.request, urllib.parse
     header = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
     flag = 'class="t0">'
     query = urllib.parse.quote(string, encoding = 'utf-8')
@@ -133,6 +130,7 @@ def chdt():
 
 def copyToClipboard(text):
     ''' Copy text to clipboard'''
+    from win32 import win32clipboard
     win32clipboard.OpenClipboard()
     win32clipboard.EmptyClipboard()
     win32clipboard.SetClipboardText(text)
@@ -564,13 +562,13 @@ def without(obj, *args):
     if typ == list:
         return [ i for i in obj if i not in args]
     if typ == tuple:
-        return ( i for i in obj if i not in args)
+        return ( i for i in obj if i not in args )
     if typ == str:
         for arg in args:
             obj = obj.replace(arg, '')
         return obj
     if typ == dict:
-        return { k:obj[k] for k in obj if k not in args}
+        return { k:obj[k] for k in obj if k not in args }
     if typ in [set, frozenset]:
         return obj.difference(args)
     raise DataTypeError
@@ -582,7 +580,7 @@ def delta_days(day1, day2):
     day = lambda x:x%100
     start = datetime.datetime(year(day1), month(day1), day(day1))
     end = datetime.datetime(year(day2), month(day2), day(day2))
-    delta = (end-start).days+1
+    delta = (end - start).days + 1
     print(abs(delta))
 
 def substitute(obj, *args):
