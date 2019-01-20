@@ -23,7 +23,7 @@ class Simplifier(Tk):
         self.brackets = {'[': ']', '(': ')', '{': '}', '（': '）',\
         '【': '】', '<': '>', '《': '》', '『': '』', '「': '」'}
         self.rbrackets = { self.brackets[key]: key for key in self.brackets }
-        
+
         self.buttonbar = Frame(self)
         self.input = Frame(self)
         self.widgetbar = Frame(self)
@@ -92,7 +92,7 @@ class Simplifier(Tk):
         self.countLines()
         self.countChars()
     def countLines(self):
-        if self.wrappers['lines']: 
+        if self.wrappers['lines']:
             count = lambda t: t.count('\n')+(t[-1] != '\n') if t else 0
             up = count(gettxt(self.t1))
             down = count(gettxt(self.t2))
@@ -148,7 +148,7 @@ class Simplifier(Tk):
     def fontSize(self):
         value = int(self.w8.get())
         self.wrappers['fontsize'] = value
-        self.w8['label'] = 'FontSize: ' + str(value)
+        self.w8['label'] = f'FontSize: {value}'
         self.t2['font'] = ('TkFixedFont', value)
     def wrapper(self):
         string = gettxt(self.t1)
@@ -160,7 +160,7 @@ class Simplifier(Tk):
             elif func == 'smartnl': string = self.smart_newline_remover(string)
             elif func == 'punc': string = self.punc_switch(string)
             self.wd[func]['relief'] = GROOVE
-        
+
         if self.wrappers['space']: string = self.space_remover(string)
         if self.wrappers['translate']: string = self.translate(string)
         ez.fwrite(self.btxt, self.wrappers)
@@ -186,7 +186,7 @@ class Simplifier(Tk):
     def newline_remover(self, string):
         new = ''
         for i,ch in enumerate(string):
-            new += ' ' if ch == '\n' else ch  
+            new += ' ' if ch == '\n' else ch
         return new.strip()
     def brackets_remover(self, string):
         new = ''
@@ -232,7 +232,7 @@ class Simplifier(Tk):
     def switch_punc(self):
         texts = ['Punctuation', 'en', 'zh']
         states = [0] + texts[1:]
-        next_index = (states.index(self.wrappers['punc']) + 1) % len(states) 
+        next_index = (states.index(self.wrappers['punc']) + 1) % len(states)
         self.wrappers['punc'] = states[next_index]
         self.b6['text'] = texts[next_index]
         if next_index == 0: self.b6['relief'] = FLAT
@@ -259,7 +259,7 @@ class Simplifier(Tk):
                 messagebox.showerror('Error', 'No Network!')
             self.remover('translate')
             return string
-        
+
 app = Simplifier()
 app.mainloop()
 ez.py2pyw(__file__)

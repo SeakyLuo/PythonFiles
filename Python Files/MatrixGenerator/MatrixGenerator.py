@@ -7,7 +7,7 @@ import ez, ezs, os
 from Dialogs import *
 
 ## Constant Variables
-maxSize = 16
+maxSize = 25
 maxRandomVarLength = 10
 minValue = -100
 maxValue = 100
@@ -103,6 +103,7 @@ class Generator(Frame):
         self.minRows = self.maxRows = 2
         self.minCols = self.maxCols = 4
         self.entries = {}
+        self.entryWidth = 20
         self.stateIndex = 0
         self.states = [] ## (resultType, entries, focusEntry)
         ## Find Dialog
@@ -114,6 +115,8 @@ class Generator(Frame):
         self.replaceDialog = None
         self.prevReplace = ''
         self.currentDialog = None
+        ## Slider Dialog
+        self.sliderDialog = None
 
         ## Settings
         self.settings = ez.Settings(__file__)
@@ -211,6 +214,7 @@ class Generator(Frame):
         ## Settings Menu
         self.settingsMenu = Menu(self)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
+        self.settingsMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
                                           command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
         self.settingsMenu.add_separator()
@@ -386,7 +390,7 @@ class Generator(Frame):
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
-                entry = Entry(self)
+                entry = Entry(self, width = self.entryWidth)
                 self.bindMoveFocus(entry)
                 entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
                 bindtags = entry.bindtags()
@@ -408,6 +412,8 @@ class Generator(Frame):
         if not result:
             return
         result = ezs.integer(ez.tryEval(result))
+        if result == 0:
+            return
         for entry in self.entries.values():
             text = ez.tryEval(entry.get())
             if not text:
@@ -415,7 +421,9 @@ class Generator(Frame):
             elif ezs.isNumeric(text) and ezs.isNumeric(result):
                 new_text = ezs.integer(text + result)
             else:
-                new_text = f'{text} + {result}'
+                if ezs.isNumeric(result):
+                    result = ('+' if result > 0 else '') + str(result)
+                new_text = f'{text}{result}'
             setEntry(entry, new_text)
         self.modifyStates()
 
@@ -993,6 +1001,24 @@ class Generator(Frame):
                 del self.entries[key]
             self.rowEntry.focus()
         self.modifyStates()
+
+    def onSliderDestroy(self):
+        self.sliderDialog = None
+
+    def modifyEntryWidth(self, value):
+        self.entryWidth = value
+        for entry in self.entries.values():
+            entry['width'] = value
+
+    def adjustEntryWidth(self):
+        if self.sliderDialog:
+            self.sliderDialog.show()
+        else:
+            self.sliderDialog = SliderDialog()
+            self.sliderDialog.setSliderValue(self.entryWidth)
+            self.sliderDialog.setOnSliderChangeListener(self.modifyEntryWidth)
+            self.sliderDialog.setOnDestroyListener(self.onSliderDestroy)
+        self.currentDialog = self.sliderDialog
 
     def checkEmpty(self):
         for entry in list(self.entries.values()) + [self.rowEntry, self.colEntry]:

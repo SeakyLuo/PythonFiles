@@ -174,3 +174,42 @@ class ReplaceDialog(Tk):
 
     def getDirection(self):
         return self.directionVar.get()
+
+class SliderDialog(Tk):
+    def __init__(self, *args, **kwargs):
+        Tk.__init__(self, *args, **kwargs)
+        self.title('Adjust Width')
+
+        self.sliderListener = None
+        self.ENTRY_WIDTH = 'Entry Width'
+        self.slider = Scale(self, label = self.ENTRY_WIDTH, from_ = 5, to = 50, orient = HORIZONTAL,\
+                        showvalue = 0, command = lambda event: self.onSliderChange())
+        self.slider.pack()
+        self.bind('<Destroy>', lambda event: self.__onDestroy())
+        self.show()
+
+    def setSliderValue(self, value):
+        self.slider.set(value)
+        self.__setSliderText(value)
+
+    def setOnSliderChangeListener(self, listener):
+        self.sliderListener = listener
+
+    def onSliderChange(self):
+        sliderValue = self.slider.get()
+        if self.sliderListener: self.sliderListener(sliderValue)
+        self.__setSliderText(sliderValue)
+
+    def __setSliderText(self, text):
+        self.slider['label'] = f'{self.ENTRY_WIDTH}: {text}'
+
+    def __onDestroy(self):
+        if self.destroyListener: self.destroyListener()
+
+    def setOnDestroyListener(self, listener):
+        self.destroyListener = listener
+
+    def show(self):
+        self.deiconify()
+        self.lift()
+        self.focus_force()
