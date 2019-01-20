@@ -106,8 +106,6 @@ class Generator(Frame):
         self.settings.setSettingOptions(settingOptions)
 
         ## init variables
-        self.minRows = self.maxRows = 2
-        self.minCols = self.maxCols = 4
         self.entries = {}
         self.stateIndex = 0
         self.states = [] ## (resultType, entries, focusEntry)
@@ -116,12 +114,14 @@ class Generator(Frame):
         self.findResult = []
         self.prevFind = ''
         self.findIndex = -1
+        self.findDirection = DOWN
         ## Replace Dialog
         self.replaceDialog = None
         self.prevReplace = ''
-        self.currentDialog = None
+        self.replaceDirection = DOWN
         ## Slider Dialog
         self.sliderDialog = None
+        self.currentDialog = None
 
         ## Generate Menus
         self.menu = Menu(self)
@@ -214,10 +214,10 @@ class Generator(Frame):
                             SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
         ## Settings Menu
         self.settingsMenu = Menu(self)
-        self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
+        self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
-                                          command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (0, 0) ))
+                                          command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1) ))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.settingsMenu]):
@@ -226,36 +226,42 @@ class Generator(Frame):
         self.master.config(menu = self.menu)
 
         ## Generate Widgets
-        self.resultTypeLabel = Label(self, text = 'Type:')
+        self.topFrame = Frame(self)
+        self.entryFrame = Frame(self)
+        self.resultTypeLabel = Label(self.topFrame, text = 'Type:')
         self.resultType = StringVar(self)
-        self.resultTypeDropdown = OptionMenu(self, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
-        self.resultFormatLabel = Label(self, text = 'Format:')
+        self.resultTypeDropdown = OptionMenu(self.topFrame, self.resultType, *resultTypeOptions, command = lambda event: self.onResultTypeChange())
+        self.resultFormatLabel = Label(self.topFrame, text = 'Format:')
         self.resultFormat = StringVar(self)
-        self.resultFormatDropdown = OptionMenu(self, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
+        self.resultFormatDropdown = OptionMenu(self.topFrame, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
 
-        self.rowLabel = Label(self, text = 'Rows:')
-        self.rowEntry = Entry(self)
-        self.colLabel = Label(self, text = 'Columns:')
-        self.colEntry = Entry(self)
+        self.rowLabel = Label(self.topFrame, text = 'Rows:')
+        self.rowEntry = Entry(self.topFrame)
+        self.colLabel = Label(self.topFrame, text = 'Columns:')
+        self.colEntry = Entry(self.topFrame)
+        self.sizeEntries = [self.rowEntry, self.colEntry]
         self.rowEntry.focus()
-        for entry in [self.rowEntry, self.colEntry]:
-            self.bindMoveFocus(entry)
-            entry.bind('<KeyRelease>', self.onRowColChange)
-            bindtags = entry.bindtags()
-            entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
-        if self.rememberSizeVar.get():
-            r, c = self.settings[REMEMBER_SIZE]
-            if r:
-                setEntry(self.rowEntry, r)
-            if c:
-                setEntry(self.colEntry, c)
-            self.generateEntries(r, c)
 
         ## Place Widgets
         for i, w in enumerate([self.resultTypeLabel, self.resultTypeDropdown, self.resultFormatLabel, self.resultFormatDropdown]):
             w.grid(row = 0, column = i, sticky = NSEW)
         for i, w in enumerate([self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
             w.grid(row = 1, column = i, sticky = NSEW)
+        self.topFrame.pack(side = TOP, anchor = W)
+        self.entryFrame.pack(side = BOTTOM, anchor = W)
+
+        for entry in self.sizeEntries:
+            self.bindMoveFocus(entry)
+            entry.bind('<KeyRelease>', self.onRowColChange)
+            bindtags = entry.bindtags()
+            entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
+        if self.rememberSizeVar.get():
+            r, c = self.settings[REMEMBER_SIZE]
+            if r > 0:
+                setEntry(self.rowEntry, r)
+            if c > 0:
+                setEntry(self.colEntry, c)
+            self.generateEntries(r, c)
 
         ## Bind
         self.master.bind('<Destroy>', lambda event: self.onDestroy())
@@ -322,6 +328,13 @@ class Generator(Frame):
         self.setRow(row)
         self.setCol(col)
 
+    def getRowCol(self):
+        return (self.getRow(), self.getCol())
+
+    def syncRowCol(self, size):
+        self.setRowCol(size, size)
+        self.generateEntries(size, size)
+
     def setResultType(self, resultType):
         if self.resultType.get() == resultType:
             return
@@ -331,8 +344,7 @@ class Generator(Frame):
     def onResultTypeChange(self):
         resultType = self.resultType.get()
         self.settings[RESULT_TYPE] = resultType
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if resultType == MATRIX:
             self.colEntry['state'] = NORMAL
         elif resultType == DETERMINANT:
@@ -357,6 +369,8 @@ class Generator(Frame):
         self.settings[RESULT_FORMAT] = self.resultFormat.get()
 
     def onRowColChange(self, event):
+        if event.keysym in directions:
+            return
         text = event.widget.get()
         if not text:
             return
@@ -371,42 +385,132 @@ class Generator(Frame):
             value = int(new_text) if new_text else 0
         setEntry(event.widget, min(value, maxSize))
         resultType = self.resultType.get()
-        r = self.getRow()
-        c = self.getCol()
-        if resultType in [DETERMINANT, IDENTITY_MATRIX]:
+        r, c = self.getRowCol()
+        if resultType == DETERMINANT:
             size = r if text == str(r) else c
             r = c = size
             self.syncRowCol(size)
-        self.maxRows = r + self.minRows
-        self.maxCols = max(c, self.maxCols)
         self.generateEntries(r, c)
         if self.rememberSizeVar.get():
             self.settings[REMEMBER_SIZE] = (r, c)
         self.modifyStates()
 
     def generateEntries(self, row, col):
-        if not row or not col:
+        if row < 1 or col < 1:
             return
         for i in range(row):
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
-                entry = Entry(self, width = self.settings.setdefault(ENTRY_WIDTH, 20))
+                entry = Entry(self.entryFrame, width = self.settings.setdefault(ENTRY_WIDTH, 20))
                 self.bindMoveFocus(entry)
                 entry.bind('<KeyRelease>', lambda event: self.onEntryChange)
                 bindtags = entry.bindtags()
                 entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
-                entry.grid(row = self.minRows + i, column = j, sticky = NSEW)
+                entry.grid(row = i, column = j, sticky = NSEW)
                 self.entries[(i, j)] = entry
         for i, j in self.entries.copy():
             if i not in range(row) or j not in range(col):
                 self.entries[(i, j)].grid_forget()
                 del self.entries[(i, j)]
-        self.maxRows = self.minRows + row
-        self.maxCols = max(self.minCols, col)
 
     def onEntryChange(self):
         self.modifyStates()
+
+    def bindMoveFocus(self, entry):
+        for key in ['<Up>', '<Down>', '<Left>', '<Right>']:
+            entry.bind(key, self.moveFocus)
+
+    def moveFocus(self, event):
+        key = event.keysym
+        entry = event.widget
+        cursorIndex = entry.index(INSERT)
+        isEnd = cursorIndex == len(entry.get())
+        if (key == LEFT and cursorIndex > 0) or \
+           (key == RIGHT and not isEnd):
+            return
+        row, col = self.getRowCol()
+        if entry in self.sizeEntries:
+            if key in [LEFT, RIGHT]:
+                fEntry = self.sizeEntries[entry == self.rowEntry]
+            else:
+                # check empty
+                if self.entries:
+                    fEntry = self.entries[(row - 1 if key == UP else 0, 0 if entry == self.rowEntry else col - 1)]
+                else:
+                    return
+        else:
+            info = entry.grid_info()
+            r, c = info['row'], info['column']
+            if c in [0, col - 1] and ((key == UP and r == 0) or (key == DOWN and r == row - 1)):
+                fEntry = self.sizeEntries[c != 0]
+            else:
+                x, y = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}[key]
+                r = (r + x) % row
+                c = (c + y) % col
+                fEntry = self.entries[(r, c)]
+        fEntry.focus()
+        if key in [UP, DOWN]:
+            fEntry.icursor(END if isEnd else min(len(fEntry.get()), cursorIndex))
+        else:
+            fEntry.icursor(END if key == LEFT else 0)
+        return
+
+    def checkEmpty(self):
+        for entry in [self.rowEntry, self.colEntry] + list(self.entries.values()):
+            if not entry.get():
+                messagebox.showerror(title = 'Error', message = 'Not All Entries are Filled')
+                return True
+        return False
+
+    def generate(self):
+        if self.checkEmpty():
+            return
+        result = ''
+        r, c = self.getRowCol()
+        resultType = self.resultType.get()
+        resultFormat = self.resultFormat.get()
+        if resultFormat == LATEX:
+            vecOption = self.vecOptionVar.get()
+            if resultType == VECTOR and vecOption != COLUMN_VECTOR:
+                result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
+            else:
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)))
+        elif resultFormat == ARRAY:
+            if resultType == VECTOR and self.settings[ARRAY_VECTOR]:
+                result = str(self.collectEntries(r, c))
+            else:
+                result = ezs.ma(r, c, ' '.join(self.collectEntries(r, c, False)))
+        if self.settings[COPY_GENERATION_RESULT]:
+            ez.copyToClipboard(result)
+        if self.settings[SHOW_GENERATION_RESULT]:
+            messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
+        clearOption = self.settings[GENERATE_CLEAR_OPTION]
+        if clearOption == CLEAR_ENTRIES:
+            self.clear(0)
+        elif clearOption == CLEAR_ALL:
+            self.clear(1)
+        return result
+
+    def collectEntries(self, r, c, evaluate = True, nested = False):
+        entries = []
+        for i in range(r):
+            if nested:
+                lst = []
+            for j in range(c):
+                text = self.entries[(i, j)].get()
+                if evaluate: text = ez.tryEval(text)
+                if nested: lst.append(text)
+                else: entries.append(text)
+            if nested:
+                entries.append(lst)
+        return entries
+
+    def switchResultType(self, move):
+        self.setResultType(resultTypeOptions[(resultTypeOptions.index(self.resultType.get()) + move) % len(resultTypeOptions)])
+
+    def switchResultFormat(self, move):
+        self.setResultFormat(resultFormatOptions[(resultFormatOptions.index(self.resultFormat.get()) + move) % len(resultFormatOptions)])
 
     def add(self):
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
@@ -472,66 +576,13 @@ class Generator(Frame):
             setEntry(entry, new_text)
         self.modifyStates()
 
-    def bindMoveFocus(self, entry):
-        for key in ['<Up>', '<Down>', '<Left>', '<Right>']:
-            entry.bind(key, self.moveFocus)
-
-    def moveFocus(self, event):
-        key = event.keysym
-        cursor_index = event.widget.index(INSERT)
-        if (key == LEFT and cursor_index > 0) or \
-           (key == RIGHT and cursor_index < len(event.widget.get())):
-            return
-        x, y = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}[key]
-        info = event.widget.grid_info()
-        r, c = info['row'], info['column']
-        while True:
-            r += x
-            c += y
-            if r == self.maxRows:
-                r = 0
-                c = (c + 1) % self.maxCols if self.entries else c
-            elif r == -1:
-                r = self.maxRows - 1
-                c = (c - 1) % self.maxCols if self.entries else c
-            elif c == self.maxCols:
-                c = 0
-                r = (r + 1) % self.maxRows if self.entries else r
-            elif c == -1:
-                c = self.maxCols - 1
-                r = (r - 1) % self.maxRows if self.entries else r
-            w = self.findByGrid(r, c)
-            if w == event.widget:
-                break
-            elif type(w) == Entry and w['state'] != DISABLED:
-                w.focus()
-                w.icursor({LEFT: END, RIGHT: 0, UP: min(cursor_index, len(w.get())), DOWN: min(cursor_index, len(w.get()))}[key])
-                break
-
-    def findByGrid(self, row, column):
-        for child in self.children.values():
-            info = child.grid_info()
-            if info and info['row'] == row and info['column'] == column:
-                return child
-        return None
-
     def insert(self, fromFormat):
         '''fromFormat can only be LaTeX or Array'''
-        def isIdentity(matrix):
-            zero = ['0', 0]
-            one = ['1', 1]
-            for i, row in enumerate(matrix):
-                for j, entry in enumerate(row):
-                    if (i == j and entry not in one) or (i != j and entry not in zero):
-                        return False
-            return True
         def getResultType(matrix):
             if len(matrix) == 1 and len(matrix[0]) == 1:
                 return MATRIX
             elif len(matrix[0]) == 1:
                 return VECTOR
-            else:
-                return IDENTITY_MATRIX if isIdentity(matrix) else MATRIX
         result = ''
         while True:
             try:
@@ -575,19 +626,8 @@ class Generator(Frame):
                 messagebox.showerror(title = 'Error', message = 'Invalid Input')
         self.modifyStates()
 
-    def switchResultType(self, move):
-        self.setResultType(resultTypeOptions[(resultTypeOptions.index(self.resultType.get()) + move) % len(resultTypeOptions)])
-
-    def switchResultFormat(self, move):
-        self.setResultFormat(resultFormatOptions[(resultFormatOptions.index(self.resultFormat.get()) + move) % len(resultFormatOptions)])
-
-    def syncRowCol(self, size):
-        self.setRowCol(size, size)
-        self.generateEntries(size, size)
-
     def fillIdentityMatrix(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if row != col:
             self.syncRowCol(max(row, col))
         for i, j in self.entries:
@@ -615,7 +655,7 @@ class Generator(Frame):
         self.master.deiconify()
         entry.focus()
         entry.select_range(start, end)
-        entry.icursor(end)\
+        entry.icursor(end)
 
     def onFind(self, target, direction):
         if not target:
@@ -645,6 +685,9 @@ class Generator(Frame):
     def onFindClose(self):
         self.findDialog = None
 
+    def onFindDirectionChange(self, direction):
+        self.findDirection = direction
+
     def find(self, findType):
         if findType == FIND_VALUE:
             self.findIndex = -1
@@ -656,7 +699,9 @@ class Generator(Frame):
                 self.findDialog = FindDialog()
                 self.findDialog.setOnFindListner(self.onFind)
                 self.findDialog.setOnCloseListener(self.onFindClose)
+                self.findDialog.setOnDirectionChangeListener(self.onFindDirectionChange)
                 self.findDialog.setFind(self.prevFind)
+                self.findDialog.setDirection(self.findDirection)
             self.currentDialog = self.findDialog
         elif findType == FIND_LOCATION:
             result = ''
@@ -680,20 +725,21 @@ class Generator(Frame):
         self.prevReplace = replace
         if self.findIndex == -1:
             self.onFind(find, direction)
-        if self.findIndex == -1:
+        if self.findIndex == -1 or not self.findResult:
             return
-        self.setFindDirection(DOWN if direction == UP else UP)
-        entry = self.entries[self.findResult.pop(self.findIndex)[0]]
+        entry = self.entries[self.findResult[self.findIndex][0]]
+        setEntry(entry, entry.get().replace(find, replace))
+        self.setFoundEntry()
+        self.findResult.pop(self.findIndex)
         if not self.findResult:
             self.findIndex = -1
-        setEntry(entry, entry.get().replace(find, replace))
-        self.setFindDirection(direction)
+        if direction == UP:
+            self.findIndex = (self.findIndex - 1) % len(self.findResult)
         self.modifyStates()
 
     def onReplaceFind(self, find, replace, direction):
         self.onReplace(find, replace, direction)
         self.setFoundEntry()
-        self.setFindDirection(direction)
 
     def onReplaceAll(self, find, replace):
         self.prevFind = find
@@ -705,6 +751,9 @@ class Generator(Frame):
         for entry in self.entries.values():
             setEntry(entry, entry.get().replace(find, replace))
         self.modifyStates()
+
+    def onReplaceDirectionChange(self, direction):
+        self.replaceDirection = direction
 
     def onReplaceClose(self):
         self.replaceDialog = None
@@ -720,9 +769,11 @@ class Generator(Frame):
             self.replaceDialog.setOnReplaceListener(self.onReplace)
             self.replaceDialog.setOnReplaceFindListener(self.onReplaceFind)
             self.replaceDialog.setOnReplaceAllListener(self.onReplaceAll)
+            self.replaceDialog.setOnDirectionChangeListener(self.onReplaceDirectionChange)
             self.replaceDialog.setOnCloseListener(self.onReplaceClose)
             self.replaceDialog.setFind(self.prevFind)
             self.replaceDialog.setReplace(self.prevReplace)
+            self.replaceDialog.setDirection(self.replaceDirection)
         self.currentDialog = self.replaceDialog
         return 'break'
 
@@ -730,8 +781,7 @@ class Generator(Frame):
         resultType = self.resultType.get()
         if resultType not in [MATRIX, DETERMINANT, VECTOR]:
             return
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRow()
         entries = { key: self.entries[key].get() for key in self.entries }
         if row != col:
             if resultType == VECTOR:
@@ -749,8 +799,7 @@ class Generator(Frame):
         self.modifyStates()
 
     def oneToN(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if not row or not col or not self.entries:
             return
         for i in range(row * col):
@@ -758,8 +807,7 @@ class Generator(Frame):
         self.modifyStates()
 
     def aToZ(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if not row or not col or not self.entries:
             return
         ordA = ord('a')
@@ -797,8 +845,7 @@ class Generator(Frame):
 
     def randomFill(self):
         resultType = self.resultType.get()
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if not row or not col:
             if resultType == MATRIX:
                 if not row:
@@ -842,8 +889,7 @@ class Generator(Frame):
         self.modifyStates()
 
     def sort(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if not row or not col or not self.entries:
             return 'break'
         varFormat = True
@@ -862,18 +908,15 @@ class Generator(Frame):
         if varFormat:
             values = [f'{var}_' + '{' + str(number) + '}' for var, number in sorted(vars)]
         else:
-            try:
-                values = sorted(self.collectEntries(row, col))
-            except:
-                values = sorted(self.collectEntries(row, col, False))
+            try: values = sorted(self.collectEntries(row, col))
+            except: values = sorted(self.collectEntries(row, col, False))
         for i in range(row * col):
             setEntry(self.entries[divmod(i, col)], values[i])
         self.modifyStates()
         return 'break'
 
     def reverse(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if not row or not col or not self.entries:
             return 'break'
         for i in range(row * col // 2):
@@ -886,11 +929,10 @@ class Generator(Frame):
         return 'break'
 
     def reshape(self):
-        if self.resultType.get() in [DETERMINANT, IDENTITY_MATRIX]:
+        if self.resultType.get() == DETERMINANT:
             messagebox.showerror('Error', 'Invalid Option')
             return
-        r = self.getRow()
-        c = self.getCol()
+        r, c = self.getRowCol()
         size = r * c
         if ezs.isPrime(size) or (size > maxSize and len(ezs.findAllFactors(size)) == 4):
             x, y = c, r
@@ -930,8 +972,7 @@ class Generator(Frame):
         self.modifyStates()
 
     def permutationMatrix(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         size = max(row, col) or min(row, col) or randrange(maxSize) + 1
         self.setResultType(MATRIX)
         if not row == col == size:
@@ -1023,57 +1064,6 @@ class Generator(Frame):
             self.sliderDialog.setOnDestroyListener(self.onSliderDestroy)
         self.currentDialog = self.sliderDialog
 
-    def checkEmpty(self):
-        for entry in list(self.entries.values()) + [self.rowEntry, self.colEntry]:
-            if not entry.get():
-                messagebox.showerror(title = 'Error', message = 'Not All Entries are Filled')
-                return True
-        return False
-
-    def generate(self):
-        if self.checkEmpty():
-            return
-        result = ''
-        r = self.getRow()
-        c = self.getCol()
-        resultType = self.resultType.get()
-        resultFormat = self.resultFormat.get()
-        if resultFormat == LATEX:
-            vecOption = self.vecOptionVar.get()
-            if resultType == VECTOR and vecOption != COLUMN_VECTOR:
-                result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
-            else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)))
-        elif resultFormat == ARRAY:
-            if resultType == VECTOR and self.settings[ARRAY_VECTOR]:
-                result = str(self.collectEntries(r, c))
-            else:
-                result = ezs.ma(r, c, ' '.join(self.collectEntries(r, c, False)))
-        if self.settings[COPY_GENERATION_RESULT]:
-            ez.copyToClipboard(result)
-        if self.settings[SHOW_GENERATION_RESULT]:
-            messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
-        clearOption = self.settings[GENERATE_CLEAR_OPTION]
-        if clearOption == CLEAR_ENTRIES:
-            self.clear(0)
-        elif clearOption == CLEAR_ALL:
-            self.clear(1)
-        return result
-
-    def collectEntries(self, r, c, evaluate = True, nested = False):
-        entries = []
-        for i in range(r):
-            if nested:
-                lst = []
-            for j in range(c):
-                text = self.entries[(i, j)].get()
-                if evaluate: text = ez.tryEval(text)
-                if nested: lst.append(text)
-                else: entries.append(text)
-            if nested:
-                entries.append(lst)
-        return entries
-
     def undo(self):
         if self.stateIndex == 0:
             return
@@ -1105,8 +1095,7 @@ class Generator(Frame):
             self.entries[divmod(focus, c)].focus()
 
     def modifyStates(self):
-        row = self.getRow()
-        col = self.getCol()
+        row, col = self.getRowCol()
         if not row and not col:
             return
         state = (self.resultType.get(), \

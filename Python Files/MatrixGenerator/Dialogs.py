@@ -14,6 +14,7 @@ class FindDialog(Tk):
         ## Variables
         self.findText = ''
         self.findListner = None
+        self.directionListener = None
         self.closeListener = None
 
         self.findLabel = Label(self, text = 'Find:')
@@ -24,8 +25,8 @@ class FindDialog(Tk):
         self.findEntry.grid(columnspan = 5)
         self.directionLabel = Label(self, text = 'Direction:')
         self.directionVar = StringVar(self)
-        self.upRadio = Radiobutton(self, text = UP, value = UP, variable = self.directionVar)
-        self.downRadio = Radiobutton(self, text = DOWN, value = DOWN, variable = self.directionVar)
+        self.upRadio = Radiobutton(self, text = UP, value = UP, variable = self.directionVar, command = self.onDirectionChange)
+        self.downRadio = Radiobutton(self, text = DOWN, value = DOWN, variable = self.directionVar, command = self.onDirectionChange)
         self.directionVar.set(DOWN)
         for i, w in enumerate([self.directionLabel, self.upRadio, self.downRadio]):
             w.grid(row = 1, column = i, sticky = NSEW)
@@ -57,6 +58,16 @@ class FindDialog(Tk):
 
     def find(self):
         if self.findListner: self.findListner(self.findEntry.get(), self.getDirection())
+
+    def setOnDirectionChangeListener(self, listener):
+        self.directionListener = listener
+
+    def onDirectionChange(self):
+        '''listner should have exactly 1 argument: direction.'''
+        if self.directionListener: self.directionListener(self.directionVar.get())
+
+    def setDirection(self, direction):
+        self.directionVar.set(direction)
 
     def setOnCloseListener(self, listener):
         '''listner should have no arguments.'''
@@ -90,6 +101,7 @@ class ReplaceDialog(Tk):
         self.replaceListener = None
         self.replaceFindListener = None
         self.replaceAllListener = None
+        self.directionListener = None
         self.closeListener = None
 
         self.findLabel = Label(self, text = 'Find:')
@@ -108,8 +120,8 @@ class ReplaceDialog(Tk):
 
         self.directionLabel = Label(self, text = 'Direction:')
         self.directionVar = StringVar(self)
-        self.upRadio = Radiobutton(self, text = UP, value = UP, variable = self.directionVar)
-        self.downRadio = Radiobutton(self, text = DOWN, value = DOWN, variable = self.directionVar)
+        self.upRadio = Radiobutton(self, text = UP, value = UP, variable = self.directionVar, command = self.onDirectionChange)
+        self.downRadio = Radiobutton(self, text = DOWN, value = DOWN, variable = self.directionVar, command = self.onDirectionChange)
         self.directionVar.set(DOWN)
         for i, w in enumerate([self.directionLabel, self.upRadio, self.downRadio]):
             w.grid(row = 2, column = i, sticky = NSEW)
@@ -180,6 +192,16 @@ class ReplaceDialog(Tk):
     def replaceAll(self):
         '''listner should have exactly 3 arguments: find and replace.'''
         if self.onReplaceAllListener: self.onReplaceAllListener(self.findEntry.get(), self.replaceEntry.get())
+
+    def setOnDirectionChangeListener(self, listener):
+        self.directionListener = listener
+
+    def onDirectionChange(self):
+        '''listner should have exactly 1 argument: direction.'''
+        if self.directionListener: self.directionListener(self.directionVar.get())
+
+    def setDirection(self, direction):
+        self.directionVar.set(direction)
 
     def setOnCloseListener(self, listener):
         '''listner should have no arguments.'''
