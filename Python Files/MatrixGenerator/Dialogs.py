@@ -59,14 +59,17 @@ class FindDialog(Toplevel):
         self.findListner = listener
 
     def find(self):
-        if self.findListner: self.findListner(self, self.findEntry.get(), self.getDirection())
+        if not self.findListner: return
+        self.findListner(self, self.findEntry.get(), self.getDirection())
 
     def setOnDirectionChangeListener(self, listener):
         self.directionListener = listener
 
     def onDirectionChange(self):
         '''listner should have the following arguments: dialog, direction.'''
-        if self.directionListener: self.directionListener(self, self.directionVar.get())
+        if self.directionListener:
+            self.directionListener(self, self.directionVar.get())
+        self.update_idletasks()
 
     def setDirection(self, direction):
         self.directionVar.set(direction)
@@ -80,7 +83,8 @@ class FindDialog(Toplevel):
         self.withdraw()
 
     def __onClose(self):
-        if self.closeListener: self.closeListener(self)
+        if self.closeListener:
+            self.closeListener(self)
         self.grab_release()
 
     def getDirection(self):
@@ -168,35 +172,45 @@ class ReplaceDialog(Toplevel):
         self.findListner = listener
 
     def find(self):
-        if self.findListner: self.findListner(self, self.findEntry.get(), self.getDirection())
+        if self.findListner:
+            self.findListner(self, self.findEntry.get(), self.getDirection())
+        self.update_idletasks()
 
     def setOnReplaceListener(self, listener):
         '''listner should have the following arguments: dialog, find, replace and direction.'''
         self.onReplaceListener = listener
 
     def replace(self):
-        if self.onReplaceListener: self.onReplaceListener(self, self.findEntry.get(), self.replaceEntry.get(), self.getDirection())
+        if self.onReplaceListener:
+            self.onReplaceListener(self, self.findEntry.get(), self.replaceEntry.get(), self.getDirection())
+        self.update_idletasks()
 
     def setOnReplaceFindListener(self, listener):
         self.onReplaceFindListener = listener
 
     def replaceFind(self):
         '''listner should have the following arguments: dialog, find, replace and direction.'''
-        if self.onReplaceFindListener: self.onReplaceFindListener(self, self.findEntry.get(), self.replaceEntry.get(), self.getDirection())
+        if self.onReplaceFindListener:
+            self.onReplaceFindListener(self, self.findEntry.get(), self.replaceEntry.get(), self.getDirection())
+        self.update_idletasks()
 
     def setOnReplaceAllListener(self, listener):
         self.onReplaceAllListener = listener
 
     def replaceAll(self):
         '''listner should have the following arguments: dialog, find and replace.'''
-        if self.onReplaceAllListener: self.onReplaceAllListener(self, self.findEntry.get(), self.replaceEntry.get())
+        if self.onReplaceAllListener:
+            self.onReplaceAllListener(self, self.findEntry.get(), self.replaceEntry.get())
+        self.update_idletasks()
 
     def setOnDirectionChangeListener(self, listener):
         self.directionListener = listener
 
     def onDirectionChange(self):
         '''listner should have the following arguments: dialog, direction.'''
-        if self.directionListener: self.directionListener(self, self.directionVar.get())
+        if self.directionListener:
+            self.directionListener(self, self.directionVar.get())
+        self.update_idletasks()
 
     def setDirection(self, direction):
         self.directionVar.set(direction)
@@ -210,7 +224,8 @@ class ReplaceDialog(Toplevel):
         self.withdraw()
 
     def __onClose(self):
-        if self.closeListener: self.closeListener(self)
+        if self.closeListener:
+            self.closeListener(self)
         self.grab_release()
 
     def getDirection(self):
@@ -244,14 +259,17 @@ class SliderDialog(Toplevel):
 
     def onSliderChange(self):
         sliderValue = self.slider.get()
-        if self.sliderListener: self.sliderListener(self, sliderValue)
+        if self.sliderListener:
+            self.sliderListener(self, sliderValue)
         self.__setSliderText(sliderValue)
+        self.update_idletasks()
 
     def __setSliderText(self, text):
         self.slider['label'] = f'{self.ENTRY_WIDTH}: {text}'
 
     def __onDestroy(self):
-        if self.destroyListener: self.destroyListener(self)
+        if self.destroyListener:
+            self.destroyListener(self)
         self.grab_release()
         self.withdraw()
 
@@ -313,7 +331,9 @@ class RangeDialog(Toplevel):
         self.confirmListener = listener
 
     def onConfirm(self):
-        if self.confirmListener: self.confirmListener(self, self.minEntry.get(), self.maxEntry.get())
+        if self.confirmListener:
+            self.confirmListener(self, self.minEntry.get(), self.maxEntry.get())
+        self.update_idletasks()
         self.close()
 
     def setOnCloseListener(self, listener):
@@ -325,5 +345,6 @@ class RangeDialog(Toplevel):
         self.withdraw()
 
     def __onClose(self):
-        if self.closeListener: self.closeListener(self)
+        if self.closeListener:
+            self.closeListener(self)
         self.grab_release()

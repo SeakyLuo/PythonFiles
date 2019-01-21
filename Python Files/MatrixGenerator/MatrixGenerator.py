@@ -683,7 +683,6 @@ class Generator(Frame):
         self.setFoundEntry()
         if findNext:
             self.setFindDirection(direction)
-        dialog.update_idletasks()
 
     def onFindDirectionChange(self, dialog, direction):
         self.findDirection = direction
