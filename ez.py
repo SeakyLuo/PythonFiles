@@ -84,7 +84,7 @@ def handlepy(directory, func, reminder = False):
     else:
         raise Exception('Invalid directory!')
 
-def exportpy(directory, withConsole, reminder = False):
+def exportpy(directory, withConsole, zip = True, reminder = False):
     '''Exports a GUI python app.'''
     ## Add '-noconfirm' ?
     path = os.path.dirname(directory)
@@ -93,6 +93,7 @@ def exportpy(directory, withConsole, reminder = False):
         args.pop()
     def export(filename):
         subprocess.run(args + [filename])
+        if not zip: return
         currDir = os.getcwd()
         path, file = ntpath.split(filename)
         os.chdir(path)

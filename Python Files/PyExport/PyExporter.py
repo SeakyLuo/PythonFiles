@@ -5,6 +5,7 @@ import os
 
 LAST_DIR = 'LastDirectory'
 WITH_CONSOLE = 'WithConsole'
+ZIP_FILE = 'ZipFile'
 
 class Exporter(Frame):
     def __init__(self, master):
@@ -16,7 +17,10 @@ class Exporter(Frame):
         self.consoleVar = BooleanVar(self, value = self.settings.setdefault(WITH_CONSOLE, True))
         self.consoleButton = Checkbutton(self, text = 'With Console', variable = self.consoleVar, \
                                                command = lambda: self.settings.setitem(WITH_CONSOLE, self.consoleVar.get()))
-        row0 = [self.exportButton, self.copyButton, self.consoleButton]
+        self.zipVar = BooleanVar(self, value = self.settings.setdefault(ZIP_FILE, True))
+        self.zipButton = Checkbutton(self, text = 'Zip File', variable = self.zipVar, \
+                                           command = lambda: self.settings.setitem(ZIP_FILE, self.zipVar.get()))
+        row0 = [self.exportButton, self.copyButton, self.consoleButton, self.zipButton]
         for i, w in enumerate(row0):
             w.grid(row = 0, column = i, sticky = NSEW)
         self.lastDirLabel = Label(self)
@@ -35,7 +39,7 @@ class Exporter(Frame):
         path = os.path.dirname(filename)
         self.settings[LAST_DIR] = path
         self.setLastDirLabel(path)
-        ez.exportpy(filename, self.settings[WITH_CONSOLE])
+        ez.exportpy(filename, self.settings[WITH_CONSOLE], self.settings[ZIP_FILE])
 
 root = Tk()
 root.title('Py Exporter')
