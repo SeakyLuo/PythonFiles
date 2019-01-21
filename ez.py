@@ -7,7 +7,7 @@ import threading, subprocess, zipfile, ntpath, shutil
 from json import loads, dumps
 from atexit import register
 
-desktop = os.path.join(os.environ['Desktop'], '')
+desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = Exception('This data type is not supported!')
 
 class Settings:

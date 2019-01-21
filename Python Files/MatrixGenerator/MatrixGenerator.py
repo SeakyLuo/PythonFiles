@@ -511,7 +511,9 @@ class Generator(Frame):
         self.setResultFormat(resultFormatOptions[(resultFormatOptions.index(self.resultFormat.get()) + move) % len(resultFormatOptions)])
 
     def add(self):
+        fEntry = self.getFocusEntry()
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
+        fEntry.focus()
         if not result:
             return
         result = ezs.integer(ez.tryEval(result))
@@ -531,7 +533,9 @@ class Generator(Frame):
         self.modifyStates()
 
     def multiply(self):
+        fEntry = self.getFocusEntry()
         result = ezs.integer(ez.tryEval(simpledialog.askstring(title = 'Multiply', prompt = 'Multiply Each Entry By')))
+        fEntry.focus()
         if result == None or result == 1:
             return
         if result == 0:
@@ -582,11 +586,13 @@ class Generator(Frame):
             elif len(matrix[0]) == 1:
                 return VECTOR
         result = ''
+        fEntry = self.getFocusEntry()
         while True:
             try:
                 result = simpledialog.askstring(title = 'Insert', prompt = f'Input Your Matrix in {fromFormat} Form', initialvalue = result)
+                fEntry.focus()
                 if not result:
-                    return
+                    break
                 if fromFormat == LATEX:
                     if 'matrix' in result:
                         matrix = [row.split('&') for row in ez.find(result).between('}', '\\end').split('\\\\')]
@@ -619,10 +625,12 @@ class Generator(Frame):
                 for i in range(r):
                     for j in range(c):
                         setEntry(self.entries[(i, j)], matrix[i][j])
-                return
+                break
             except:
                 messagebox.showerror(title = 'Error', message = 'Invalid Input')
-        self.modifyStates()
+        fEntry.focus()
+        if result:
+            self.modifyStates()
 
     def fillIdentityMatrix(self):
         row, col = self.getRowCol()
@@ -634,10 +642,11 @@ class Generator(Frame):
 
     def append(self, position):
         isStart = position == APPEND_START
+        fEntry = self.getFocusEntry()
         result = simpledialog.askstring(title = 'Append', \
                                         prompt = 'Append to the {} of Every Entry'.format('Start' if isStart else 'End'))
-        if not result:
-            return
+        fEntry.focus()
+        if not result: return
         for entry in self.entries.values():
             text = entry.get()
             setEntry(entry, result + text if isStart else text + result)
@@ -668,10 +677,9 @@ class Generator(Frame):
             for i in range(r):
                 for j in range(c):
                     text = self.entries[(i, j)].get()
-                    index = text.find(target)
-                    if index > -1:
+                    for index in ez.find(text).all(target):
                         self.findResult.append(((i, j), index, index + targetLen))
-                        if self.currentEntry and divmod(self.currentEntry[0], c) == (i, j):
+                        if self.currentEntry and divmod(self.currentEntry[1], c) == (i, j) and self.currentEntry[2] == index:
                             self.findIndex = len(self.findResult) - 1
             if self.findResult:
                 if self.findIndex < 0:
@@ -697,20 +705,21 @@ class Generator(Frame):
                 self.findDialog.show()
             else:
                 try:
-                    self.prevFind = self.master.focus_get().selection_get()
-                    self.currentEntry = self.getFocusEntry()
+                    target = self.master.focus_get().selection_get()
+                    self.currentEntry = self.getFocusEntryIndex()
                     if not self.currentEntry[0]: self.currentEntry = None
                 except:
-                    pass
+                    target = self.prevFind
                 self.findDialog = FindDialog()
                 self.findDialog.setOnFindListner(self.onFind)
                 self.findDialog.setOnCloseListener(self.onFindClose)
                 self.findDialog.setOnDirectionChangeListener(self.onFindDirectionChange)
-                self.findDialog.setFind(self.prevFind)
+                self.findDialog.setFind(target)
                 self.findDialog.setDirection(self.findDirection)
             self.currentDialog = self.findDialog
         elif findType == FIND_LOCATION:
             result = ''
+            fEntry = self.getFocusEntry()
             while True:
                 result = simpledialog.askstring(title = findType, prompt = 'Input Location in the Form of x,y', initialvalue = result)
                 if not result:
@@ -725,16 +734,19 @@ class Generator(Frame):
                     messagebox.showerror('Error', 'Invalid Input')
                     continue
                 break
+            fEntry.focus()
         return 'break'
 
     def onReplace(self, find, replace, direction):
         self.prevReplace = replace
-        if self.findIndex == -1:
+        if self.findIndex == -1 or self.prevFind != find:
             self.onFind(find, direction)
         if self.findIndex == -1 or not self.findResult:
             return
-        entry = self.entries[self.findResult[self.findIndex][0]]
-        setEntry(entry, entry.get().replace(find, replace))
+        location, start, end = self.findResult[self.findIndex]
+        entry = self.entries[location]
+        text = entry.get()
+        setEntry(entry, text[:start] + replace + text[end:])
         self.setFoundEntry()
         self.findResult.pop(self.findIndex)
         if self.findResult:
@@ -770,11 +782,11 @@ class Generator(Frame):
             self.replaceDialog.show()
         else:
             try:
-                self.prevFind = self.master.focus_get().selection_get()
-                self.currentEntry = self.getFocusEntry()
+                target = self.master.focus_get().selection_get()
+                self.currentEntry = self.getFocusEntryIndex()
                 if not self.currentEntry[0]: self.currentEntry = None
             except:
-                pass
+                target = self.prevFind
             self.replaceDialog = ReplaceDialog()
             self.replaceDialog.setOnFindListner(self.onFind)
             self.replaceDialog.setOnReplaceListener(self.onReplace)
@@ -782,7 +794,7 @@ class Generator(Frame):
             self.replaceDialog.setOnReplaceAllListener(self.onReplaceAll)
             self.replaceDialog.setOnDirectionChangeListener(self.onReplaceDirectionChange)
             self.replaceDialog.setOnCloseListener(self.onReplaceClose)
-            self.replaceDialog.setFind(self.prevFind)
+            self.replaceDialog.setFind(target)
             self.replaceDialog.setReplace(self.prevReplace)
             self.replaceDialog.setDirection(self.replaceDirection)
         self.currentDialog = self.replaceDialog
@@ -829,19 +841,21 @@ class Generator(Frame):
 
     def setRandomVar(self):
         result = self.settings[RANDOM_VAR]
+        fEntry = self.getFocusEntry()
         while True:
             result = simpledialog.askstring(title = 'Set Variable', \
                                             prompt = f'Input a Variable Name With Length <= {maxRandomVarLength}', \
                                             initialvalue = result)
             if not result:
-                return
+                break
             if len(result) > maxRandomVarLength:
                 messagebox.showerror('Error', 'Variable too long')
             elif not result[0].isalpha():
                 messagebox.showerror('Error', 'The first letter should be alphabetical')
             else:
                 self.settings[RANDOM_VAR] = result
-                return
+                break
+        fEntry.focus()
 
     def onConfirmRange(self, minValue, maxValue):
         try:
@@ -964,6 +978,7 @@ class Generator(Frame):
             x, y = c, r
         else:
             result = ''
+            fEntry = self.getFocusEntry()
             while True:
                 result = simpledialog.askstring(title = 'Reshape', prompt = 'Input Shape in the Form of x,y', initialvalue = result)
                 if not result:
@@ -979,6 +994,7 @@ class Generator(Frame):
                     messagebox.showerror('Error', 'Invalid Input')
                     continue
                 break
+            fEntry.focus()
         values = [self.entries[(i, j)].get() for i in range(r) for j in range(c)]
         self.setRowCol(x, y)
         self.generateEntries(x, y)
@@ -1115,12 +1131,9 @@ class Generator(Frame):
         for i, row in enumerate(entries):
             for j, entry in enumerate(row):
                 setEntry(self.entries[(i, j)], entry)
-        if focus == (0, 0):
-            self.rowEntry.focus()
-        elif focus == (0, 1):
-            self.colEntry.focus()
-        else:
-            self.entries[divmod(focus[1], c)].focus()
+        entry = self.getLastFocusEntry(c)
+        entry.focus()
+        entry.icursor(focus[2])
 
     def modifyStates(self):
         row, col = self.getRowCol()
@@ -1128,19 +1141,32 @@ class Generator(Frame):
             return
         state = (self.resultType.get(), \
                  self.collectEntries(row, col, False, True), \
-                 self.getFocusEntry())
+                 self.getFocusEntryIndex())
         if self.states and state[:-1] == self.states[self.stateIndex][:-1]:
             return
         self.states = self.states[:self.stateIndex + 1] + [state]
         self.stateIndex = len(self.states) - 1
 
     def getFocusEntry(self):
+        try: return self.master.focus_get()
+        except: return self.rowEntry
+
+    def getFocusEntryIndex(self):
         try:
-            entry = str(self.master.focus_get())
-            f = ez.find(entry)
-            return (int(f.between('frame', '.') or 1) - 1, int(f.after('.!entry') or 1) - 1)
+            entry = self.master.focus_get()
+            f = ez.find(str(entry))
+            return (int(f.between('frame', '.') or 1) - 1, int(f.after('.!entry') or 1) - 1, entry.index(ANCHOR) if entry.selection_present() else entry.index(INSERT))
         except:
             return (0, 0)
+
+    def getLastFocusEntry(self, col = None):
+        focus = self.states[self.stateIndex][2]
+        if focus[:2] == (0, 0):
+            return self.rowEntry
+        elif focus[:2] == (0, 1):
+            return self.colEntry
+        else:
+            return self.entries[divmod(focus[1], col or self.getCol())]
 
     def onDestroy(self):
         if self.currentDialog:
