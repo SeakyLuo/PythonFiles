@@ -664,7 +664,7 @@ class Generator(Frame):
         entry.select_range(start, end)
         entry.icursor(end)
 
-    def onFind(self, target, direction):
+    def onFind(self, target, direction, findNext = True):
         if not target:
             messagebox.showerror('Error', 'Empty Find!')
             self.currentDialog.show()
@@ -690,7 +690,8 @@ class Generator(Frame):
                 self.currentDialog.show()
                 return
         self.setFoundEntry()
-        self.setFindDirection(direction)
+        if findNext:
+            self.setFindDirection(direction)
 
     def onFindClose(self):
         self.findDialog = None
@@ -740,7 +741,7 @@ class Generator(Frame):
     def onReplace(self, find, replace, direction):
         self.prevReplace = replace
         if self.findIndex == -1 or self.prevFind != find:
-            self.onFind(find, direction)
+            self.onFind(find, direction, False)
         if self.findIndex == -1 or not self.findResult:
             return
         location, start, end = self.findResult[self.findIndex]
@@ -749,6 +750,12 @@ class Generator(Frame):
         setEntry(entry, text[:start] + replace + text[end:])
         self.setFoundEntry()
         self.findResult.pop(self.findIndex)
+        difference = len(replace) - len(find)
+        for i, (fLocation, fStart, fEnd) in enumerate(self.findResult[self.findIndex:]):
+            if location == fLocation:
+                self.findResult[self.findIndex + i] = (fLocation, fStart + difference, fEnd + difference)
+            else:
+                break
         if self.findResult:
             if direction == UP:
                 self.findIndex = (self.findIndex - 1) % len(self.findResult)
@@ -1157,7 +1164,7 @@ class Generator(Frame):
             f = ez.find(str(entry))
             return (int(f.between('frame', '.') or 1) - 1, int(f.after('.!entry') or 1) - 1, entry.index(ANCHOR) if entry.selection_present() else entry.index(INSERT))
         except:
-            return (0, 0)
+            return (0, 0, END)
 
     def getLastFocusEntry(self, col = None):
         focus = self.states[self.stateIndex][2]
