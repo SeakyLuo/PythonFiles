@@ -370,10 +370,18 @@ class Generator(Frame):
                 row = col = size
                 self.syncRowCol(size)
         elif resultType == VECTOR:
+            entries = []
+            if self.entries and row == 1 and col > 1:
+                entries = self.collectEntries(row, col, False)
+                row = col
+                self.setRow(row)
             self.setCol(1)
             self.colEntry['state'] = DISABLED
             if row:
                 self.generateEntries(row, 1)
+            if entries:
+                for i in range(1, col):
+                    setEntry(self.entries[(i, 0)], entries[i])
 
     def setResultFormat(self, resultFormat):
         if self.resultFormat.get() == resultFormat:
@@ -609,6 +617,7 @@ class Generator(Frame):
                 return MATRIX
             elif len(matrix[0]) == 1:
                 return VECTOR
+            return MATRIX
         result = ''
         fEntry = self.getFocusEntry()
         while True:
@@ -644,6 +653,9 @@ class Generator(Frame):
                     raise Exception()
                 r = len(matrix)
                 c = len(matrix[0])
+                if (r * c > maxSize ** 2):
+                    messagebox.showerror(title = 'Error', message = 'Matrix Too Large')
+                    break
                 self.setRowCol(r, c)
                 self.generateEntries(r, c)
                 for i in range(r):
@@ -974,11 +986,10 @@ class Generator(Frame):
         return 'break'
 
     def reshape(self):
-        if self.resultType.get() == DETERMINANT:
-            messagebox.showerror('Error', 'Invalid Option')
-            return
         r, c = self.getRowCol()
         size = r * c
+        if size <= 1:
+            return 'break'
         if ezs.isPrime(size) or (size > maxSize and len(ezs.findAllFactors(size)) == 4):
             x, y = c, r
         else:
@@ -1001,11 +1012,13 @@ class Generator(Frame):
                 break
             fEntry.focus()
         values = [self.entries[(i, j)].get() for i in range(r) for j in range(c)]
+        self.setResultType(VECTOR if x > 1 and y == 1 else MATRIX)
         self.setRowCol(x, y)
         self.generateEntries(x, y)
         for i, value in enumerate(values):
             setEntry(self.entries[divmod(i, y)], value)
         self.modifyStates()
+        return 'break'
 
     def triangularMatrix(self, mode):
         for i, j in self.entries:
