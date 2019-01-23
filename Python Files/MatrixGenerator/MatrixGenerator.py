@@ -76,6 +76,7 @@ LOWER_CASE = 'Lower Case'
 UPPER_CASE = 'Upper Case'
 ONE_TO_N = '1 to N'
 A_TO_Z = 'A to Z'
+INDEX = 'Index'
 FROM_ARRAY = 'From ' + ARRAY
 FROM_LATEX = 'From ' + LATEX
 EXIT = 'Exit'
@@ -83,6 +84,7 @@ ENTRY_WIDTH = 'EntryWidth'
 NEWLINE_ENDING = 'Newline Row Ending'
 LATEX_NEWLINE = 'LaTexNewline'
 ARRAY_NEWLINE = 'ArrayNewline'
+UNKNOWN_MATRIX = 'UnknownMatrix'
 
 ## Settings
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, ENTRY_WIDTH, \
@@ -91,7 +93,7 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
-              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
+              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', INDEX: 'Control+Shift+I', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
               A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
@@ -127,10 +129,12 @@ class Generator(Frame):
         self.resultMenu = Menu(self)
         ## Result Type Menu
         self.matMenu = Menu(self)
-        self.matMenu.add_command(label = IDENTITY_MATRIX, accelerator = shortcuts[IDENTITY_MATRIX], command = self.fillIdentityMatrix)
+        self.matMenu.add_command(label = IDENTITY_MATRIX, accelerator = shortcuts[IDENTITY_MATRIX], command = self.identityMatrix)
         self.matMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
-        self.matMenu.add_command(label = ZERO_MATRIX, accelerator = shortcuts[ZERO_MATRIX], command = self.fillZeroMatrix)
+        self.matMenu.add_command(label = ZERO_MATRIX, accelerator = shortcuts[ZERO_MATRIX], command = self.zeroMatrix)
         self.matMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
+        self.matMenu.add_separator()
+        self.matMenu.add_command(label = 'Unknown Matrix', command = self.unknownMatrix)
         self.detMenu = Menu(self)
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
@@ -187,6 +191,7 @@ class Generator(Frame):
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
         self.insertMenu = Menu(self)
+        self.insertMenu.add_command(label = INDEX, accelerator = shortcuts[INDEX], command = self.insertIndex)
         self.insertMenu.add_command(label = APPEND_START, accelerator = shortcuts[APPEND_START], command = lambda: self.append(APPEND_START))
         self.insertMenu.add_command(label = APPEND_END, accelerator = shortcuts[APPEND_END], command = lambda: self.append(APPEND_END))
         self.insertMenu.add_separator()
@@ -228,15 +233,15 @@ class Generator(Frame):
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
                             lambda: self.settings.setitem(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
                             SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
-        ## Settings Menu
-        self.settingsMenu = Menu(self)
-        self.settingsMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
+        ## Help Menu
+        self.helpMenu = Menu(self)
+        self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
-        self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
+        self.helpMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
                                           command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
-        self.settingsMenu.add_separator()
-        self.settingsMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
-        for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.settingsMenu]):
+        self.helpMenu.add_separator()
+        self.helpMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
+        for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Help'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.helpMenu]):
             menu['tearoff'] = False
             self.menu.add_cascade(label = name, menu = menu)
         self.master.config(menu = self.menu)
@@ -282,10 +287,10 @@ class Generator(Frame):
         ## Bind
         self.master.bind('<Destroy>', lambda event: self.onDestroy())
         self.master.bind('<Return>', lambda event: self.generate())
-        self.master.bind('<Control-0>', lambda event: self.fillZeroMatrix())
+        self.master.bind('<Control-0>', lambda event: self.zeroMatrix())
         self.master.bind('<Control-f>', lambda event: self.find(FIND_VALUE))
         self.master.bind('<Control-h>', lambda event: self.replace())
-        self.master.bind('<Control-i>', lambda event: self.fillIdentityMatrix())
+        self.master.bind('<Control-i>', lambda event: self.identityMatrix())
         self.master.bind('<Control-m>', lambda event: self.multiply())
         self.master.bind('<Control-p>', lambda event: self.permutationVector() if self.resultType.get() == VECTOR or self.getCol() == 1 else self.permutationMatrix())
         self.master.bind('<Control-r>', lambda event: self.randomFill())
@@ -300,6 +305,7 @@ class Generator(Frame):
         self.master.bind('<Control-C>', lambda event: self.calculateDet())
         self.master.bind('<Control-E>', lambda event: self.clear(0))
         self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
+        self.master.bind('<Control-I>', lambda event: self.insertIndex())
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
         self.master.bind('<Control-R>', lambda event: self.randomReorder())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
@@ -319,11 +325,12 @@ class Generator(Frame):
         self.master.bind('<Alt-S>', lambda event: self.sort())
 
         ## Set Values
+        self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
+        self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
         self.settings.setdefault(RANDOM_MIN, 1)
         self.settings.setdefault(RANDOM_MAX, maxSize)
         self.settings.setdefault(RANDOM_VAR, defaultVar)
-        self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
-        self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
+        self.settings.setdefault(UNKNOWN_MATRIX, ('a', 'i', 'j'))
         self.modifyStates()
 
     def getRow(self):
@@ -571,7 +578,7 @@ class Generator(Frame):
         if result == None or result == 1:
             return
         if result == 0:
-            self.fillZeroMatrix()
+            self.zeroMatrix()
             return
         isResultNumeric = ezs.isNumeric(result)
         for entry in self.entries.values():
@@ -668,7 +675,12 @@ class Generator(Frame):
         if result:
             self.modifyStates()
 
-    def fillIdentityMatrix(self):
+    def insertIndex(self):
+        for i in range(self.getRow()):
+            for j in range(self.getCol()):
+                self.entries[(i, j)].insert(END, '_{%s%s}' % (i + 1, j + 1))
+
+    def identityMatrix(self):
         row, col = self.getRowCol()
         if row != col:
             self.syncRowCol(max(row, col))
@@ -841,7 +853,7 @@ class Generator(Frame):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
         self.modifyStates()
 
-    def fillZeroMatrix(self):
+    def zeroMatrix(self):
         for entry in self.entries.values():
             setEntry(entry, 0)
         self.modifyStates()
@@ -1045,6 +1057,14 @@ class Generator(Frame):
                 setEntry(self.entries[(i, j)], 0)
             setEntry(self.entries[(i, c)], 1)
         self.modifyStates()
+
+    def unknownMatrix(self):
+        dialog = UnknownMatrix(self)
+        var, row, col = self.settings[UNKNOWN_MATRIX]
+        dialog.setData(var, row, col)
+        dialog.setOnCopyListener(lambda dialog, result: ez.copyToClipboard(result))
+        dialog.setOnCloseListener(lambda dialog, var, row, col: self.settings.setitem(UNKNOWN_MATRIX, (var, row, col)) )
+        self.wait_window(dialog)
 
     def permutationVector(self):
         self.setResultType(VECTOR)

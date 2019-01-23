@@ -47,6 +47,7 @@ class FindDialog(Toplevel):
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.find())
+        self.bind('<Control+w>', lambda event: self.close())
 
     def setFind(self, target):
         if not target: return
@@ -148,6 +149,7 @@ class ReplaceDialog(Toplevel):
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.replaceFind())
+        self.bind('<Control+w>', lambda event: self.close())
 
     def moveFocus(self, event):
         if event.widget == self.findEntry:
@@ -246,7 +248,9 @@ class SliderDialog(Toplevel):
         self.slider = Scale(self, label = self.ENTRY_WIDTH, from_ = 5, to = 50, orient = HORIZONTAL,\
                         showvalue = 0, command = lambda event: self.onSliderChange())
         self.slider.pack()
+
         self.bind('<Destroy>', lambda event: self.__onDestroy())
+        self.bind('<Control+w>', lambda event: self.close())
 
     def setSliderValue(self, value):
         self.slider.set(value)
@@ -314,6 +318,7 @@ class RangeDialog(Toplevel):
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.onConfirm())
+        self.bind('<Control+w>', lambda event: self.close())
 
     def moveFocus(self, event):
         if event.widget == self.minEntry:
@@ -348,3 +353,116 @@ class RangeDialog(Toplevel):
         if self.closeListener:
             self.closeListener(self)
         self.grab_release()
+
+class UnknownMatrix(Toplevel):
+    def __init__(self, master):
+        Toplevel.__init__(self, master)
+        self.master = master
+        self.transient(master)
+        self.grab_set()
+        self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
+        self.title('Uknown Matrix')
+
+        self.onCopyListener = None
+        self.onCloseListener = None
+
+        self.varLabel = Label(self, text = 'Variable:')
+        self.varVar = StringVar(self)
+        self.varEntry = Entry(self)
+        self.rowLabel = Label(self, text = 'Rows:')
+        self.rowVar = StringVar(self)
+        self.rowEntry = Entry(self)
+        self.colLabel = Label(self, text = 'Columns:')
+        self.colVar = StringVar(self)
+        self.colEntry = Entry(self)
+        self.varEntry.focus()
+        self.entries = [self.varEntry, self.rowEntry, self.colEntry]
+        vars = [self.varVar, self.rowVar, self.colVar]
+        for i, w in enumerate([self.varLabel, self.varEntry, self.rowLabel, self.rowEntry, self.colLabel, self.colEntry]):
+            row = i % 2
+            col = i // 2
+            w.grid(row = row, column = col)
+            if row:
+                var = vars[col]
+                var.trace('w', lambda *args: self.__onChange())
+                w['textvariable'] = var
+                w.bind('<Left>', self.moveFocus)
+                w.bind('<Right>', self.moveFocus)
+        self.copyBorder = Frame(self, highlightbackground = SYSTEM_HIGHLIGHT)
+        self.copyButton = Button(self.copyBorder, text = 'Copy', command = self.onCopy)
+        self.copyButton.grid(row = 0, column = len(self.entries))
+        self.closeBorder = Frame(self, highlightbackground = BUTTON_BORDER)
+        self.closeButton = Button(self.closeBorder, text = 'Close', command = self.close)
+        self.closeButton.grid(row = 1, column = len(self.entries))
+        entryCount = len(self.entries)
+        for i, (w, b) in enumerate(zip([self.copyButton, self.closeButton], [self.copyBorder, self.closeBorder])):
+            w.grid(row = i, column = entryCount)
+            w['relief'] = FLAT
+            b.grid(row = i, column = entryCount)
+            b.config(highlightthickness = 1, bd = 0)
+
+        self.noteLabel = Label(self, text = 'Reminder: Result is in LaTeX form.')
+        self.resultLabel = Label(self)
+        for i, l in enumerate([self.noteLabel, self.resultLabel]):
+            l.grid(row = i + 2, column = 0, columnspan = entryCount + 1)
+
+        self.bind('<Destroy>', lambda event: self.__onClose())
+        self.bind('<Return>', lambda event: self.onCopy())
+        self.bind('<Control-w>', lambda event: self.close())
+
+    def setData(self, var, row, col):
+        self.varEntry.insert(0, var)
+        self.rowEntry.insert(0, row)
+        self.colEntry.insert(0, col)
+
+    def moveFocus(self, event):
+        move = -1 if event.keysym == 'Left' else 1
+        self.entries[(self.entries.index(event.widget) + move) % len(self.entries)].focus()
+
+    def setOnCopyListener(self, listener):
+        self.onCopyListener = listener
+
+    def onCopy(self):
+        if self.onCopyListener:
+            self.onCopyListener(self, self.result)
+
+    def setOnCloseListener(self, listener):
+        '''listner should have the following arguments: dialog, var, row, col.'''
+        self.closeListener = listener
+
+    def close(self):
+        self.__onClose()
+        self.withdraw()
+
+    def __onClose(self):
+        if self.closeListener:
+            self.closeListener(self, self.varVar.get(), self.rowVar.get(), self.colVar.get())
+        self.grab_release()
+
+    def generate(self):
+        dots = '  ...  '
+        var = self.varVar.get()
+        row = self.rowVar.get()
+        col = self.colVar.get()
+        end1 = '11'
+        end2 = '1' + col
+        end3 = row + '1'
+        end4 = '1' + col
+        var1 = var + end1
+        var2 = var + end2
+        var3 = var + end3
+        var4 = var + end4
+        self.resultLabel['text'] = f'{var1}{dots}{var2}\n{dots}{dots}{dots}\n{var3}{dots}{var4}'
+        cdots = '\\cdots'
+        self.result = '\\begin{bmatrix}%s&%s&%s\\\\\%s&%s&%s\\\\\%s&%s&%s\\end{bmatrix}' % \
+                      ('%s_{%s}' % (var, end1), cdots, '%s_{%s}' % (var, end2), \
+                       cdots, cdots, cdots, \
+                       '%s_{%s}' % (var, end3), cdots, '%s_{%s}' % (var, end3))
+
+    def __onChange(self):
+        self.generate()
+
+if __name__ == '__main__':
+    root = Tk()
+    dialog = UnknownMatrix(root)
+    root.mainloop()
