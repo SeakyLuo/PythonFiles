@@ -439,7 +439,8 @@ class UnknownMatrix(Toplevel):
             self.closeListener(self, self.varVar.get(), self.rowVar.get(), self.colVar.get())
         self.grab_release()
 
-    def generate(self):
+
+    def __onChange(self):
         dots = '  ...  '
         var = self.varVar.get()
         row = self.rowVar.get()
@@ -459,10 +460,7 @@ class UnknownMatrix(Toplevel):
                        cdots, cdots, cdots, \
                        '%s_{%s}' % (var, end3), cdots, '%s_{%s}' % (var, end3))
 
-    def __onChange(self):
-        self.generate()
-
 if __name__ == '__main__':
     root = Tk()
-    dialog = UnknownMatrix(root)
+    # dialog = UnknownMatrix(root)
     root.mainloop()
