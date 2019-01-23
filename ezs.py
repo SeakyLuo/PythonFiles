@@ -4,7 +4,7 @@ import ez
 from decimal import Decimal
 from functools import reduce
 
-def npMatrixToLatex(matrix, printResult = True, copy = True):
+def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
     '''matrix can be any 2d iterable'''
     r = len(matrix)
     c = len(matrix[0])
@@ -632,41 +632,28 @@ def lcm(n1, n2):
 
 formLst = ['a', 'l', 's', 'b']
 
-def matrixProducer(row, column, formula, matrixOrDeterminant = 'm'):
-    ## latex form
-    Ent = advancedSplit(formula)
+def matrixLaTeX(row, column, formula, isDeterminant = False, newline = False):
+    ''' Abbreviation: ml.'''
+    matrix = advancedSplit(formula)
     expected = row * column
-    if len(Ent) != expected:
-        print('{} entr{} expected. Found {}.'.format(expected, 'y' if expected == 1 else 'ies', len(Ent)))
+    if len(matrix) != expected:
+        print('{} entr{} expected. Found {}.'.format(expected, 'y' if expected == 1 else 'ies', len(matrix)))
         return
     else:
-        output = ''
-        for i in range(row):
-            for j in range(column):
-##                entry = Ent[i * column + j]
-##                if -1<entry.find('f')<entry.find('(')<entry.find(', ')<entry.find(')'):
-##                    output += ['', '-'][entry[0] == '-'] + fl(entry[entry.find('(') + 1:entry.find(', ')], entry[entry.find(', ') + 1:entry.find(')')])[2:-2]
-##                else:
-##                    output += Ent[i * column + j]
-##                output += '&'
-                output += Ent[i * column + j] + '&'
-            output = output[:-1] + '\\\\'
-        if matrixOrDeterminant == 'm':
-            output = '\\begin{bmatrix}' + output[:-2] + '\\end{bmatrix}'
-        elif matrixOrDeterminant == 'd':
-            output = '\\begin{vmatrix}' + output[:-2] + '\\end{vmatrix}'
+        output = ('\\\\' + ('\n' if newline else '')).join([
+            '&'.join([matrix[i * column + j] for j in range(column)])
+            for i in range(row)
+        ])
+        header = '{%smatrix}' % ('v' if isDeterminant else 'b')
+        output = f'\\begin{header}{output}\\end{header}'
         return output
-
-def matrixLaTeX(row, column, entries):
-    '''Abbreviation: ml'''
-    return matrixProducer(row, column, entries)
 
 ##abbreviation
 ml = matrixLaTeX
 
-def matrixArray(row, column, entries):
+def matrixArray(row, column, entries, newline = False):
     '''Abbreviation: ma'''
-    return matrixConvert(form = 'a', matrix = matrixProducer(row, column, entries))
+    return matrixConvert(form = 'a', matrix = matrixLaTeX(row, column, entries, newline = False))
 
 ##abbreviation
 ma = matrixArray
@@ -956,7 +943,7 @@ def vectorLaTeX(entries, overRightArrow = True):
     '''entries needs to be a string separted by a comma.
         if overRightArrow, will use \\overrightarrow instead of \\vec'''
     entries = entries
-    result = '\\overrightarrow{' + entries + '}' if overRightArrow else '\\vec{' + entries + '}'
+    result = '\\overrightarrow{%s}' % entries if overRightArrow else '\\vec{%s}' % entries
     return result
 
 ##abbreviation

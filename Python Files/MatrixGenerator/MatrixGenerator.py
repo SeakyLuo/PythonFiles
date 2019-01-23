@@ -24,9 +24,11 @@ GENERATE_CLEAR_OPTION = 'GenerateClearOption'
 CALCULATE_CLEAR_OPTION = 'CalculateClearOption'
 VECTOR_OPTION = 'VectorOption'
 ARRAY_VECTOR = 'ArrayVector'
-COLUMN_VECTOR = 'Column Vector'
-OVERRIGHTARROW = 'OverRightArrow'
+COLUMN_VECTOR, OVERRIGHTARROW = 'Column Vector', 'OverRightArrow'
 vectorOptions = [COLUMN_VECTOR, OVERRIGHTARROW,  VECTOR]
+ARRAY_OPTION = 'ArrayOption'
+NORMAL_ARRAY, NUMPY_ARRAY, NP_ARRAY = 'Normal Array', 'Numpy Array', 'Np Array'
+arrayOptions = [NORMAL_ARRAY, NUMPY_ARRAY, NP_ARRAY]
 REMEMBER_SIZE = 'RememberSize'
 SHOW_RESULT = 'Show Result'
 SHOW_CALCULATION_RESULT = 'ShowCalculationResult'
@@ -78,6 +80,9 @@ FROM_ARRAY = 'From ' + ARRAY
 FROM_LATEX = 'From ' + LATEX
 EXIT = 'Exit'
 ENTRY_WIDTH = 'EntryWidth'
+NEWLINE_ENDING = 'Newline Row Ending'
+LATEX_NEWLINE = 'LaTexNewline'
+ARRAY_NEWLINE = 'ArrayNewline'
 
 ## Settings
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, ENTRY_WIDTH, \
@@ -120,6 +125,7 @@ class Generator(Frame):
         self.menu = Menu(self)
         ## Result Menu
         self.resultMenu = Menu(self)
+        ## Result Type Menu
         self.matMenu = Menu(self)
         self.matMenu.add_command(label = IDENTITY_MATRIX, accelerator = shortcuts[IDENTITY_MATRIX], command = self.fillIdentityMatrix)
         self.matMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
@@ -145,6 +151,24 @@ class Generator(Frame):
         self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
         self.vecMenu.add_cascade(label = 'Vector Options', menu = self.vecOptionMenu)
         for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu]):
+            menu['tearoff'] = False
+            self.resultMenu.add_cascade(label = name, menu = menu)
+        ## Result Format Menu
+        self.latexMenu = Menu(self)
+        self.latexNewlineVar = BooleanVar(self, value = self.settings.setdefault(LATEX_NEWLINE, False))
+        self.latexMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.latexNewlineVar, \
+                                       command = lambda: self.settings.setitem(LATEX_NEWLINE, self.latexNewlineVar.get()))
+        self.arrayMenu = Menu(self)
+        self.arrayNewlineVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_NEWLINE, False))
+        self.arrayMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.arrayNewlineVar, \
+                                       command = lambda: self.settings.setitem(ARRAY_NEWLINE, self.arrayNewlineVar.get()))
+        self.arrayMenu.add_separator()
+        self.arrayOptionVar = StringVar(self)
+        for option in arrayOptions:
+            self.arrayMenu.add_radiobutton(label = option, variable = self.arrayOptionVar, \
+                                           command = lambda: self.settings.setitem(ARRAY_OPTION, self.arrayOptionVar.get()))
+        self.arrayOptionVar.set(self.settings.setdefault(ARRAY_OPTION, NORMAL_ARRAY))
+        for name, menu in zip(resultFormatOptions, [self.latexMenu, self.arrayMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
         ## Edit Menu
@@ -209,7 +233,7 @@ class Generator(Frame):
         self.settingsMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.settingsMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
-                                          command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1) ))
+                                          command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
         self.settingsMenu.add_separator()
         self.settingsMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Settings'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.settingsMenu]):
@@ -467,12 +491,18 @@ class Generator(Frame):
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
                 result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)))
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)), resultType == DETERMINANT, self.settings[LATEX_NEWLINE])
         elif resultFormat == ARRAY:
             if resultType == VECTOR and self.settings[ARRAY_VECTOR]:
                 result = str(self.collectEntries(r, c))
             else:
-                result = ezs.ma(r, c, ' '.join(self.collectEntries(r, c, False)))
+                result = str(self.collectEntries(r, c, True, True))
+                if self.settings[ARRAY_NEWLINE]:
+                    result = result.replace('],', '],\n')
+            arrayOption = self.settings[ARRAY_OPTION]
+            if arrayOption != NORMAL_ARRAY:
+                prefix = 'np' if arrayOption == NP_ARRAY else 'numpy'
+                result = f'{prefix}.array({result})'
         if self.settings[COPY_GENERATION_RESULT]:
             ez.copyToClipboard(result)
         if self.settings[SHOW_GENERATION_RESULT]:
