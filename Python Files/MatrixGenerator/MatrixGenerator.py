@@ -41,6 +41,7 @@ RESULT_FORMAT = 'ResultFormat'
 ZERO_MATRIX = 'Zero Matrix'
 APPEND_START = 'Append Start'
 APPEND_END = 'Append End'
+APPEND_INDEX = 'Append Index'
 FIND_VALUE = 'Find Value'
 FIND_LOCATION = 'Find Location'
 REPLACE = 'Replace'
@@ -76,7 +77,6 @@ LOWER_CASE = 'Lower Case'
 UPPER_CASE = 'Upper Case'
 ONE_TO_N = '1 to N'
 A_TO_Z = 'A to Z'
-INDEX = 'Index'
 FROM_ARRAY = 'From ' + ARRAY
 FROM_LATEX = 'From ' + LATEX
 EXIT = 'Exit'
@@ -93,7 +93,7 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
-              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', INDEX: 'Ctrl+Shift+I', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
+              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', APPEND_INDEX: 'Ctrl+Shift+I', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
               A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
@@ -191,9 +191,9 @@ class Generator(Frame):
         self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
         ## Insert Menu
         self.insertMenu = Menu(self)
-        self.insertMenu.add_command(label = INDEX, accelerator = shortcuts[INDEX], command = self.insertIndex)
         self.insertMenu.add_command(label = APPEND_START, accelerator = shortcuts[APPEND_START], command = lambda: self.append(APPEND_START))
         self.insertMenu.add_command(label = APPEND_END, accelerator = shortcuts[APPEND_END], command = lambda: self.append(APPEND_END))
+        self.insertMenu.add_command(label = APPEND_INDEX, accelerator = shortcuts[APPEND_INDEX], command = self.appendIndex)
         self.insertMenu.add_separator()
         self.insertMenu.add_command(label = FROM_LATEX, accelerator = shortcuts[FROM_LATEX], command = lambda: self.insert(LATEX))
         self.insertMenu.add_command(label = FROM_ARRAY, accelerator = shortcuts[FROM_ARRAY], command = lambda: self.insert(ARRAY))
@@ -305,7 +305,7 @@ class Generator(Frame):
         self.master.bind('<Control-C>', lambda event: self.calculateDet())
         self.master.bind('<Control-E>', lambda event: self.clear(0))
         self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
-        self.master.bind('<Control-I>', lambda event: self.insertIndex())
+        self.master.bind('<Control-I>', lambda event: self.appendIndex())
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
         self.master.bind('<Control-R>', lambda event: self.randomReorder())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
@@ -675,10 +675,12 @@ class Generator(Frame):
         if result:
             self.modifyStates()
 
-    def insertIndex(self):
+    def appendIndex(self):
+        isLatex = self.resultFormat.get() == LATEX
         for i in range(self.getRow()):
             for j in range(self.getCol()):
-                self.entries[(i, j)].insert(END, '_{%s%s}' % (i + 1, j + 1))
+                text = f'{i + 1}{j + 1}'
+                self.entries[(i, j)].insert(END, '_{%s}' % text if isLatex else text)
 
     def identityMatrix(self):
         row, col = self.getRowCol()
@@ -696,8 +698,7 @@ class Generator(Frame):
         fEntry.focus()
         if not result: return
         for entry in self.entries.values():
-            text = entry.get()
-            setEntry(entry, result + text if isStart else text + result)
+            entry.insert(0 if isStart else END, result)
 
     def setFindDirection(self, direction):
         if self.findResult:
@@ -931,7 +932,8 @@ class Generator(Frame):
         if option == RANDOM_INT_MATRIX:
             setEntryFunc = lambda entry: setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
         elif option == RANDOM_VAR_MATRIX:
-            setEntryFunc = lambda entry: setEntry(entry, self.settings[RANDOM_VAR] + '_{' + str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1)) + '}')
+            isLatex = self.resultFormat.get() == LATEX
+            setEntryFunc = lambda entry: setEntry(entry, self.settings[RANDOM_VAR] + ('_{%s}' % randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1) if isLatex else str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))))
         elif option == RANDOM_MULTIVAR_MATRIX:
             setEntryFunc = lambda entry: setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
         hasEmpty = False
