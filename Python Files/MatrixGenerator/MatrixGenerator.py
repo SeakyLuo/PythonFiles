@@ -667,6 +667,8 @@ class Generator(Frame):
                             self.setResultType(getResultType(matrix))
                         elif 'vmatrix' in result:
                             self.setResultType(DETERMINANT)
+                        else:
+                            raise Exception()
                     else:
                         matrix = [[i] for i in ez.find(result).between('{', '}').split(',')]
                         self.setResultType(VECTOR)
@@ -678,8 +680,7 @@ class Generator(Frame):
                         matrix = [matrix]
                     else:
                         try:
-                            len(matrix)
-                            len(matrix[0])
+                            len(matrix) + len(matrix[0])
                         except:
                             matrix = [[matrix]]
                     self.setResultType(getResultType(matrix))

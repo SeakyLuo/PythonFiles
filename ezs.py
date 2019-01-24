@@ -427,6 +427,21 @@ def numEval(obj):
             return obj
     return integer(eval(number))
 
+def noExpressionEval(obj):
+    '''Eval a string without eval expressions.'''
+    if isinstance(obj, str):
+        return obj
+    result = ez.tryEval(obj)
+    string = str(result)
+    if string == obj:
+        return result
+    if isNumeric(result):
+        return obj
+    # It's too hard to do. I give up.
+    if isinstance(result, list):
+        return result
+    return result
+
 def get24(a, b = -1, c = -1, d = -1):
     if 1000 <= a<10000 and b == c == d == -1:
         a, b, c, d = map(int, str(a))
