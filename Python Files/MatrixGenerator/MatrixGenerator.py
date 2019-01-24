@@ -92,7 +92,8 @@ SWITCH_COLUMNS = 'Switch ' + COLUMN
 
 ## Settings
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, ENTRY_WIDTH, \
-                  SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION]
+                  SHOW_GENERATION_RESULT, SHOW_CALCULATION_RESULT, COPY_GENERATION_RESULT, COPY_CALCULATION_RESULT, GENERATE_CLEAR_OPTION, CALCULATE_CLEAR_OPTION, \
+                  ARRAY_VECTOR, LATEX_NEWLINE, ARRAY_NEWLINE, ARRAY_OPTION, UNKNOWN_MATRIX]
 
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
@@ -143,19 +144,21 @@ class Generator(Frame):
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
         self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.detMenu, self.calculateClearVar, \
-                            lambda: self.settings.setitem(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
+                            lambda: self.settings.set(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
                             SHOW_CALCULATION_RESULT, COPY_CALCULATION_RESULT, 'After Calculation')
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
+        print(self.settings)
+        print(self.settings.settings)
         self.arrayVecVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_VECTOR, False))
         self.vecOptionMenu.add_checkbutton(label = 'Array Vector', variable = self.arrayVecVar, \
-                                           command = lambda: self.settings.setitem(ARRAY_VECTOR, self.arrayVecVar.get()))
+                                           command = lambda: self.settings.set(ARRAY_VECTOR, self.arrayVecVar.get()))
         self.vecOptionMenu.add_separator()
         self.vecOptionVar = StringVar(self)
         for option in vectorOptions:
             self.vecOptionMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
-                                               command = lambda: self.settings.setitem(VECTOR_OPTION, self.vecOptionVar.get()))
+                                               command = lambda: self.settings.set(VECTOR_OPTION, self.vecOptionVar.get()))
         self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
         self.vecMenu.add_cascade(label = 'Vector Options', menu = self.vecOptionMenu)
         for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu]):
@@ -165,16 +168,16 @@ class Generator(Frame):
         self.latexMenu = Menu(self)
         self.latexNewlineVar = BooleanVar(self, value = self.settings.setdefault(LATEX_NEWLINE, False))
         self.latexMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.latexNewlineVar, \
-                                       command = lambda: self.settings.setitem(LATEX_NEWLINE, self.latexNewlineVar.get()))
+                                       command = lambda: self.settings.set(LATEX_NEWLINE, self.latexNewlineVar.get()))
         self.arrayMenu = Menu(self)
         self.arrayNewlineVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_NEWLINE, False))
         self.arrayMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.arrayNewlineVar, \
-                                       command = lambda: self.settings.setitem(ARRAY_NEWLINE, self.arrayNewlineVar.get()))
+                                       command = lambda: self.settings.set(ARRAY_NEWLINE, self.arrayNewlineVar.get()))
         self.arrayMenu.add_separator()
         self.arrayOptionVar = StringVar(self)
         for option in arrayOptions:
             self.arrayMenu.add_radiobutton(label = option, variable = self.arrayOptionVar, \
-                                           command = lambda: self.settings.setitem(ARRAY_OPTION, self.arrayOptionVar.get()))
+                                           command = lambda: self.settings.set(ARRAY_OPTION, self.arrayOptionVar.get()))
         self.arrayOptionVar.set(self.settings.setdefault(ARRAY_OPTION, NORMAL_ARRAY))
         for name, menu in zip(resultFormatOptions, [self.latexMenu, self.arrayMenu]):
             menu['tearoff'] = False
@@ -215,7 +218,7 @@ class Generator(Frame):
         self.randomMatrixOption = StringVar(self)
         for option in randomMatrixOptions:
             self.randomMenu.add_radiobutton(label = option, variable = self.randomMatrixOption, \
-                                            command = lambda: self.settings.setitem(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
+                                            command = lambda: self.settings.set(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
         self.randomMatrixOption.set(self.settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
         self.randomMenu.add_separator()
         self.randomMenu.add_command(label = 'Set Random Range', command = self.setRandomRange)
@@ -239,14 +242,14 @@ class Generator(Frame):
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
         self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
-                            lambda: self.settings.setitem(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
+                            lambda: self.settings.set(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
                             SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
         ## Help Menu
         self.helpMenu = Menu(self)
         self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.helpMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
-                                          command = lambda: self.settings.setitem(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
+                                          command = lambda: self.settings.set(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
         self.helpMenu.add_separator()
         self.helpMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Help'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.helpMenu]):
@@ -545,6 +548,7 @@ class Generator(Frame):
                         if isinstance(entry, str) and ezs.isNumeric(ez.tryEval(entry)):
                             result = result.replace(f"'{entry}'", f'{entry}')
                 if self.settings[ARRAY_NEWLINE]:
+                    # Maybe ], \\\n?
                     result = result.replace('],', '],\n')
             arrayOption = self.settings[ARRAY_OPTION]
             if arrayOption != NORMAL_ARRAY:
@@ -1128,7 +1132,7 @@ class Generator(Frame):
         var, row, col = self.settings[UNKNOWN_MATRIX]
         dialog.setData(var, row, col)
         dialog.setOnCopyListener(lambda dialog, result: ez.copyToClipboard(result))
-        dialog.setOnCloseListener(lambda dialog, var, row, col: self.settings.setitem(UNKNOWN_MATRIX, (var, row, col)) )
+        dialog.setOnCloseListener(lambda dialog, var, row, col: self.settings.set(UNKNOWN_MATRIX, (var, row, col)) )
         self.wait_window(dialog)
 
     def permutationVector(self):
@@ -1170,10 +1174,10 @@ class Generator(Frame):
         clearMenu = Menu(master = master, tearoff = False)
         showResultVar = BooleanVar(self, value = self.settings.setdefault(showResultOption, True))
         clearMenu.add_checkbutton(label = SHOW_RESULT, variable = showResultVar, \
-                                  command = lambda: self.settings.setitem(showResultOption, showResultVar.get()))
+                                  command = lambda: self.settings.set(showResultOption, showResultVar.get()))
         copyResultVar = BooleanVar(self, value = self.settings.setdefault(copyResultOption, True))
         clearMenu.add_checkbutton(label = COPY_RESULT, variable = copyResultVar, \
-                                  command = lambda: self.settings.setitem(copyResultOption, copyResultVar.get()))
+                                  command = lambda: self.settings.set(copyResultOption, copyResultVar.get()))
         clearMenu.add_separator()
         for option in clearOptions:
             clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)

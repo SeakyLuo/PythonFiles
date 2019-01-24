@@ -367,7 +367,6 @@ def truth_table(formula, output= 'a'):
                 del method[var_lst[length]]
 
     recursive()
-
     for method in table:
         method = eval(method)
         row = []

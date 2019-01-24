@@ -16,10 +16,10 @@ class Exporter(Frame):
         self.copyButton = Button(self, text = 'Copy Path', command = lambda: ez.copyToClipboard(self.settings[LAST_DIR]))
         self.consoleVar = BooleanVar(self, value = self.settings.setdefault(WITH_CONSOLE, True))
         self.consoleButton = Checkbutton(self, text = 'With Console', variable = self.consoleVar, \
-                                               command = lambda: self.settings.setitem(WITH_CONSOLE, self.consoleVar.get()))
+                                               command = lambda: self.settings.set(WITH_CONSOLE, self.consoleVar.get()))
         self.zipVar = BooleanVar(self, value = self.settings.setdefault(ZIP_FILE, True))
         self.zipButton = Checkbutton(self, text = 'Zip File', variable = self.zipVar, \
-                                           command = lambda: self.settings.setitem(ZIP_FILE, self.zipVar.get()))
+                                           command = lambda: self.settings.set(ZIP_FILE, self.zipVar.get()))
         row0 = [self.exportButton, self.copyButton, self.consoleButton, self.zipButton]
         for i, w in enumerate(row0):
             w.grid(row = 0, column = i, sticky = NSEW)

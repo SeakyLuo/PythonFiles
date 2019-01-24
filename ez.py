@@ -22,7 +22,7 @@ class Settings:
     def setdefault(self, key, value):
         return self.settings.setdefault(key, value)
 
-    def setitem(self, key, value):
+    def set(self, key, value):
         self.__setitem__(key, value)
 
     def setSettingOptions(self, settingOptions):
@@ -39,9 +39,18 @@ class Settings:
     def __setitem__(self, key, value):
         self.settings[key] = value
 
+    def __str__(self):
+        return str(self.settings)
+
+    def __repr__(self):
+        return repr(self.settings)
+
     def load(self):
-        try: self.settings = loads(fread(self.settingsFile, False))
-        except (FileNotFoundError, TypeError): self.settings = {}
+        try:
+            self.settings = loads(fread(self.settingsFile, False))
+            print('Load:', self.settings)
+        except (FileNotFoundError, TypeError):
+            self.settings = {}
 
     def save(self):
         fwrite(self.settingsFile, dumps(self.settings))
