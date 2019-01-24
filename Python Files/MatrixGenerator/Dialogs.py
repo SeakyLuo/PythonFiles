@@ -47,7 +47,7 @@ class FindDialog(Toplevel):
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.find())
-        self.bind('<Control+w>', lambda event: self.close())
+        self.bind('<Control-w>', lambda event: self.close())
 
     def setFind(self, target):
         if not target: return
@@ -149,7 +149,7 @@ class ReplaceDialog(Toplevel):
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.replaceFind())
-        self.bind('<Control+w>', lambda event: self.close())
+        self.bind('<Control-w>', lambda event: self.close())
 
     def moveFocus(self, event):
         if event.widget == self.findEntry:
@@ -234,7 +234,7 @@ class ReplaceDialog(Toplevel):
         return self.directionVar.get()
 
 class SliderDialog(Toplevel):
-    def __init__(self, master):
+    def __init__(self, master, defaultValue = 20):
         Toplevel.__init__(self, master)
         self.master = master
         self.transient(master)
@@ -242,15 +242,23 @@ class SliderDialog(Toplevel):
         self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
         self.title('Adjust Width')
 
-        self.destroyListener = None
         self.sliderListener = None
+        self.destroyListener = None
+        self.defaultValue = defaultValue
         self.ENTRY_WIDTH = 'Entry Width'
-        self.slider = Scale(self, label = self.ENTRY_WIDTH, from_ = 5, to = 50, orient = HORIZONTAL,\
-                        showvalue = 0, command = lambda event: self.onSliderChange())
+        self.slider = Scale(self, label = self.ENTRY_WIDTH, from_ = 1, to = 50, orient = HORIZONTAL,\
+                            showvalue = 0, length = 250, sliderlength = 50, \
+                            command = lambda event: self.onSliderChange())
         self.slider.pack()
+        self.defaultButton = Button(self, text = 'Default', command = self.setDefault)
+        self.defaultButton.pack()
+        self.setDefault()
 
         self.bind('<Destroy>', lambda event: self.__onDestroy())
-        self.bind('<Control+w>', lambda event: self.close())
+        self.bind('<Control-w>', lambda event: self.__onDestroy())
+
+    def setDefault(self):
+        self.setSliderValue(self.defaultValue)
 
     def setSliderValue(self, value):
         self.slider.set(value)
@@ -266,7 +274,6 @@ class SliderDialog(Toplevel):
         if self.sliderListener:
             self.sliderListener(self, sliderValue)
         self.__setSliderText(sliderValue)
-        self.update_idletasks()
 
     def __setSliderText(self, text):
         self.slider['label'] = f'{self.ENTRY_WIDTH}: {text}'
@@ -318,7 +325,7 @@ class RangeDialog(Toplevel):
 
         self.bind('<Destroy>', lambda event: self.__onClose())
         self.bind('<Return>', lambda event: self.onConfirm())
-        self.bind('<Control+w>', lambda event: self.close())
+        self.bind('<Control-w>', lambda event: self.close())
 
     def moveFocus(self, event):
         if event.widget == self.minEntry:
@@ -462,5 +469,5 @@ class UnknownMatrix(Toplevel):
 
 if __name__ == '__main__':
     root = Tk()
-    # dialog = UnknownMatrix(root)
+    dialog = SliderDialog(root)
     root.mainloop()
