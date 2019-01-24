@@ -399,6 +399,8 @@ def truth_table(formula, output= 'a'):
         return
 
 def integer(number):
+    '''Convert a number to an integer if appropriate.
+       For example convert 1.0 to 1.'''
     try:
         int_n = int(number)
         return int_n if number == int_n else number
@@ -406,7 +408,24 @@ def integer(number):
         return number
 
 def isNumeric(obj):
-    return type(obj) in [int, float]
+    '''Check whether obj is an int or a float.'''
+    return isinstance(obj, (int, float))
+
+def numEval(obj):
+    '''Convert a string to an number.
+       Expressions will not be converted.'''
+    if isNumeric(obj) or not isinstance(obj, str):
+        return obj
+    number = ''
+    for i, ch in enumerate(obj):
+        number += ch
+        if isNumeric(ez.tryEval(number)) or \
+           i == 0 and ch in ['+', '-'] or \
+           ch in ['e']:
+            continue
+        else:
+            return obj
+    return integer(eval(number))
 
 def get24(a, b = -1, c = -1, d = -1):
     if 1000 <= a<10000 and b == c == d == -1:
@@ -415,18 +434,16 @@ def get24(a, b = -1, c = -1, d = -1):
         print('Numbers should be greater than 0 and less than 10.')
         return
     operators = [' + ', '-', '*', '/']
-    jiajian = [' + ', '-']
-    chengchu = ['*', '/']
     for p in permutations(str(a), str(b), str(c), str(d)):
         for o1 in operators:
             for o2 in operators:
                 for o3 in operators:
                     calculations = ['{}{}{}{}{}{}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
-                                  '({}{}{}){}{}{}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
-                                  '{}{}{}{}({}{}{})'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
-                                  '({}{}{}{}{}){}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
-                                  '({}{}{}){}({}{}{})'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
-                                   '(({}{}{}){}{}){}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3])]
+                                    '({}{}{}){}{}{}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
+                                    '{}{}{}{}({}{}{})'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
+                                    '({}{}{}{}{}){}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
+                                    '({}{}{}){}({}{}{})'.format(p[0], o1, p[1], o2, p[2], o3, p[3]), \
+                                    '(({}{}{}){}{}){}{}'.format(p[0], o1, p[1], o2, p[2], o3, p[3])]
                     for c in calculations:
                         try:
                             if eval(c) == 24:

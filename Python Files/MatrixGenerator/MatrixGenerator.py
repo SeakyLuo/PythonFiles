@@ -15,9 +15,11 @@ MATRIX, DETERMINANT, VECTOR, IDENTITY_MATRIX = 'Matrix', 'Determinant', 'Vector'
 resultTypeOptions = [MATRIX, DETERMINANT, VECTOR]
 LATEX, ARRAY = 'LaTeX', 'Array'
 resultFormatOptions = [LATEX, ARRAY]
+ROW = 'Rows'
+COLUMN = 'Columns'
 LEFT, RIGHT, UP, DOWN = 'Left', 'Right', 'Up', 'Down'
 directions = [LEFT, RIGHT, UP, DOWN]
-CLEAR_ENTRIES, CLEAR_ALL = 'Clear Entries', 'Clear All'
+CLEAR_ZEROS, CLEAR_ENTRIES, CLEAR_ALL = 'Clear Zeros', 'Clear Entries', 'Clear All'
 NONE = 'None'
 clearOptions = [CLEAR_ENTRIES, CLEAR_ALL, NONE]
 GENERATE_CLEAR_OPTION = 'GenerateClearOption'
@@ -85,6 +87,8 @@ NEWLINE_ENDING = 'Newline Row Ending'
 LATEX_NEWLINE = 'LaTexNewline'
 ARRAY_NEWLINE = 'ArrayNewline'
 UNKNOWN_MATRIX = 'UnknownMatrix'
+SWITCH_ROWS = 'Switch ' + ROW
+SWITCH_COLUMNS = 'Switch ' + COLUMN
 
 ## Settings
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, ENTRY_WIDTH, \
@@ -93,8 +97,8 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
-              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', APPEND_INDEX: 'Ctrl+Shift+I', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
-              A_TO_Z: 'Alt+A', APPEND_END: 'Alt+E', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', RESHAPE: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
+              CLEAR_ZEROS: 'Ctrl+Shift+0', CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
+              A_TO_Z: 'Alt+A', SWITCH_COLUMNS: 'Alt+C',APPEND_END: 'Alt+E', APPEND_INDEX: 'Alt+I', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', SWITCH_ROWS: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for command, shortcut in \
@@ -184,11 +188,15 @@ class Generator(Frame):
         self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
         self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
         self.editMenu.add_separator()
+        self.editMenu.add_command(label = SWITCH_ROWS, accelerator = shortcuts[SWITCH_ROWS], command = lambda: self.switch(ROW))
+        self.editMenu.add_command(label = SWITCH_COLUMNS, accelerator = shortcuts[SWITCH_COLUMNS], command = lambda: self.switch(COLUMN))
+        self.editMenu.add_separator()
         self.editMenu.add_command(label = LOWER_CASE, accelerator = shortcuts[LOWER_CASE], command = lambda: self.toCase(LOWER_CASE))
         self.editMenu.add_command(label = UPPER_CASE, accelerator = shortcuts[UPPER_CASE], command = lambda: self.toCase(UPPER_CASE))
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(0))
-        self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(1))
+        self.editMenu.add_command(label = CLEAR_ZEROS, accelerator = shortcuts[CLEAR_ZEROS], command = lambda: self.clear(0))
+        self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(1))
+        self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(2))
         ## Insert Menu
         self.insertMenu = Menu(self)
         self.insertMenu.add_command(label = APPEND_START, accelerator = shortcuts[APPEND_START], command = lambda: self.append(APPEND_START))
@@ -219,7 +227,7 @@ class Generator(Frame):
         self.modifyMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.modifyMenu.add_separator()
         self.modifyMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
-        self.modifyMenu.add_command(label = RESHAPE, accelerator = shortcuts[RESHAPE], command = self.reshape)
+        self.modifyMenu.add_command(label = RESHAPE, command = self.reshape)
         self.modifyMenu.add_separator()
         self.modifyMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
         self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
@@ -256,9 +264,9 @@ class Generator(Frame):
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self.topFrame, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
 
-        self.rowLabel = Label(self.topFrame, text = 'Rows:')
+        self.rowLabel = Label(self.topFrame, text = ROW + ':')
         self.rowEntry = Entry(self.topFrame)
-        self.colLabel = Label(self.topFrame, text = 'Columns:')
+        self.colLabel = Label(self.topFrame, text = COLUMN + ':')
         self.colEntry = Entry(self.topFrame)
         self.sizeEntries = [self.rowEntry, self.colEntry]
         self.rowEntry.focus()
@@ -294,19 +302,21 @@ class Generator(Frame):
         self.master.bind('<Control-=>', lambda event: self.add())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
         self.master.bind('<Control-]>', lambda event: self.switchResultType(1))
-        self.master.bind('<Control-A>', lambda event: self.clear(1))
+        self.master.bind('<Control-Shift-Key-0>', lambda event: self.clear(0))
+        self.master.bind('<Control-A>', lambda event: self.clear(2))
         self.master.bind('<Control-C>', lambda event: self.calculateDet())
-        self.master.bind('<Control-E>', lambda event: self.clear(0))
+        self.master.bind('<Control-E>', lambda event: self.clear(1))
         self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
-        self.master.bind('<Control-I>', lambda event: self.appendIndex())
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
         self.master.bind('<Control-R>', lambda event: self.randomReorder())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
         self.master.bind('<Alt-a>', lambda event: self.aToZ())
+        self.master.bind('<Alt-c>', lambda event: self.switch(COLUMN))
         self.master.bind('<Alt-e>', lambda event: self.append(APPEND_END))
+        self.master.bind('<Alt-i>', lambda event: self.appendIndex())
         self.master.bind('<Alt-l>', lambda event: self.toCase(LOWER))
         self.master.bind('<Alt-n>', lambda event: self.oneToN())
-        self.master.bind('<Alt-r>', lambda event: self.reshape())
+        self.master.bind('<Alt-r>', lambda event: self.switch(ROW))
         self.master.bind('<Alt-s>', lambda event: self.append(APPEND_START))
         self.master.bind('<Alt-t>', lambda event: self.transpose())
         self.master.bind('<Alt-u>', lambda event: self.toCase(UPPER))
@@ -527,7 +537,13 @@ class Generator(Frame):
             if resultType == VECTOR and self.settings[ARRAY_VECTOR]:
                 result = str(self.collectEntries(r, c))
             else:
-                result = str(self.collectEntries(r, c, True, True))
+                result_list = self.collectEntries(r, c, True, True)
+                result = str(result_list)
+                for row in result_list:
+                    for entry in row:
+                        ## if is expression
+                        if isinstance(entry, str) and ezs.isNumeric(ez.tryEval(entry)):
+                            result = result.replace(f"'{entry}'", f'{entry}')
                 if self.settings[ARRAY_NEWLINE]:
                     result = result.replace('],', '],\n')
             arrayOption = self.settings[ARRAY_OPTION]
@@ -540,19 +556,20 @@ class Generator(Frame):
             messagebox.showinfo(title = 'Result', message = result + '\nhas been copied to the clipboard!')
         clearOption = self.settings[GENERATE_CLEAR_OPTION]
         if clearOption == CLEAR_ENTRIES:
-            self.clear(0)
-        elif clearOption == CLEAR_ALL:
             self.clear(1)
+        elif clearOption == CLEAR_ALL:
+            self.clear(2)
         return result
 
     def collectEntries(self, r, c, evaluate = True, nested = False):
         entries = []
+        expressions = []
         for i in range(r):
             if nested:
                 lst = []
             for j in range(c):
                 text = self.entries[(i, j)].get()
-                if evaluate: text = ez.tryEval(text)
+                if evaluate: text = ezs.numEval(text)
                 if nested: lst.append(text)
                 else: entries.append(text)
             if nested:
@@ -609,20 +626,14 @@ class Generator(Frame):
                             new_text = f'{result}({text})'
                         else:
                             coef = ''
-                            countDot = 0
                             for ch in text:
-                                if ch.isnumeric():
-                                    coef += ch
-                                elif ch == '.':
-                                    if countDot == 1:
-                                        coef = ''
-                                        break
-                                    countDot = 1
-                                    coef += ch
+                                coeff = coef + ch
+                                if ezs.isNumeric(ezs.numEval(coff)):
+                                    coef = coeff
                                 else:
                                     break
                             new_text = str(ezs.integer(eval(coef) * result)) + text[len(coef):] if coef else \
-                                    str(ezs.integer(result)) + text
+                                       str(ezs.integer(result)) + text
                 else:
                     if '+' in result or '-' in result:
                         new_text = f'{text}({result})'
@@ -853,6 +864,41 @@ class Generator(Frame):
         dialog.setDirection(self.replaceDirection)
         self.wait_window(dialog)
         return 'break'
+
+    def switch(self, target):
+        isRow = target == ROW
+        row, col = self.getRowCol()
+        if row == 0 or col == 0 or (isRow and row == 1) or (not isRow and col == 1):
+            return
+        size = col if isRow else row
+        autoSwitch = (isRow and row == 2) or (not isRow and col == 2)
+        fEntry = self.getFocusEntry()
+        result = ''
+        while True:
+            if autoSwitch:
+                size1, size2 = 0, 1
+            else:
+                result = simpledialog.askstring(title = 'Switch ' + target, prompt = f'Input {target} in the Form of x,y', initialvalue = result)
+                if not result:
+                    break
+                try:
+                    size1, size2 = result.split(',')
+                    size1, size2 = eval(size1) - 1, eval(size2) - 1
+                    if size1 < 0 or size1 >= size or size2 < 0 or size2 >= size:
+                        raise Exception()
+                except:
+                    messagebox.showerror(title = 'Error', message = 'Invalid Input')
+                    continue
+            for i in range(size):
+                e1 = self.entries[(size1, i) if isRow else (i, size1)]
+                e2 = self.entries[(size2, i) if isRow else (i, size2)]
+                t1, t2 = e1.get(), e2.get()
+                setEntry(e1, t2)
+                setEntry(e2, t1)
+            break
+        fEntry.focus()
+        self.modifyState()
+
 
     def transpose(self):
         resultType = self.resultType.get()
@@ -1112,9 +1158,9 @@ class Generator(Frame):
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
             clearOption = self.calculateClearVar.get()
             if clearOption == CLEAR_ENTRIES:
-                self.clear(0)
-            elif clearOption == CLEAR_ALL:
                 self.clear(1)
+            elif clearOption == CLEAR_ALL:
+                self.clear(2)
             return result
         except ValueError:
             messagebox.showerror(title = 'Error', message = 'Numerical Entries Only')
@@ -1133,18 +1179,23 @@ class Generator(Frame):
         variable.set(self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         master.add_cascade(label = label, menu = clearMenu)
 
-    def clear(self, mode = 0):
-        '''0 for clear entries, 1 for clear all'''
-        if mode >= 0:
+    def clear(self, mode):
+        '''0 for clear zeros, 1 for clear entries, 1 for clear all'''
+        if mode == 0:
             for entry in self.entries.values():
-                clearEntry(entry)
-        if mode >= 1:
-            clearEntry(self.rowEntry)
-            clearEntry(self.colEntry)
-            for key, entry in self.entries.copy().items():
-                entry.grid_forget()
-                del self.entries[key]
-            self.rowEntry.focus()
+                if ez.tryEval(entry.get()) == 0:
+                    clearEntry(entry)
+        else:
+            if mode >= 1:
+                for entry in self.entries.values():
+                    clearEntry(entry)
+            if mode >= 2:
+                clearEntry(self.rowEntry)
+                clearEntry(self.colEntry)
+                for key, entry in self.entries.copy().items():
+                    entry.grid_forget()
+                    del self.entries[key]
+                self.rowEntry.focus()
         self.modifyState()
 
     def modifyEntryWidth(self, dialog, value):
