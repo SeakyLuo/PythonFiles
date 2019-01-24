@@ -488,14 +488,26 @@ class Generator(Frame):
         return
 
     def checkEmpty(self):
-        for entry in [self.rowEntry, self.colEntry] + list(self.entries.values()):
+        result = None
+        for entry in [self.rowEntry, self.colEntry]:
             if not entry.get():
-                messagebox.showerror(title = 'Error', message = 'Not All Entries are Filled')
-                return True
-        return False
+                messagebox.showerror(title = 'Error', message = 'Empty Size')
+                return result
+        asked = False
+        for entry in self.entries.values():
+            if entry.get():
+                continue
+            if not asked:
+                result = messagebox.askyesnocancel(title = 'Warning', message = 'Not All Entries are Filled\nDo you want to fill them with zeros?')
+                asked = True
+            if result:
+                entry.insert(0, 0)
+            elif result == None:
+                break
+        return result
 
     def generate(self):
-        if self.checkEmpty():
+        if self.checkEmpty() == None:
             return
         result = ''
         r, c = self.getRowCol()
@@ -1081,7 +1093,7 @@ class Generator(Frame):
 
     def calculateDet(self):
         size = self.getRow()
-        if size != self.getCol() or self.checkEmpty():
+        if size != self.getCol() or self.checkEmpty() == None:
             return
         try:
             try:
