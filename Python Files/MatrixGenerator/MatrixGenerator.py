@@ -6,6 +6,9 @@ import ez, ezs, os
 from dialog import *
 from constants import *
 
+settings = ez.Settings(__file__)
+settings.setSettingOptions(settingOptions)
+
 class Generator(Frame):
     def __init__(self, master):
         Frame.__init__(self, master)
@@ -26,10 +29,6 @@ class Generator(Frame):
         self.prevReplace = ''
         self.replaceDirection = DOWN
 
-        ## Settings
-        self.settings = ez.Settings(__file__)
-        self.settings.setSettingOptions(settingOptions)
-
         ## Generate Menus
         self.menu = Menu(self)
         ## Result Menu
@@ -44,41 +43,41 @@ class Generator(Frame):
         self.matMenu.add_command(label = 'Unknown Matrix', command = self.unknownMatrix)
         self.detMenu = Menu(self)
         self.detMenu.add_command(label = CALCULATE, accelerator = shortcuts[CALCULATE], command = self.calculateDet)
-        self.calculateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
+        self.calculateClearVar = StringVar(self, value = settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.detMenu, self.calculateClearVar, \
-                            lambda: self.settings.set(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
+                            lambda: settings.set(CALCULATE_CLEAR_OPTION, self.calculateClearVar.get()), \
                             SHOW_CALCULATION_RESULT, COPY_CALCULATION_RESULT, 'After Calculation')
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
-        self.arrayVecVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_VECTOR, False))
+        self.arrayVecVar = BooleanVar(self, value = settings.setdefault(ARRAY_VECTOR, False))
         self.vecOptionMenu.add_checkbutton(label = 'Array Vector', variable = self.arrayVecVar, \
-                                           command = lambda: self.settings.set(ARRAY_VECTOR, self.arrayVecVar.get()))
+                                           command = lambda: settings.set(ARRAY_VECTOR, self.arrayVecVar.get()))
         self.vecOptionMenu.add_separator()
         self.vecOptionVar = StringVar(self)
         for option in vectorOptions:
             self.vecOptionMenu.add_radiobutton(label = option, variable = self.vecOptionVar, \
-                                               command = lambda: self.settings.set(VECTOR_OPTION, self.vecOptionVar.get()))
-        self.vecOptionVar.set(self.settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
+                                               command = lambda: settings.set(VECTOR_OPTION, self.vecOptionVar.get()))
+        self.vecOptionVar.set(settings.setdefault(VECTOR_OPTION, COLUMN_VECTOR))
         self.vecMenu.add_cascade(label = 'Vector Options', menu = self.vecOptionMenu)
         for name, menu in zip(resultTypeOptions, [self.matMenu, self.detMenu, self.vecMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
         ## Result Format Menu
         self.latexMenu = Menu(self)
-        self.latexNewlineVar = BooleanVar(self, value = self.settings.setdefault(LATEX_NEWLINE, False))
+        self.latexNewlineVar = BooleanVar(self, value = settings.setdefault(LATEX_NEWLINE, False))
         self.latexMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.latexNewlineVar, \
-                                       command = lambda: self.settings.set(LATEX_NEWLINE, self.latexNewlineVar.get()))
+                                       command = lambda: settings.set(LATEX_NEWLINE, self.latexNewlineVar.get()))
         self.arrayMenu = Menu(self)
-        self.arrayNewlineVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_NEWLINE, False))
+        self.arrayNewlineVar = BooleanVar(self, value = settings.setdefault(ARRAY_NEWLINE, False))
         self.arrayMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.arrayNewlineVar, \
-                                       command = lambda: self.settings.set(ARRAY_NEWLINE, self.arrayNewlineVar.get()))
+                                       command = lambda: settings.set(ARRAY_NEWLINE, self.arrayNewlineVar.get()))
         self.arrayMenu.add_separator()
         self.arrayOptionVar = StringVar(self)
         for option in arrayOptions:
             self.arrayMenu.add_radiobutton(label = option, variable = self.arrayOptionVar, \
-                                           command = lambda: self.settings.set(ARRAY_OPTION, self.arrayOptionVar.get()))
-        self.arrayOptionVar.set(self.settings.setdefault(ARRAY_OPTION, NORMAL_ARRAY))
+                                           command = lambda: settings.set(ARRAY_OPTION, self.arrayOptionVar.get()))
+        self.arrayOptionVar.set(settings.setdefault(ARRAY_OPTION, NORMAL_ARRAY))
         for name, menu in zip(resultFormatOptions, [self.latexMenu, self.arrayMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
@@ -118,8 +117,8 @@ class Generator(Frame):
         self.randomMatrixOption = StringVar(self)
         for option in randomMatrixOptions:
             self.randomMenu.add_radiobutton(label = option, variable = self.randomMatrixOption, \
-                                            command = lambda: self.settings.set(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
-        self.randomMatrixOption.set(self.settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
+                                            command = lambda: settings.set(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
+        self.randomMatrixOption.set(settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
         self.randomMenu.add_separator()
         self.randomMenu.add_command(label = 'Set Random Range', command = self.setRandomRange)
         self.randomMenu.add_command(label = 'Set Random Var', command = self.setRandomVar)
@@ -140,16 +139,16 @@ class Generator(Frame):
         ## Generate Menu
         self.generateMenu = Menu(self)
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
-        self.generateClearVar = StringVar(self, value = self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
+        self.generateClearVar = StringVar(self, value = settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         self.setupClearMenu(self.generateMenu, self.generateClearVar, \
-                            lambda: self.settings.set(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
+                            lambda: settings.set(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
                             SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
         ## Help Menu
         self.helpMenu = Menu(self)
         self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustWidth)
-        self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
+        self.rememberSizeVar = BooleanVar(self, value = settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.helpMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
-                                          command = lambda: self.settings.set(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
+                                          command = lambda: settings.set(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
         self.helpMenu.add_separator()
         self.helpMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Help'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.helpMenu]):
@@ -229,14 +228,14 @@ class Generator(Frame):
         self.master.bind('<Alt-L>', lambda event: self.insert(LATEX))
 
         ## Set Values
-        self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
-        self.setResultFormat(self.settings.setdefault(RESULT_FORMAT, LATEX))
-        self.settings.setdefault(RANDOM_MIN, 1)
-        self.settings.setdefault(RANDOM_MAX, maxSize)
-        self.settings.setdefault(RANDOM_VAR, defaultVar)
-        self.settings.setdefault(UNKNOWN_MATRIX, ('a', 'i', 'j'))
+        self.setResultType(settings.setdefault(RESULT_TYPE, MATRIX))
+        self.setResultFormat(settings.setdefault(RESULT_FORMAT, LATEX))
+        settings.setdefault(RANDOM_MIN, 1)
+        settings.setdefault(RANDOM_MAX, maxSize)
+        settings.setdefault(RANDOM_VAR, defaultVar)
+        settings.setdefault(UNKNOWN_MATRIX, ('a', 'i', 'j'))
         if self.rememberSizeVar.get():
-            r, c = self.settings[REMEMBER_SIZE]
+            r, c = settings[REMEMBER_SIZE]
             if r > 0:
                 setEntry(self.rowEntry, r)
             if c > 0:
@@ -279,7 +278,7 @@ class Generator(Frame):
 
     def onResultTypeChange(self):
         resultType = self.resultType.get()
-        self.settings[RESULT_TYPE] = resultType
+        settings[RESULT_TYPE] = resultType
         row, col = self.getRowCol()
         if resultType == MATRIX:
             self.colEntry['state'] = NORMAL
@@ -310,7 +309,7 @@ class Generator(Frame):
         self.onResultFormatChange()
 
     def onResultFormatChange(self):
-        self.settings[RESULT_FORMAT] = self.resultFormat.get()
+        settings[RESULT_FORMAT] = self.resultFormat.get()
 
     def onRowColChange(self, event):
         if event.keysym in directions:
@@ -336,13 +335,13 @@ class Generator(Frame):
             self.syncRowCol(size)
         self.generateEntries(r, c)
         if self.rememberSizeVar.get():
-            self.settings[REMEMBER_SIZE] = (r, c)
+            settings[REMEMBER_SIZE] = (r, c)
         self.modifyState()
 
     def generateEntries(self, row, col):
         if row < 1 or col < 1:
             return
-        width = self.settings.setdefault(ENTRY_WIDTH, 20)
+        width = settings.setdefault(ENTRY_WIDTH, 20)
         for i in range(1, col + 1):
             if (0, i) in self.entryLabels:
                 continue
@@ -447,13 +446,13 @@ class Generator(Frame):
         resultType = self.resultType.get()
         resultFormat = self.resultFormat.get()
         if resultFormat == LATEX:
-            vecOption = self.settings[VECTOR_OPTION]
+            vecOption = settings[VECTOR_OPTION]
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
                 result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)), resultType == DETERMINANT, self.settings[LATEX_NEWLINE])
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)), resultType == DETERMINANT, settings[LATEX_NEWLINE])
         elif resultFormat == ARRAY:
-            if resultType == VECTOR and self.settings[ARRAY_VECTOR]:
+            if resultType == VECTOR and settings[ARRAY_VECTOR]:
                 result = str(self.collectEntries(r, c))
             else:
                 result_list = self.collectEntries(r, c, True, True)
@@ -463,18 +462,18 @@ class Generator(Frame):
                         ## if is expression
                         if isinstance(entry, str) and ezs.isNumeric(ez.tryEval(entry)):
                             result = result.replace(f"'{entry}'", f'{entry}')
-                if self.settings[ARRAY_NEWLINE]:
+                if settings[ARRAY_NEWLINE]:
                     # Maybe ], \\\n?
                     result = result.replace('],', '],\n')
-            arrayOption = self.settings[ARRAY_OPTION]
+            arrayOption = settings[ARRAY_OPTION]
             if arrayOption != NORMAL_ARRAY:
                 prefix = 'np' if arrayOption == NP_ARRAY else 'numpy'
                 result = f'{prefix}.array({result})'
-        if self.settings[COPY_GENERATION_RESULT]:
+        if settings[COPY_GENERATION_RESULT]:
             ez.copyToClipboard(result)
-        if self.settings[SHOW_GENERATION_RESULT]:
+        if settings[SHOW_GENERATION_RESULT]:
             messagebox.showinfo(title = 'Result', message = result + '\nhas been copied to the clipboard!')
-        clearOption = self.settings[GENERATE_CLEAR_OPTION]
+        clearOption = settings[GENERATE_CLEAR_OPTION]
         if clearOption == CLEAR_ENTRIES:
             self.clear(1)
         elif clearOption == CLEAR_ALL:
@@ -860,7 +859,7 @@ class Generator(Frame):
         self.modifyState()
 
     def setRandomVar(self):
-        result = self.settings[RANDOM_VAR]
+        result = settings[RANDOM_VAR]
         fEntry = self.getFocusEntry()
         while True:
             result = simpledialog.askstring(title = 'Set Variable', \
@@ -873,7 +872,7 @@ class Generator(Frame):
             elif not result[0].isalpha():
                 messagebox.showerror('Error', 'The first letter should be alphabetical')
             else:
-                self.settings[RANDOM_VAR] = result
+                settings[RANDOM_VAR] = result
                 break
         fEntry.focus()
 
@@ -883,15 +882,15 @@ class Generator(Frame):
             maxValue = int(maxValue)
             if minValue > maxValue:
                 raise Exception()
-            self.settings[RANDOM_MIN] = minValue
-            self.settings[RANDOM_MAX] = maxValue
+            settings[RANDOM_MIN] = minValue
+            settings[RANDOM_MAX] = maxValue
         except:
             messagebox.showerror('Error', 'Invalid Input')
             return
 
     def setRandomRange(self):
         dialog = RangeDialog(self)
-        dialog.setMinMax(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX])
+        dialog.setMinMax(settings[RANDOM_MIN], settings[RANDOM_MAX])
         dialog.setOnConfirmListener(self.onConfirmRange)
         self.wait_window(dialog)
 
@@ -910,12 +909,12 @@ class Generator(Frame):
                 row = randrange(maxSize) + 1
             self.setRowCol(row, col)
             self.generateEntries(row, col)
-        option = self.settings[RANDOM_MATRIX_OPTION]
+        option = settings[RANDOM_MATRIX_OPTION]
         if option == RANDOM_INT_MATRIX:
-            setEntryFunc = lambda entry: setEntry(entry, randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))
+            setEntryFunc = lambda entry: setEntry(entry, randrange(settings[RANDOM_MIN], settings[RANDOM_MAX] + 1))
         elif option == RANDOM_VAR_MATRIX:
             isLatex = self.resultFormat.get() == LATEX
-            setEntryFunc = lambda entry: setEntry(entry, self.settings[RANDOM_VAR] + ('_{%s}' % randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1) if isLatex else str(randrange(self.settings[RANDOM_MIN], self.settings[RANDOM_MAX] + 1))))
+            setEntryFunc = lambda entry: setEntry(entry, settings[RANDOM_VAR] + ('_{%s}' % randrange(settings[RANDOM_MIN], settings[RANDOM_MAX] + 1) if isLatex else str(randrange(settings[RANDOM_MIN], settings[RANDOM_MAX] + 1))))
         elif option == RANDOM_MULTIVAR_MATRIX:
             setEntryFunc = lambda entry: setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
         hasEmpty = False
@@ -1044,10 +1043,10 @@ class Generator(Frame):
 
     def unknownMatrix(self):
         dialog = UnknownMatrix(self)
-        var, row, col = self.settings[UNKNOWN_MATRIX]
+        var, row, col = settings[UNKNOWN_MATRIX]
         dialog.setData(var, row, col)
         dialog.setOnCopyListener(lambda dialog, result: ez.copyToClipboard(result))
-        dialog.setOnCloseListener(lambda dialog, var, row, col: self.settings.set(UNKNOWN_MATRIX, (var, row, col)) )
+        dialog.setOnCloseListener(lambda dialog, var, row, col: settings.set(UNKNOWN_MATRIX, (var, row, col)) )
         self.wait_window(dialog)
 
     def permutationVector(self):
@@ -1072,9 +1071,9 @@ class Generator(Frame):
             except ModuleNotFoundError:
                 result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
-            if self.settings[COPY_CALCULATION_RESULT]:
+            if settings[COPY_CALCULATION_RESULT]:
                 ez.copyToClipboard(str_result)
-            if self.settings[SHOW_CALCULATION_RESULT]:
+            if settings[SHOW_CALCULATION_RESULT]:
                 messagebox.showinfo(title = 'Result', message = 'Value: ' + str_result)
             clearOption = self.calculateClearVar.get()
             if clearOption == CLEAR_ENTRIES:
@@ -1087,16 +1086,16 @@ class Generator(Frame):
 
     def setupClearMenu(self, master, variable, command, showResultOption, copyResultOption, label = 'Clear Options'):
         clearMenu = Menu(master = master, tearoff = False)
-        showResultVar = BooleanVar(self, value = self.settings.setdefault(showResultOption, True))
+        showResultVar = BooleanVar(self, value = settings.setdefault(showResultOption, True))
         clearMenu.add_checkbutton(label = SHOW_RESULT, variable = showResultVar, \
-                                  command = lambda: self.settings.set(showResultOption, showResultVar.get()))
-        copyResultVar = BooleanVar(self, value = self.settings.setdefault(copyResultOption, True))
+                                  command = lambda: settings.set(showResultOption, showResultVar.get()))
+        copyResultVar = BooleanVar(self, value = settings.setdefault(copyResultOption, True))
         clearMenu.add_checkbutton(label = COPY_RESULT, variable = copyResultVar, \
-                                  command = lambda: self.settings.set(copyResultOption, copyResultVar.get()))
+                                  command = lambda: settings.set(copyResultOption, copyResultVar.get()))
         clearMenu.add_separator()
         for option in clearOptions:
             clearMenu.add_radiobutton(label = option, value = option, variable = variable, command = command)
-        variable.set(self.settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
+        variable.set(settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
         master.add_cascade(label = label, menu = clearMenu)
 
     def clear(self, mode):
@@ -1122,7 +1121,7 @@ class Generator(Frame):
         self.modifyState()
 
     def modifyEntryWidth(self, dialog, value):
-        self.settings[ENTRY_WIDTH] = value
+        settings[ENTRY_WIDTH] = value
         for entry in self.entries.values():
             entry['width'] = value
         for i in range(1, self.getCol() + 1):
@@ -1130,7 +1129,7 @@ class Generator(Frame):
 
     def adjustWidth(self):
         dialog = SliderDialog(self, 20)
-        dialog.setSliderValue(self.settings[ENTRY_WIDTH])
+        dialog.setSliderValue(settings[ENTRY_WIDTH])
         dialog.setOnSliderChangeListener(self.modifyEntryWidth)
         self.wait_window(dialog)
 
@@ -1194,9 +1193,10 @@ class Generator(Frame):
     def onDestroy(self):
         pass
 
-root = Tk()
-app = Generator(root)
-app.pack()
-root.title('Matrix Generator')
-ez.py2pyw(__file__)
-root.mainloop()
+if __name__ == "__main__":
+    root = Tk()
+    app = Generator(root)
+    app.pack()
+    root.title('Matrix Generator')
+    ez.py2pyw(__file__)
+    root.mainloop()

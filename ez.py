@@ -118,10 +118,14 @@ def exportpy(directory, withConsole, zip = True, reminder = False):
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
                      args = (directory, export, reminder)).start()
 
-def py2pyw(directory, reminder = False):
-    ''' Converts a py file or a folder of py files to pyw files.'''
+def py2pyw(directory, pywname = '', reminder = False):
+    ''' Converts a py file or a folder of py files to pyw files.
+        pywname is the of pyw file and is only available when converting a file.
+        pywname is empty, set to pyw filename wil be set to the name of py file.'''
+    suffix = '.pyw'
+    if pywname and not pywname.endswith(suffix): pywname += suffix
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
-                     args = (directory, lambda filename: fwrite(filename + 'w', fread(filename, False)), reminder)).start()
+                     args = (directory, lambda filename: fwrite(pywname or filename + 'w', fread(filename, False)), reminder)).start()
 
 def rmlnk(path = None):
     ''' Remove "- 快捷方式"'''
