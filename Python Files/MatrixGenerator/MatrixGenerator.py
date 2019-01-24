@@ -149,8 +149,6 @@ class Generator(Frame):
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
         self.vecOptionMenu = Menu(self, tearoff = False)
-        print(self.settings)
-        print(self.settings.settings)
         self.arrayVecVar = BooleanVar(self, value = self.settings.setdefault(ARRAY_VECTOR, False))
         self.vecOptionMenu.add_checkbutton(label = 'Array Vector', variable = self.arrayVecVar, \
                                            command = lambda: self.settings.set(ARRAY_VECTOR, self.arrayVecVar.get()))

@@ -48,7 +48,6 @@ class Settings:
     def load(self):
         try:
             self.settings = loads(fread(self.settingsFile, False))
-            print('Load:', self.settings)
         except (FileNotFoundError, TypeError):
             self.settings = {}
 
