@@ -31,6 +31,65 @@ class Generator(Frame):
 
         ## Generate Menus
         self.menu = Menu(self)
+        ## Insert Menu
+        self.insertMenu = Menu(self)
+        self.insertMenu.add_command(label = APPEND_START, accelerator = shortcuts[APPEND_START], command = lambda: self.append(APPEND_START))
+        self.insertMenu.add_command(label = APPEND_END, accelerator = shortcuts[APPEND_END], command = lambda: self.append(APPEND_END))
+        self.insertMenu.add_command(label = APPEND_INDEX, accelerator = shortcuts[APPEND_INDEX], command = self.appendIndex)
+        self.insertMenu.add_separator()
+        self.insertMenu.add_command(label = FROM_LATEX, accelerator = shortcuts[FROM_LATEX], command = lambda: self.insert(LATEX))
+        self.insertMenu.add_command(label = FROM_ARRAY, accelerator = shortcuts[FROM_ARRAY], command = lambda: self.insert(ARRAY))
+        self.insertMenu.add_separator()
+        self.insertMenu.add_command(label = ONE_TO_N, accelerator = shortcuts[ONE_TO_N], command = self.oneToN)
+        self.insertMenu.add_command(label = A_TO_Z, accelerator = shortcuts[A_TO_Z], command = self.aToZ)
+        self.randomMenu = Menu(self, tearoff = False)
+        self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
+        self.randomMenu.add_command(label = RANDOM_REORDER, accelerator = shortcuts[RANDOM_REORDER], command = self.randomReorder)
+        self.randomMenu.add_separator()
+        self.randomMatrixOption = StringVar(self)
+        for option in randomMatrixOptions:
+            self.randomMenu.add_radiobutton(label = option, variable = self.randomMatrixOption, \
+                                            command = lambda: settings.set(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
+        self.randomMatrixOption.set(settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
+        self.randomMenu.add_separator()
+        self.randomMenu.add_command(label = 'Set Random Range', command = self.setRandomRange)
+        self.randomMenu.add_command(label = 'Set Random Var', command = self.setRandomVar)
+        self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
+        ## Edit Menu
+        self.editMenu = Menu(self)
+        self.editMenu.add_command(label = UNDO, accelerator = shortcuts[UNDO], command = self.undo)
+        self.editMenu.add_command(label = REDO, accelerator = shortcuts[REDO], command = self.redo)
+        self.editMenu.add_separator()
+        self.editMenu.add_command(label = FIND_VALUE, accelerator = shortcuts[FIND_VALUE], command = lambda: self.find(FIND_VALUE))
+        self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
+        self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
+        self.editMenu.add_separator()
+        self.editMenu.add_command(label = SWITCH_ROWS, accelerator = shortcuts[SWITCH_ROWS], command = lambda: self.switch(ROW))
+        self.editMenu.add_command(label = SWITCH_COLUMNS, accelerator = shortcuts[SWITCH_COLUMNS], command = lambda: self.switch(COLUMN))
+        self.editMenu.add_separator()
+        self.editMenu.add_command(label = CLEAR_ZEROS, accelerator = shortcuts[CLEAR_ZEROS], command = lambda: self.clear(0))
+        self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(1))
+        self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(2))
+        ## Modify Menu
+        self.modifyMenu = Menu(self)
+        self.modifyMenu.add_command(label = ADD, accelerator = shortcuts[ADD], command = self.add)
+        self.modifyMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
+        self.modifyMenu.add_separator()
+        self.modifyMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
+        self.modifyMenu.add_command(label = RESHAPE, command = self.reshape)
+        self.modifyMenu.add_separator()
+        self.modifyMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
+        self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
+        self.modifyMenu.add_separator()
+        self.modifyMenu.add_command(label = SORT, command = self.sort)
+        self.modifyMenu.add_command(label = REVERSE, command = self.reverse)
+        ## Generate Menu
+        self.generateMenu = Menu(self)
+        self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
+        self.generateClearVar = StringVar(self, value = settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
+        self.setupClearMenu(self.generateMenu, self.generateClearVar, \
+                            lambda: settings.set(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
+                            SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
         ## Result Menu
         self.resultMenu = Menu(self)
         ## Result Type Menu
@@ -81,68 +140,7 @@ class Generator(Frame):
         for name, menu in zip(resultFormatOptions, [self.latexMenu, self.arrayMenu]):
             menu['tearoff'] = False
             self.resultMenu.add_cascade(label = name, menu = menu)
-        ## Edit Menu
-        self.editMenu = Menu(self)
-        self.editMenu.add_command(label = UNDO, accelerator = shortcuts[UNDO], command = self.undo)
-        self.editMenu.add_command(label = REDO, accelerator = shortcuts[REDO], command = self.redo)
-        self.editMenu.add_separator()
-        self.editMenu.add_command(label = FIND_VALUE, accelerator = shortcuts[FIND_VALUE], command = lambda: self.find(FIND_VALUE))
-        self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
-        self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
-        self.editMenu.add_separator()
-        self.editMenu.add_command(label = SWITCH_ROWS, accelerator = shortcuts[SWITCH_ROWS], command = lambda: self.switch(ROW))
-        self.editMenu.add_command(label = SWITCH_COLUMNS, accelerator = shortcuts[SWITCH_COLUMNS], command = lambda: self.switch(COLUMN))
-        self.editMenu.add_separator()
-        self.editMenu.add_command(label = LOWER_CASE, accelerator = shortcuts[LOWER_CASE], command = lambda: self.toCase(LOWER_CASE))
-        self.editMenu.add_command(label = UPPER_CASE, accelerator = shortcuts[UPPER_CASE], command = lambda: self.toCase(UPPER_CASE))
-        self.editMenu.add_separator()
-        self.editMenu.add_command(label = CLEAR_ZEROS, accelerator = shortcuts[CLEAR_ZEROS], command = lambda: self.clear(0))
-        self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(1))
-        self.editMenu.add_command(label = CLEAR_ALL, accelerator = shortcuts[CLEAR_ALL], command = lambda: self.clear(2))
-        ## Insert Menu
-        self.insertMenu = Menu(self)
-        self.insertMenu.add_command(label = APPEND_START, accelerator = shortcuts[APPEND_START], command = lambda: self.append(APPEND_START))
-        self.insertMenu.add_command(label = APPEND_END, accelerator = shortcuts[APPEND_END], command = lambda: self.append(APPEND_END))
-        self.insertMenu.add_command(label = APPEND_INDEX, accelerator = shortcuts[APPEND_INDEX], command = self.appendIndex)
-        self.insertMenu.add_separator()
-        self.insertMenu.add_command(label = FROM_LATEX, accelerator = shortcuts[FROM_LATEX], command = lambda: self.insert(LATEX))
-        self.insertMenu.add_command(label = FROM_ARRAY, accelerator = shortcuts[FROM_ARRAY], command = lambda: self.insert(ARRAY))
-        self.insertMenu.add_separator()
-        self.insertMenu.add_command(label = ONE_TO_N, accelerator = shortcuts[ONE_TO_N], command = self.oneToN)
-        self.insertMenu.add_command(label = A_TO_Z, accelerator = shortcuts[A_TO_Z], command = self.aToZ)
-        self.randomMenu = Menu(self, tearoff = False)
-        self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
-        self.randomMenu.add_command(label = RANDOM_REORDER, accelerator = shortcuts[RANDOM_REORDER], command = self.randomReorder)
-        self.randomMenu.add_separator()
-        self.randomMatrixOption = StringVar(self)
-        for option in randomMatrixOptions:
-            self.randomMenu.add_radiobutton(label = option, variable = self.randomMatrixOption, \
-                                            command = lambda: settings.set(RANDOM_MATRIX_OPTION, self.randomMatrixOption.get()))
-        self.randomMatrixOption.set(settings.setdefault(RANDOM_MATRIX_OPTION, RANDOM_INT_MATRIX))
-        self.randomMenu.add_separator()
-        self.randomMenu.add_command(label = 'Set Random Range', command = self.setRandomRange)
-        self.randomMenu.add_command(label = 'Set Random Var', command = self.setRandomVar)
-        self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
-        ## Modify Menu
-        self.modifyMenu = Menu(self)
-        self.modifyMenu.add_command(label = ADD, accelerator = shortcuts[ADD], command = self.add)
-        self.modifyMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
-        self.modifyMenu.add_separator()
-        self.modifyMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
-        self.modifyMenu.add_command(label = RESHAPE, command = self.reshape)
-        self.modifyMenu.add_separator()
-        self.modifyMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
-        self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
-        self.modifyMenu.add_separator()
-        self.modifyMenu.add_command(label = SORT, command = self.sort)
-        self.modifyMenu.add_command(label = REVERSE, command = self.reverse)
-        ## Generate Menu
-        self.generateMenu = Menu(self)
-        self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
-        self.generateClearVar = StringVar(self, value = settings.setdefault(GENERATE_CLEAR_OPTION, NONE))
-        self.setupClearMenu(self.generateMenu, self.generateClearVar, \
-                            lambda: settings.set(GENERATE_CLEAR_OPTION, self.generateClearVar.get()), \
-                            SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
+
         ## Help Menu
         self.helpMenu = Menu(self)
         self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustWidth)
@@ -151,7 +149,7 @@ class Generator(Frame):
                                           command = lambda: settings.set(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
         self.helpMenu.add_separator()
         self.helpMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
-        for name, menu in zip(['Result', 'Edit', 'Insert', 'Modify', 'Generate', 'Help'], [self.resultMenu, self.editMenu, self.insertMenu, self.modifyMenu, self.generateMenu, self.helpMenu]):
+        for name, menu in zip(['Insert', 'Edit', 'Modify', 'Generate', 'Result', 'Help'], [self.insertMenu, self.editMenu, self.modifyMenu, self.generateMenu, self.resultMenu, self.helpMenu]):
             menu['tearoff'] = False
             self.menu.add_cascade(label = name, menu = menu)
         self.master.config(menu = self.menu)
@@ -216,12 +214,10 @@ class Generator(Frame):
         self.master.bind('<Alt-c>', lambda event: self.switch(COLUMN))
         self.master.bind('<Alt-e>', lambda event: self.append(APPEND_END))
         self.master.bind('<Alt-i>', lambda event: self.appendIndex())
-        self.master.bind('<Alt-l>', lambda event: self.toCase(LOWER))
         self.master.bind('<Alt-n>', lambda event: self.oneToN())
         self.master.bind('<Alt-r>', lambda event: self.switch(ROW))
         self.master.bind('<Alt-s>', lambda event: self.append(APPEND_START))
         self.master.bind('<Alt-t>', lambda event: self.transpose())
-        self.master.bind('<Alt-u>', lambda event: self.toCase(UPPER))
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
         self.master.bind('<Alt-A>', lambda event: self.insert(ARRAY))
@@ -932,12 +928,6 @@ class Generator(Frame):
         shuffle(values)
         for i, entry in enumerate(self.entries.values()):
             setEntry(entry, values[i])
-        self.modifyState()
-
-    def toCase(self, case):
-        '''Case: LOWER or UPPER'''
-        for entry in self.entries.values():
-            setEntry(entry, entry.get().lower() if case == LOWER else entry.get().upper())
         self.modifyState()
 
     def sort(self):

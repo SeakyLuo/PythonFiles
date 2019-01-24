@@ -77,7 +77,7 @@ def handlepy(directory, func, reminder = False):
     ''' Do something, meaning that func(directory), to a py file or a folder of py files.
         func must has exactly one argument filename.
         '''
-    if os.path.isfile(directory) and endwith(directory, '.py'):
+    if os.path.isfile(directory) and directory.endswith('.py'):
         if reminder:
             print('File detected')
         func(directory)
@@ -85,7 +85,7 @@ def handlepy(directory, func, reminder = False):
         if reminder:
             print('Folder detected')
         for file in os.listdir(directory):
-            if endwith(file, '.py'):
+            if file.endswith('.py'):
                 if reminder:
                     print(file)
                 func(os.path.join(directory, file))
@@ -131,7 +131,7 @@ def rmlnk(path = None):
     ''' Remove "- 快捷方式"'''
     for folder in os.listdir(path):
         folder = os.path.join(path, folder)
-        if endwith(folder, '.lnk'):
+        if folder.endswith('.lnk'):
             os.rename(folder, folder.replace(' - 快捷方式', ''))
 
 def chdt():
@@ -492,7 +492,7 @@ class find:
                 index2 = self.obj[index1:].index(obj2) + index1
             else:
                 index2 = None
-            return self.obj[index1+len(obj1):index2]
+            return self.obj[index1 + len(obj1):index2]
         except ValueError:
             return self.empty
 
@@ -556,14 +556,6 @@ class find:
            This fuction returns a list because set is not ordered.'''
         length = len(self.obj)
         return [self.obj[j:j + i] for i in range(1, length) for j in range(length + 1 - i)]
-
-def startwith(string, occurrence):
-    '''Check whether the string starts with occurrence.'''
-    return len(string) >= len(occurrence) and string[:len(occurrence)] == occurrence
-
-def endwith(string, occurrence):
-    '''Check whether the string ends with occurrence.'''
-    return len(string) >= len(occurrence) and string[-len(occurrence):] == occurrence
 
 flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
 

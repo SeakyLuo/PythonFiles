@@ -65,7 +65,7 @@ def accurateCalculation(formula = '', scin = False):
         if formula == '':
             return
         flag = 'scin = '
-        if ez.startwith(formula, flag):
+        if formula.startswith(flag):
             scin = eval(ez.find(formula).after(flag))
             continue
         result = get_result()
@@ -692,9 +692,9 @@ ma = matrixArray
 def formJudge(m):
     if type(m) != str:
         return False
-    if ez.startwith(m, '\\begin{bmatrix}') and ez.endwith(m, '\\end{bmatrix}') and (m.find('&') and m.find('\\')) > -1:
+    if m.startswith('\\begin{bmatrix}') and m.endswith('\\begin{bmatrix}'):
         return 'l'
-    elif ez.startwith(m, '\\begin{vmatrix}') and ez.endwith(m, '\\end{vmatrix}') and (m.find('&') and m.find('\\')) > -1:
+    elif m.startswith('\\begin{vmatrix}') and m.endswith('\\begin{vmatrix}'):
         return 'dl'
     elif m.find(' ') > 0:
         for i in m.split():

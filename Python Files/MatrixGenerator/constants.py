@@ -68,8 +68,6 @@ LOWER = 'Lower'
 UPPER = 'Upper'
 LOWER_TRIANGULAR = 'Lower Triangular'
 UPPER_TRIANGULAR = 'Upper Triangular'
-LOWER_CASE = 'Lower Case'
-UPPER_CASE = 'Upper Case'
 ONE_TO_N = '1 to N'
 A_TO_Z = 'A to Z'
 FROM_ARRAY = 'From ' + ARRAY
@@ -92,7 +90,7 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
               CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', CLEAR_ZEROS: 'Ctrl+Shift+Z', \
-              A_TO_Z: 'Alt+A', SWITCH_COLUMNS: 'Alt+C',APPEND_END: 'Alt+E', APPEND_INDEX: 'Alt+I', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', SWITCH_ROWS: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
+              A_TO_Z: 'Alt+A', SWITCH_COLUMNS: 'Alt+C',APPEND_END: 'Alt+E', APPEND_INDEX: 'Alt+I', ONE_TO_N: 'Alt+N', SWITCH_ROWS: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', \
               FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for command, shortcut in \
