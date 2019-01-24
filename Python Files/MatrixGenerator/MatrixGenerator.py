@@ -383,8 +383,7 @@ class Generator(Frame):
         entry = event.widget
         cursorIndex = entry.index(INSERT)
         isEnd = cursorIndex == len(entry.get())
-        if (key == LEFT and cursorIndex > 0) or \
-           (key == RIGHT and not isEnd):
+        if (key == LEFT and cursorIndex) or (key == RIGHT and not isEnd):
             return
         row, col = self.getRowCol()
         if entry in self.sizeEntries:
@@ -398,13 +397,15 @@ class Generator(Frame):
                     return
         else:
             info = entry.grid_info()
-            r, c = info['row'], info['column']
+            r, c = info['row'] - 1, info['column'] - 1
             if c in [0, col - 1] and ((key == UP and r == 0) or (key == DOWN and r == row - 1)):
                 fEntry = self.sizeEntries[c != 0]
             else:
                 x, y = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}[key]
+                print(r, c)
                 r = (r + x) % row
                 c = (c + y) % col
+                print(r, c)
                 fEntry = self.entries[(r, c)]
         fEntry.focus()
         if key in [UP, DOWN]:
