@@ -276,13 +276,6 @@ class Generator(Frame):
             entry.bind('<KeyRelease>', self.onRowColChange)
             bindtags = entry.bindtags()
             entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
-        if self.rememberSizeVar.get():
-            r, c = self.settings[REMEMBER_SIZE]
-            if r > 0:
-                setEntry(self.rowEntry, r)
-            if c > 0:
-                setEntry(self.colEntry, c)
-            self.generateEntries(r, c)
 
         ## Bind
         self.master.bind('<Destroy>', lambda event: self.onDestroy())
@@ -331,7 +324,16 @@ class Generator(Frame):
         self.settings.setdefault(RANDOM_MAX, maxSize)
         self.settings.setdefault(RANDOM_VAR, defaultVar)
         self.settings.setdefault(UNKNOWN_MATRIX, ('a', 'i', 'j'))
-        self.modifyStates()
+        if self.rememberSizeVar.get():
+            r, c = self.settings[REMEMBER_SIZE]
+            if r > 0:
+                setEntry(self.rowEntry, r)
+            if c > 0:
+                setEntry(self.colEntry, c)
+            self.generateEntries(r, c)
+            self.modifyState()
+        else:
+            self.modifyState()
 
     def getRow(self):
         try: return int(self.rowEntry.get())
@@ -424,7 +426,7 @@ class Generator(Frame):
         self.generateEntries(r, c)
         if self.rememberSizeVar.get():
             self.settings[REMEMBER_SIZE] = (r, c)
-        self.modifyStates()
+        self.modifyState()
 
     def generateEntries(self, row, col):
         if row < 1 or col < 1:
@@ -446,7 +448,7 @@ class Generator(Frame):
                 del self.entries[(i, j)]
 
     def onEntryChange(self):
-        self.modifyStates()
+        self.modifyState()
 
     def bindMoveFocus(self, entry):
         for key in ['<Up>', '<Down>', '<Left>', '<Right>']:
@@ -504,6 +506,8 @@ class Generator(Frame):
                 entry.insert(0, 0)
             elif result == None:
                 break
+        else:
+            result = True
         return result
 
     def generate(self):
@@ -533,7 +537,7 @@ class Generator(Frame):
         if self.settings[COPY_GENERATION_RESULT]:
             ez.copyToClipboard(result)
         if self.settings[SHOW_GENERATION_RESULT]:
-            messagebox.showinfo(title = 'Result', message = result + '\nis Copied to the Clipboard!')
+            messagebox.showinfo(title = 'Result', message = result + '\nhas been copied to the clipboard!')
         clearOption = self.settings[GENERATE_CLEAR_OPTION]
         if clearOption == CLEAR_ENTRIES:
             self.clear(0)
@@ -581,7 +585,7 @@ class Generator(Frame):
                     result = ('+' if result > 0 else '') + str(result)
                 new_text = f'{text}{result}'
             setEntry(entry, new_text)
-        self.modifyStates()
+        self.modifyState()
 
     def multiply(self):
         fEntry = self.getFocusEntry()
@@ -627,7 +631,7 @@ class Generator(Frame):
             else:
                 new_text = 0
             setEntry(entry, new_text)
-        self.modifyStates()
+        self.modifyState()
 
     def insert(self, fromFormat):
         '''fromFormat can only be LaTeX or Array'''
@@ -685,7 +689,7 @@ class Generator(Frame):
                 messagebox.showerror(title = 'Error', message = 'Invalid Input')
         fEntry.focus()
         if result:
-            self.modifyStates()
+            self.modifyState()
 
     def appendIndex(self):
         isLatex = self.resultFormat.get() == LATEX
@@ -700,7 +704,7 @@ class Generator(Frame):
             self.syncRowCol(max(row, col))
         for i, j in self.entries:
             setEntry(self.entries[(i, j)], 1 if i == j else 0)
-        self.modifyStates()
+        self.modifyState()
 
     def append(self, position):
         isStart = position == APPEND_START
@@ -812,7 +816,7 @@ class Generator(Frame):
                 self.findIndex = (self.findIndex - 1) % len(self.findResult)
         else:
             self.findIndex = -1
-        self.modifyStates()
+        self.modifyState()
 
     def onReplaceFind(self, dialog, find, replace, direction):
         self.onReplace(dialog, find, replace, direction)
@@ -826,7 +830,7 @@ class Generator(Frame):
             return
         for entry in self.entries.values():
             setEntry(entry, entry.get().replace(find, replace))
-        self.modifyStates()
+        self.modifyState()
 
     def onReplaceDirectionChange(self, dialog, direction):
         self.replaceDirection = direction
@@ -864,12 +868,12 @@ class Generator(Frame):
         for i in range(row):
             for j in range(col):
                 setEntry(self.entries[(j, i)], entries[(i, j)])
-        self.modifyStates()
+        self.modifyState()
 
     def zeroMatrix(self):
         for entry in self.entries.values():
             setEntry(entry, 0)
-        self.modifyStates()
+        self.modifyState()
 
     def oneToN(self):
         row, col = self.getRowCol()
@@ -877,7 +881,7 @@ class Generator(Frame):
             return
         for i in range(row * col):
             setEntry(self.entries[divmod(i, col)], i + 1)
-        self.modifyStates()
+        self.modifyState()
 
     def aToZ(self):
         row, col = self.getRowCol()
@@ -887,7 +891,7 @@ class Generator(Frame):
         for i in range(row * col):
             count, char = divmod(i, 26)
             setEntry(self.entries[divmod(i, col)], chr(ordA + char) * (count + 1))
-        self.modifyStates()
+        self.modifyState()
 
     def setRandomVar(self):
         result = self.settings[RANDOM_VAR]
@@ -956,20 +960,20 @@ class Generator(Frame):
         if not hasEmpty:
             for entry in self.entries.values():
                 setEntryFunc(entry)
-        self.modifyStates()
+        self.modifyState()
 
     def randomReorder(self):
         values = [entry.get() for entry in self.entries.values()]
         shuffle(values)
         for i, entry in enumerate(self.entries.values()):
             setEntry(entry, values[i])
-        self.modifyStates()
+        self.modifyState()
 
     def toCase(self, case):
         '''Case: LOWER or UPPER'''
         for entry in self.entries.values():
             setEntry(entry, entry.get().lower() if case == LOWER else entry.get().upper())
-        self.modifyStates()
+        self.modifyState()
 
     def sort(self):
         row, col = self.getRowCol()
@@ -995,7 +999,7 @@ class Generator(Frame):
             except: values = sorted(self.collectEntries(row, col, False))
         for i in range(row * col):
             setEntry(self.entries[divmod(i, col)], values[i])
-        self.modifyStates()
+        self.modifyState()
         return 'break'
 
     def reverse(self):
@@ -1008,7 +1012,7 @@ class Generator(Frame):
             t1, t2 = e2.get(), e1.get()
             setEntry(e1, t1)
             setEntry(e2, t2)
-        self.modifyStates()
+        self.modifyState()
         return 'break'
 
     def reshape(self):
@@ -1043,19 +1047,19 @@ class Generator(Frame):
         self.generateEntries(x, y)
         for i, value in enumerate(values):
             setEntry(self.entries[divmod(i, y)], value)
-        self.modifyStates()
+        self.modifyState()
         return 'break'
 
     def triangularMatrix(self, mode):
         for i, j in self.entries:
             if i < j if mode == LOWER else i > j:
                 setEntry(self.entries[(i, j)], 0)
-        self.modifyStates()
+        self.modifyState()
 
     def unitMatrix(self):
         for entry in self.entries.values():
             setEntry(entry, 1)
-        self.modifyStates()
+        self.modifyState()
 
     def permutationMatrix(self):
         row, col = self.getRowCol()
@@ -1070,7 +1074,7 @@ class Generator(Frame):
             for j in range(size):
                 setEntry(self.entries[(i, j)], 0)
             setEntry(self.entries[(i, c)], 1)
-        self.modifyStates()
+        self.modifyState()
 
     def unknownMatrix(self):
         dialog = UnknownMatrix(self)
@@ -1089,7 +1093,7 @@ class Generator(Frame):
         shuffle(values)
         for i, entry in enumerate(self.entries.values()):
             setEntry(entry, values[i])
-        self.modifyStates()
+        self.modifyState()
 
     def calculateDet(self):
         size = self.getRow()
@@ -1141,7 +1145,7 @@ class Generator(Frame):
                 entry.grid_forget()
                 del self.entries[key]
             self.rowEntry.focus()
-        self.modifyStates()
+        self.modifyState()
 
     def modifyEntryWidth(self, dialog, value):
         self.settings[ENTRY_WIDTH] = value
@@ -1180,10 +1184,8 @@ class Generator(Frame):
         entry.focus()
         entry.icursor(focus[2])
 
-    def modifyStates(self):
+    def modifyState(self):
         row, col = self.getRowCol()
-        if not row and not col:
-            return
         state = (self.resultType.get(), \
                  self.collectEntries(row, col, False, True), \
                  self.getFocusEntryIndex())
