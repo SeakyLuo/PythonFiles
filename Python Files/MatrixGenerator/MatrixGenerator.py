@@ -8,6 +8,7 @@ from Dialogs import *
 ## Constant Variables
 maxSize = 25
 maxRandomVarLength = 10
+columnLabelWidth = 1
 
 defaultVar = 'x'
 
@@ -98,12 +99,12 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
-              CLEAR_ZEROS: 'Ctrl+Shift+0', CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', \
+              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', CLEAR_ZEROS: 'Ctrl+Shift+Z', \
               A_TO_Z: 'Alt+A', SWITCH_COLUMNS: 'Alt+C',APPEND_END: 'Alt+E', APPEND_INDEX: 'Alt+I', LOWER_CASE: 'Alt+L', ONE_TO_N: 'Alt+N', SWITCH_ROWS: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', UPPER_CASE: 'Alt+U', \
-              FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L', REVERSE: 'Alt+Shift+R', SORT: 'Alt+Shift+S'}
+              FROM_ARRAY: 'Alt+Shift+A', FROM_LATEX: 'Alt+Shift+L'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
 otherShortcuts = '\n'.join([otherShortcutFormatter(command, shortcut) for command, shortcut in \
-                            [('Switch Result Type', 'Ctrl+[ Ctrl+]'), ('Switch Result Format', 'Alt+[ Alt+]'), ('Exit', 'Ctrl+W')]])
+                           [('Switch Result Type', 'Ctrl+[ Ctrl+]'), ('Switch Result Format', 'Alt+[ Alt+]'), ('Exit', 'Ctrl+W')]])
 
 class Generator(Frame):
     def __init__(self, master):
@@ -116,6 +117,7 @@ class Generator(Frame):
 
         ## init variables
         self.entries = {}
+        self.entryLabels = {}
         self.stateIndex = 0
         self.states = [] ## (resultType, entries, focusEntry)
         ## Find Dialog
@@ -233,8 +235,8 @@ class Generator(Frame):
         self.modifyMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
         self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
         self.modifyMenu.add_separator()
-        self.modifyMenu.add_command(label = SORT, accelerator = shortcuts[SORT], command = self.sort)
-        self.modifyMenu.add_command(label = REVERSE, accelerator = shortcuts[REVERSE], command = self.reverse)
+        self.modifyMenu.add_command(label = SORT, command = self.sort)
+        self.modifyMenu.add_command(label = REVERSE, command = self.reverse)
         ## Generate Menu
         self.generateMenu = Menu(self)
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
@@ -244,7 +246,7 @@ class Generator(Frame):
                             SHOW_GENERATION_RESULT, COPY_GENERATION_RESULT, 'After Generation')
         ## Help Menu
         self.helpMenu = Menu(self)
-        self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustEntryWidth)
+        self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustWidth)
         self.rememberSizeVar = BooleanVar(self, value = self.settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.helpMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
                                           command = lambda: self.settings.set(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
@@ -303,7 +305,6 @@ class Generator(Frame):
         self.master.bind('<Control-=>', lambda event: self.add())
         self.master.bind('<Control-[>', lambda event: self.switchResultType(-1))
         self.master.bind('<Control-]>', lambda event: self.switchResultType(1))
-        self.master.bind('<Control-Shift-Key-0>', lambda event: self.clear(0))
         self.master.bind('<Control-A>', lambda event: self.clear(2))
         self.master.bind('<Control-C>', lambda event: self.calculateDet())
         self.master.bind('<Control-E>', lambda event: self.clear(1))
@@ -311,6 +312,7 @@ class Generator(Frame):
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
         self.master.bind('<Control-R>', lambda event: self.randomReorder())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
+        self.master.bind('<Control-Z>', lambda event: self.clear(0))
         self.master.bind('<Alt-a>', lambda event: self.aToZ())
         self.master.bind('<Alt-c>', lambda event: self.switch(COLUMN))
         self.master.bind('<Alt-e>', lambda event: self.append(APPEND_END))
@@ -325,8 +327,6 @@ class Generator(Frame):
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
         self.master.bind('<Alt-A>', lambda event: self.insert(ARRAY))
         self.master.bind('<Alt-L>', lambda event: self.insert(LATEX))
-        self.master.bind('<Alt-R>', lambda event: self.reverse())
-        self.master.bind('<Alt-S>', lambda event: self.sort())
 
         ## Set Values
         self.setResultType(self.settings.setdefault(RESULT_TYPE, MATRIX))
@@ -442,21 +442,39 @@ class Generator(Frame):
     def generateEntries(self, row, col):
         if row < 1 or col < 1:
             return
+        width = self.settings.setdefault(ENTRY_WIDTH, 20)
+        for i in range(1, col + 1):
+            if (0, i) in self.entryLabels:
+                continue
+            label = Label(self.entryFrame, width = columnLabelWidth, text = i)
+            label.grid(row = 0, column = i)
+            self.entryLabels[(0, i)] = label
         for i in range(row):
+            if (i + 1, 0) not in self.entryLabels:
+                label = Label(self.entryFrame, text = i + 1)
+                label.grid(row = i + 1, column = 0)
+                self.entryLabels[(i + 1, 0)] = label
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
-                entry = Entry(self.entryFrame, width = self.settings.setdefault(ENTRY_WIDTH, 20))
+                entry = Entry(self.entryFrame, width = width)
                 self.bindMoveFocus(entry)
                 entry.bind('<KeyRelease>', lambda event: self.onEntryChange())
                 bindtags = entry.bindtags()
                 entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
-                entry.grid(row = i, column = j, sticky = NSEW)
+                entry.grid(row = i + 1, column = j + 1, sticky = NSEW)
                 self.entries[(i, j)] = entry
         for i, j in self.entries.copy():
-            if i not in range(row) or j not in range(col):
+            if i >= row or j >= col:
                 self.entries[(i, j)].grid_forget()
                 del self.entries[(i, j)]
+        for i, j in self.entryLabels.copy():
+            if i > row:
+                self.entryLabels[(i, 0)].grid_forget()
+                del self.entryLabels[(i, 0)]
+            elif j > col:
+                self.entryLabels[(0, j)].grid_forget()
+                del self.entryLabels[(0, j)]
 
     def onEntryChange(self):
         self.modifyState()
@@ -529,7 +547,7 @@ class Generator(Frame):
         resultType = self.resultType.get()
         resultFormat = self.resultFormat.get()
         if resultFormat == LATEX:
-            vecOption = self.vecOptionVar.get()
+            vecOption = self.settings[VECTOR_OPTION]
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
                 result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
             else:
@@ -565,7 +583,6 @@ class Generator(Frame):
 
     def collectEntries(self, r, c, evaluate = True, nested = False):
         entries = []
-        expressions = []
         for i in range(r):
             if nested:
                 lst = []
@@ -1195,9 +1212,12 @@ class Generator(Frame):
             if mode >= 2:
                 clearEntry(self.rowEntry)
                 clearEntry(self.colEntry)
-                for key, entry in self.entries.copy().items():
+                for entry in self.entries.values():
                     entry.grid_forget()
-                    del self.entries[key]
+                self.entries.clear()
+                for label in self.entryLabels.values():
+                    label.grid_forget()
+                self.entryLabels.clear()
                 self.rowEntry.focus()
         self.modifyState()
 
@@ -1205,8 +1225,10 @@ class Generator(Frame):
         self.settings[ENTRY_WIDTH] = value
         for entry in self.entries.values():
             entry['width'] = value
+        for i in range(1, self.getCol() + 1):
+            self.entryLabels[(0, i)]['width'] = value
 
-    def adjustEntryWidth(self):
+    def adjustWidth(self):
         dialog = SliderDialog(self, 20)
         dialog.setSliderValue(self.settings[ENTRY_WIDTH])
         dialog.setOnSliderChangeListener(self.modifyEntryWidth)
