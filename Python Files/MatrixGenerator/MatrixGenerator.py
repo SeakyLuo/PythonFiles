@@ -1137,7 +1137,7 @@ class Generator(Frame):
             entry['width'] = value
 
     def adjustEntryWidth(self):
-        dialog = SliderDialog(self, 25)
+        dialog = SliderDialog(self, 20)
         dialog.setSliderValue(self.settings[ENTRY_WIDTH])
         dialog.setOnSliderChangeListener(self.modifyEntryWidth)
         self.wait_window(dialog)
