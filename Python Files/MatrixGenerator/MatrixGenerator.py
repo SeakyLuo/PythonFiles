@@ -391,10 +391,8 @@ class Generator(Frame):
                 fEntry = self.sizeEntries[entry == self.rowEntry]
             else:
                 # check empty
-                if self.entries:
-                    fEntry = self.entries[(row - 1 if key == UP else 0, 0 if entry == self.rowEntry else col - 1)]
-                else:
-                    return
+                if not self.entries: return
+                fEntry = self.entries[(row - 1 if key == UP else 0, 0 if entry == self.rowEntry else col - 1)]
         else:
             info = entry.grid_info()
             r, c = info['row'] - 1, info['column'] - 1
@@ -402,10 +400,8 @@ class Generator(Frame):
                 fEntry = self.sizeEntries[c != 0]
             else:
                 x, y = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}[key]
-                print(r, c)
                 r = (r + x) % row
                 c = (c + y) % col
-                print(r, c)
                 fEntry = self.entries[(r, c)]
         fEntry.focus()
         if key in [UP, DOWN]:
@@ -436,8 +432,7 @@ class Generator(Frame):
         return result
 
     def generate(self):
-        if self.checkEmpty() == None:
-            return
+        if self.checkEmpty() == None: return
         result = ''
         r, c = self.getRowCol()
         resultType = self.resultType.get()
@@ -480,15 +475,13 @@ class Generator(Frame):
     def collectEntries(self, r, c, evaluate = True, nested = False):
         entries = []
         for i in range(r):
-            if nested:
-                lst = []
+            if nested: lst = []
             for j in range(c):
                 text = self.entries[(i, j)].get()
                 if evaluate: text = ezs.numEval(text)
                 if nested: lst.append(text)
                 else: entries.append(text)
-            if nested:
-                entries.append(lst)
+            if nested: entries.append(lst)
         return entries
 
     def switchResultType(self, move):
@@ -501,8 +494,7 @@ class Generator(Frame):
         fEntry = self.getFocusEntry()
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
         fEntry.focus()
-        if not result:
-            return
+        if not result: return
         result = ezs.integer(ez.tryEval(result))
         if result == 0:
             return
@@ -543,7 +535,7 @@ class Generator(Frame):
                             coef = ''
                             for ch in text:
                                 coeff = coef + ch
-                                if ezs.isNumeric(ezs.numEval(coff)):
+                                if ezs.isNumeric(ezs.numEval(coeff)):
                                     coef = coeff
                                 else:
                                     break
