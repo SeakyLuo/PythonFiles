@@ -480,19 +480,15 @@ class find:
 
     def between(self, obj1 = None, obj2 = None):
         '''Return the obj between obj1 and obj2 (not included).
-            First occurrence only.'''
+           Start from the first occurrence.'''
         if self.type not in [str, list, tuple]:
             raise DataTypeError
         try:
-            if obj1:
-                index1 = self.obj.index(obj1)
-            else:
-                index1 = 0
-            if obj2:
-                index2 = self.obj[index1:].index(obj2) + index1
-            else:
-                index2 = None
-            return self.obj[index1 + len(obj1):index2]
+            start = 0
+            if obj1 != None:
+                start = self.obj.index(obj1) + (len(obj1) if self.type == str else 1)
+            end = self.obj[start:].index(obj2) + start if obj2 != None else None
+            return self.obj[start:end]
         except ValueError:
             return self.empty
 
