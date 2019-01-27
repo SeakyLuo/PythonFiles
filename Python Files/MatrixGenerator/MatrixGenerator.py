@@ -37,6 +37,9 @@ class Generator(Frame):
         self.insertMenu.add_command(label = APPEND_END, accelerator = shortcuts[APPEND_END], command = lambda: self.append(APPEND_END))
         self.insertMenu.add_command(label = APPEND_INDEX, accelerator = shortcuts[APPEND_INDEX], command = self.appendIndex)
         self.insertMenu.add_separator()
+        self.insertMenu.add_command(label = FILL_ROW, accelerator = shortcuts[FILL_ROW], command = lambda: self.fillRC(FILL_ROW))
+        self.insertMenu.add_command(label = FILL_COLUMN, accelerator = shortcuts[FILL_COLUMN], command = lambda: self.fillRC(FILL_COLUMN))
+        self.insertMenu.add_separator()
         self.insertMenu.add_command(label = FROM_LATEX, accelerator = shortcuts[FROM_LATEX], command = lambda: self.insert(LATEX))
         self.insertMenu.add_command(label = FROM_ARRAY, accelerator = shortcuts[FROM_ARRAY], command = lambda: self.insert(ARRAY))
         self.insertMenu.add_separator()
@@ -221,7 +224,9 @@ class Generator(Frame):
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
         self.master.bind('<Alt-]>', lambda event: self.switchResultFormat(1))
         self.master.bind('<Alt-A>', lambda event: self.insert(ARRAY))
+        self.master.bind('<Alt-C>', lambda event: self.fillRC(FILL_COLUMN))
         self.master.bind('<Alt-L>', lambda event: self.insert(LATEX))
+        self.master.bind('<Alt-R>', lambda event: self.fillRC(FILL_ROW))
 
         ## Set Values
         self.setResultType(settings.setdefault(RESULT_TYPE, MATRIX))
@@ -617,7 +622,39 @@ class Generator(Frame):
                 text = f'{i + 1}{j + 1}'
                 self.entries[(i, j)].insert(END, '_{%s}' % text if isLatex else text)
 
+    def fillRC(self, title):
+        isRow = title == FILL_ROW
+        fEntry = self.getFocusEntry()
+        result = ''
+        while True:
+            result = simpledialog.askstring(title = title, \
+                                            prompt = title + ' k With x. \nInput k and x in the Form of k,x', \
+                                            initialvalue = result)
+            if not result:
+                break
+            try:
+                resultLst = result.split(',')
+                row, col = self.getRowCol()
+                if len(resultLst) == 1:
+                    if (row == 1 and isRow) or (col == 1 and not isRow):
+                        k, x = 0, resultLst[0]
+                    else:
+                        raise Exception()
+                else:
+                    k, x = list(map(str.strip, resultLst))
+                    k = eval(k) - 1
+                for i in range(col if isRow else row):
+                    setEntry(self.entries[(k, i) if isRow else (i, k)], x)
+                break
+            except:
+                messagebox.showerror('Error', 'Invalid Input')
+                continue
+            break
+        fEntry.focus()
+
     def identityMatrix(self):
+        if self.resultType.get() == VECTOR:
+            self.setResultType(MATRIX)
         row, col = self.getRowCol()
         if row != col:
             self.syncRowCol(max(row, col))
@@ -750,6 +787,7 @@ class Generator(Frame):
         for entry in self.entries.values():
             setEntry(entry, entry.get().replace(find, replace))
         self.modifyState()
+        dialog.close()
 
     def onReplaceDirectionChange(self, dialog, direction):
         self.replaceDirection = direction
@@ -812,7 +850,7 @@ class Generator(Frame):
         resultType = self.resultType.get()
         if resultType not in [MATRIX, DETERMINANT, VECTOR]:
             return
-        row, col = self.getRow()
+        row, col = self.getRowCol()
         entries = { key: self.entries[key].get() for key in self.entries }
         if row != col:
             if resultType == VECTOR:
