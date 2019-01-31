@@ -599,9 +599,9 @@ def without(obj, *args):
 
 def delta_days(day1, day2):
     '''Please enter an 8-digit number with the format YYYYMMDD like 20170101'''
-    year = lambda x:x//10000
-    month = lambda x:(x%10000)//100
-    day = lambda x:x%100
+    year = lambda x: x // 10000
+    month = lambda x:(x % 10000) // 100
+    day = lambda x: x % 100
     start = datetime.datetime(year(day1), month(day1), day(day1))
     end = datetime.datetime(year(day2), month(day2), day(day2))
     delta = (end - start).days + 1
@@ -615,18 +615,12 @@ def substitute(obj, *args):
     if num == 0:
         return
     if num % 2:
-        raise Exception('Please type in the correct number of words!')
+        raise Exception('Incorrect number of words!')
     typ = type(obj)
     if typ == str:
         new = obj
         for i in range(0, num, 2):
-            subed = args[i]
-            if type(subed) != str:
-                subed = str(subed)
-            subs = args[i + 1]
-            if type(subs) != str:
-                subs = str(subs)
-            new = new.replace(subed, subs)
+            new = new.replace(str(args[i]), str(args[i + 1]))
     else:
         if typ == tuple:
             new = ()
