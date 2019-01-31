@@ -10,6 +10,19 @@ from atexit import register
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = Exception('This data type is not supported!')
 
+def countLines(path, filetype):
+    '''Count the lines of all the files with the specified type in the path.'''
+    count = 0
+    for item in os.listdir(path):
+        directory = os.path.join(path, item)
+        if os.path.isdir(directory):
+            for script in os.listdir(directory):
+                if script.endswith(filetype):
+                    count += fread(os.path.join(directory, script), False).count('\n')
+        elif os.path.isfile(item) and item.endswith(filetype):
+            count += fread(directory, False).count('\n')
+    return count
+
 class Settings:
     '''Recommend passing __file__ to file'''
     def __init__(self, file, settingsName = 'settings.json'):
