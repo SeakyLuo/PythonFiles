@@ -1,13 +1,13 @@
 import urllib.request, urllib.parse
 import os
 import ez
-from ez import have, find, sub, similar
+from ez import find, sub, similar
 import eyed3
 import traceback
 
 music_fmt = ['.mp3', '.wma', '.ape', '.flac']
-isMusic = lambda x:have(x.lower()).any(*music_fmt)
-find_fmt = lambda x:have(x.lower()).which(*music_fmt)
+isMusic = lambda x: any(fmt in x.lower() for fmt in music_fmt)
+find_fmt = lambda x: [fmt in x.lower() for fmt in music_fmt][0]
 deformat = lambda x:ez.without(x, find_fmt(x))
 fengexian = '\n' + ' = ' * 5 + '分割线' + ' = ' * 5 + '\n'
 defaultPath = "D:\\Media\\Music\\"
@@ -68,7 +68,7 @@ class searcher:
                 print('QAQ主人sama搜不到{}的歌词诶...'.format(self.text))
                 self.again = True
                 for left, right in [('(', ')'), ('（', '）'), ('《', '》'), ('(', '）'), ('（', ')')]:
-                    if have(self.title).all(left, right):
+                    if ez.contains(self.title, left, right):
                         self.new_title = (self.title[:self.title.find(left)] + self.title[find(self.title).last(right) + 1:]).strip()
                         print('直接搜一下《{}》看看~'.format(self.new_title))
                         self.parse(self.new_title, self.artist, speed)
@@ -118,30 +118,29 @@ class searcher:
     def parse(self, title = '', artist = '', speed = ''):
         ctitle = utf8(title) ## c means encoded
         cartist = utf8(artist)
-        self.url={'baidu':'http://music.baidu.com/search/lrc?key = ' + ctitle + ['', '%20' + cartist][artist != ''],
-            'xiami':'http://www.xiami.com/search?key = ' + ctitle + ['', ' + ' + cartist][artist != '']}
+        self.url={'baidu':'http://music.baidu.com/search/lrc?key = ' + ctitle + (artist or ('%20' + cartist)), \
+                  'xiami':'http://www.xiami.com/search?key = ' + ctitle + (artist or (' + ' + cartist))}
         for source in self.url:
-            request=urllib.request.Request(self.url[source],  headers=header)
-            data=urllib.request.urlopen(request).read().decode().split('\n')
+            request = urllib.request.Request(self.url[source],  headers=header)
+            data = urllib.request.urlopen(request).read().decode().split('\n')
             lyrics = ''
             begin = False
             if source == 'baidu':
                 for line in data:
-                    line=line.strip()
-                    hv=have(line)
-                    if hv.start('<a href="/song') and 'title = "{}"'.format(title) in line:
+                    line = line.strip()
+                    if line.startswith('<a href="/song') and 'title = "{}"'.format(title) in line:
                         start = True
-                    elif hv.start('<span class="author_list"'):
-                        if artist and not hv.end('title = "{}"'.format(artist)):
+                    elif line.startswith('<span class="author_list"'):
+                        if artist and not line.endswith('title = "{}"'.format(artist)):
                             begin = False
-                    elif hv.end('<div class="page-cont">'):
+                    elif line.endswith('<div class="page-cont">'):
                         break
                     elif begin:
-                        if hv.start('<p id="lyricCont-'):
-                            line=line[line.find('>') + 1:]
-                        if hv.end('<br />', '</p>'):
+                        if line.startswith('<p id="lyricCont-'):
+                            line = line[line.find('>') + 1:]
+                        if line.endswith(('<br />', '</p>')):
                             lyrics += ez.without(sub(line, '<br />', '\n', '&#039;', '\'').strip(), *self.invalid) + '\n'
-                            if have(line).end('</p>'):
+                            if line.endswith('</p>'):
                                 self.lyrics_list.append(lyrics[:-1])
                                 lyrics = ''
                                 if speed == 'f':
@@ -152,10 +151,9 @@ class searcher:
                 urls = []
                 for line in data:
                     line = line.strip()
-                    hv = have(line)
-                    if hv.start('<a target="_blank" href = ') and hv.all('song', 'title = "{}"'.format(sub(title, '\'', '&#039;'))):
+                    if line.startswith('<a target="_blank" href = ') and ez.contains(line, 'song', 'title = "{}"'.format(sub(title, '\'', '&#039;'))):
                         urls.append(find(line).between('href="', '" title'))
-                    elif hv.end('''<a class="song_digg" href="javascript:void(0)" title = "推荐" onclick="recommend('1773881048', '32')"><span>推荐</span></a>'''):
+                    elif line.endswith('''<a class="song_digg" href="javascript:void(0)" title = "推荐" onclick="recommend('1773881048', '32')"><span>推荐</span></a>'''):
                         break
                 for url in urls:
                     request = urllib.request.Request(url,  headers=header)
@@ -236,9 +234,9 @@ class setter:
         self.path = "D:\\Media\\Music\\"
         os.chdir(defaultPath)
         if path:
-            path = path[have(path).start('\\'):].strip()
+            path = path[path.startswith('\\'):].strip()
             self.path = path
-        self.title = ''  ## Doesn't have .mp3 at the end
+        self.title = ''  ## No .mp3 at the end
         self.artist = artist
         self.format = '.mp3'
         self.lyrics = ''
@@ -299,7 +297,6 @@ class setter:
                     raise Exception(f'QAQ这个路径下找不到{text}诶...')
 
         if not path.startswith(defaultPath) and os.path.exists(defaultPath + self.path):
-            have(path).start(defaultPath)
             self.path = defaultPath + self.path
         if not self.path.endswith('\\'):
             self.path += '\\'
@@ -344,8 +341,8 @@ class setter:
                 print('下面是歌词~\n\n' + self.lyrics + '\n')
         else:
             for song in self.song_list:
-                songartist = eyed3.load(self.path + song).tag.artist
-                self.set(title = song, artist = songArtist, src = source, ow = overwrite)
+                artist = eyed3.load(self.path + song).tag.artist
+                self.set(title = song, artist = artist, src = source, ow = overwrite)
             if self.count == 1 and self.title == '' and self.artist == '' and self.lyrics == '':
                 self.title, self.artist, self.lyrics, self.format = self.talf
             if self.count:
@@ -438,7 +435,7 @@ class setter:
             music.tag.save()
             print('《' + self.title + '》的歌词已经被删除啦~')
         else:
-            areusure = input('你真的想删除所有的歌词嘛？输入"y"表示确定，其他输入会被当做哎呀呀弄错惹\n>>>')
+            areusure = input('你真的想删除所有的歌词嘛？输入"y"表示确定，其他输入会被当做"哎呀呀弄错惹"哟\n>>>')
             if areusure != 'y':
                 return
             for song in self.song_list:
@@ -461,8 +458,8 @@ class setter:
     def retry(self):
         '''Rematch lyrics for the failed songs.'''
         for song in self.fail_list:
-            songartist = eyed3.load(self.path + song).tag.artist
-            self.set(title = song, artist = songArtist, src = source)
+            artist = eyed3.load(self.path + song).tag.artist
+            self.set(title = song, artist = artist)
 
     def again(self):
         '''Print all songs that are searched again to find matching lyrics.'''

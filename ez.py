@@ -251,10 +251,10 @@ def fwrite(filename, content, mode = 'w', coding = 'utf8'):
 
 def fcopy(src, dst, coding = 'utf8'):
     '''Copy a file.
-        Requires source directory(src) and destination directory(dst).
-        Default coding: utf8.'''
+       Requires source directory(src) and destination directory(dst).
+       Default coding: utf8.'''
     filename = src[:find(src).last('\\')]
-    fwrite(dst+['', filename][have(dst).end(filename)], fread(src, coding), coding = coding)
+    fwrite(dst if dst.endswith(filename) else os.path.join(dst, filename), fread(src, coding), coding = coding)
 
 def advancedSplit(obj, *sep):
     '''Can have multiple seperators.'''
@@ -264,7 +264,7 @@ def advancedSplit(obj, *sep):
     lst = []
     for ch in obj:
         word += ch
-        f = find(word).any(*sep)
+        f = contains(word, *sep)
         if f:
             word = without(word, *f)
             if word:
@@ -308,7 +308,7 @@ def similar(obj1, obj2, capital = True):
             score = maxLen / len_o1
         if o2.lower() in o1.lower():
             if o2 in o1:
-                if have(o1).start(o2):
+                if o1.startswith(o2):
                     score *= 1.5
                 else:
                     pass
@@ -357,6 +357,9 @@ def isMultiple(obj1, obj2):
         return False
     return all(obj1[i:i + length2] == obj2 for i in range(0, length1, length2))
 
+def contains(obj, *args):
+    return any(arg in obj for arg in args)
+
 class find:
     '''A helper class which finds something in the object.'''
     def __init__(self, obj):
@@ -385,7 +388,7 @@ class find:
     def all(self, occurrence):
         '''Find all the occurring indices in an obj.'''
         if self.type == str:
-            return [ idx for idx in range(len(self.obj)) if self.obj[idx:].startswith(occurence) ]
+            return [ idx for idx in range(len(self.obj)) if self.obj[idx:].startswith(occurrence) ]
         try:
             return [ idx for idx in range(len(self.obj)) if self.obj[idx] == occurrence ]
         except:
@@ -446,6 +449,10 @@ class find:
            This fuction returns a list because set is not ordered.'''
         length = len(self.obj)
         return [self.obj[j:j + i] for i in range(1, length) for j in range(length + 1 - i)]
+
+    def count(self):
+        '''Calls collections.Counter'''
+        return dict(Counter(self.obj))
 
 ##flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
 def flatten(items, ignore_types = (str, bytes)):

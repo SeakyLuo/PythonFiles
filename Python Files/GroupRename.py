@@ -1,5 +1,4 @@
 import os, shutil
-from ez import have
 
 media_fmt = ['.mkv', '.mp4', '.avi', '.rmvb', '.mp3', '.m4a']
 isMedia = lambda x: have(x.lower()).any(*media_fmt)

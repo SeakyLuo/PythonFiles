@@ -53,7 +53,7 @@ class stats:
         self.max = self.sorted[-1]
         self.min = self.sorted[0]
         self.mean = integer(sum(self.data)/self.num)
-        self.Median()
+        self.median()
         self.mode = ez.find(self.count).key(max(self.count[k] for k in self.count))
         if set(self.mode) == set(self.data):
             self.mode = None
@@ -69,7 +69,7 @@ class stats:
 
     def Min(self, nth = 1):
         '''Find the nth least number.'''
-        return self.sorted[nth-1]
+        return self.sorted[nth - 1]
 
     def Mean(self, precision = 4):
         '''Find Arithmatic Mean, Geometric Mean, Harmonic Mean, Weighted Arithmatic Mean and Square Mean.'''
@@ -79,8 +79,8 @@ class stats:
         self.GM = multiply(self.data) ** (1 / self.num)
         self.HM = self.num / sum(1 / n for n in self.data)
         self.wAM = sum(k * self.count[k] for k in self.count)/self.num
-        self.SM = (sum(n**2 for n in self.data) / len(self.data)) ** 0.5
-        if precision>0:
+        self.SM = (sum(n ** 2 for n in self.data) / len(self.data)) ** 0.5
+        if precision > 0:
             self.AM = round(self.AM, precision)
             self.GM = round(self.GM, precision)
             self.HM = round(self.HM, precision)
@@ -110,11 +110,11 @@ class stats:
                 self.q1 = self.sorted[(self.num - mod) // 4]
                 self.q3 = self.sorted[(self.num * 3 - 4 + mod) // 4]
             else:
-                self.q1 = (self.sorted[self.num // 4 - 1]+self.sorted[self.num // 4]) / 2
-                self.q3 = (self.sorted[self.num * 3 // 4 - 1]+self.sorted[self.num * 3 // 4]) / 2
-            self.interquartile = self.q3-self.q1
+                self.q1 = (self.sorted[self.num // 4 - 1] + self.sorted[self.num // 4]) / 2
+                self.q3 = (self.sorted[self.num * 3 // 4 - 1] + self.sorted[self.num * 3 // 4]) / 2
+            self.interquartile = self.q3 - self.q1
             outliers = ez.rmdup([i for i in self.sorted if i < self.q1 - 1.5 * self.interquartile or i > self.q3 + 1.5 * self.interquartile])
-            self.outliers = outliers if outliers else None
+            self.outliers = outliers or None
             return self.outliers
 
     def add(self, *numbers):
@@ -135,7 +135,7 @@ class stats:
             If precision is negative, results will be as precise as possible.'''
         self.precision = precision
         self.mean = sum(self.data) / self.num
-        self.Median(precision)
+        self.median(precision)
         self.var = sum((data - self.mean) ** 2 for data in self.data) / self.num
         self.sd = self.var ** 0.5
         self.ad = sum(abs(data - self.mean) for data in self.data) / self.num
@@ -267,14 +267,12 @@ Outliers: {outliers}'''
             Default Display: not in percentage'''
         import cTurtle
         self.group(interval)
-        nBins = len(self.groups)
         lower = eval(ez.find(list(self.groups.keys())[0]).between('[', ', '))
-        if interval == 0:
-            interval = eval(ez.find(list(self.groups.keys())[0]).between(', ', ')'))-lower
+        interval = interval or eval(ez.find(list(self.groups.keys())[0]).between(', ', ')'))-lower
         upper = eval(ez.find(list(self.groups.keys())[-1]).between(', ', ')'))
-        deltaBins = upper-lower
-        xMin = lower - 0.1*deltaBins
-        xMax = upper + 0.1*deltaBins
+        deltaBins = upper - lower
+        xMin = lower - 0.1 * deltaBins
+        xMax = upper + 0.1 * deltaBins
         yMin = -0.1
         yMax = 1.1
         ct = cTurtle.Turtle()
@@ -293,7 +291,7 @@ Outliers: {outliers}'''
             ct.down()
             value = self.groups.get(f'[{lower}, {lower + interval})', 0)
             if value:
-                height = value/maxValue
+                height = value / maxValue
                 ct.begin_fill()
                 ct.goto(lower, height)
                 ct.goto(lower + interval, height)
@@ -307,12 +305,12 @@ Outliers: {outliers}'''
                     value = str(value)
                 ct.goto(lower + 0.5 * interval, height)
                 ct.write(value, align = 'center', font = (font[0], int(font[1] * 0.75) if len(value) > 2 * interval else font[1], font[2]))
-                if lower+interval == upper:
+                if lower + interval == upper:
                     ct.goto(upper, -0.05)
                     ct.write(upper, font = font)
                     break
             else:
-                ct.goto(lower+interval, 0)
+                ct.goto(lower + interval, 0)
                 ct.up()
             lower += interval
 
