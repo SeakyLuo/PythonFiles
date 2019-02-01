@@ -581,7 +581,7 @@ def factorial(n):
 fact = factorial
 
 def factorialSkip(n):
-    if n in [0, 1] :
+    if n in [0, 1]:
         return 1
     return n * factorialSkip(n - 2)
 
@@ -590,15 +590,15 @@ def isPrime(n):
         return all(n % i for i in range(2, int(n ** 0.5) + 1))
     return False
 
-def findPrimeFactors(num, printResult = True, return_dict = False):
+def findPrimeFactors(number, printResult = True, return_dict = False):
     '''Automatically Converts to Non-Negative.
-        Abbreviation: fpf'''
-    num = abs(num)
-    if num in [0, 1] or isPrime(num) :
-        return [num]
-    i = num
+       Abbreviation: fpf'''
+    number = abs(number)
+    if number in [0, 1] or isPrime(number) :
+        return [number]
+    i = number
     d = {}
-    for k in range(2, num // 2 + 1):
+    for k in range(2, number // 2 + 1):
         while i % k == 0:
             d[k] = d.get(k, 0) + 1
             i /= k
@@ -610,7 +610,7 @@ def findPrimeFactors(num, printResult = True, return_dict = False):
             else:
                 s += f'({key}^{d[key]})*'
     if printResult:
-        print(f'{num} = {s[:-1]}')
+        print(f'{number} = {s[:-1]}')
     if return_dict:
         return d
     else:
@@ -619,11 +619,12 @@ def findPrimeFactors(num, printResult = True, return_dict = False):
 ##abbreviation
 fpf = findPrimeFactors
 
-def findAllFactors(num):
-    '''Return a list of numbers.'''
-    if num in [0, 1]: return [num]
-    smallFactors = [i for i in range(1, int(num ** 0.5) + 1) if num % i == 0]
-    bigFactors = [num // i for i in reversed(smallFactors)]
+def findAllFactors(number):
+    '''Return all the factors of the number.
+       Abbreviation: faf'''
+    if number in [0, 1]: return [number]
+    smallFactors = [i for i in range(1, int(number ** 0.5) + 1) if number % i == 0]
+    bigFactors = [number // i for i in reversed(smallFactors)]
     return smallFactors + bigFactors
 
 ##abbreviation
