@@ -3,6 +3,7 @@ import random
 import ez
 from decimal import Decimal
 from functools import reduce
+import itertools
 
 def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
     '''Matrix can be any 2d iterable'''
@@ -19,12 +20,10 @@ def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
 ##abbreviation
 nl = npMatrixToLatex
 
-def product(iterator, start = 1):
-    '''Return the product of a 'start' value (default: 1) times an iterable of numbers
-    When the iterable is empty, return the start value.
-    This function is intended specifically for use with numeric values and may
-    reject non-numeric types.'''
-    return start * reduce(lambda x, y: x * y, iterator) if iterator else start
+def product(*numbers):
+    ''' Return the numerical product of numbers.
+    For Cartesian Product, please use itertools.product instead.'''
+    return reduce(lambda x, y: x * y, numbers)
 
 def accurateCalculation(formula = '', scin = False):
     '''Function calls not supported.
@@ -476,21 +475,22 @@ def permutation(n, m):
 a = permutation
 
 def permutations(*args):
-    '''Please use builtin func: itertools.permuations'''
-    methods = []
-    length = len(args)
-    def recursive(p = ()):
-        if len(p) == length and p not in methods:
-            methods.append(p)
-            return
-        lst = list(args)
-        for i in p:
-            lst.remove(i)
-        for arg in lst:
-            recursive(p + (arg, ))
+    '''Calls function: itertools.permuations'''
+    return list(itertools.permutations(args))
+    # methods = []
+    # length = len(args)
+    # def recursive(p = ()):
+    #     if len(p) == length and p not in methods:
+    #         methods.append(p)
+    #         return
+    #     lst = list(args)
+    #     for i in p:
+    #         lst.remove(i)
+    #     for arg in lst:
+    #         recursive(p + (arg, ))
 
-    recursive()
-    return methods
+    # recursive()
+    # return methods
 
 def combination(n, m):
     ''' n choose m
@@ -510,20 +510,20 @@ def combination(n, m):
 c = combination
 
 def npickm(n, m):
-    '''n cannot have duplicates.
-       Please use builtin func: itertools.combinations, itertools.combinations_with_replacement'''
-    methods = []
-    def recursive(method = set()):
-        for item in n:
-            if item not in method:
-                recursive(method.union({item}))
-            if len(method) == m:
-                if method not in methods:
-                    methods.append(method)
-                return
+    '''Calls function: itertools.combinations.'''
+    return len(list(itertools.combinations(range(n), m)))
+    # methods = []
+    # def recursive(method = set()):
+    #     for item in n:
+    #         if item not in method:
+    #             recursive(method.union({item}))
+    #         if len(method) == m:
+    #             if method not in methods:
+    #                 methods.append(method)
+    #             return
 
-    recursive()
-    return methods
+    # recursive()
+    # return methods
 
 def fraction(n, m):
     '''Reduce n/m'''
