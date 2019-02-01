@@ -6,6 +6,7 @@ import platform
 import threading, subprocess, zipfile, ntpath, shutil
 from json import loads, dumps
 from atexit import register
+from collections.abc import Iterable
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = Exception('This data type is not supported!')
@@ -262,7 +263,7 @@ def advancedSplit(obj, *sep):
     word = ''
     lst = []
     for ch in obj:
-        word+= ch
+        word += ch
         f = find(word).any(*sep)
         if f:
             word = without(word, *f)
@@ -345,157 +346,61 @@ def predir():
     path = os.getcwd()
     os.chdir(path[:find(path).last('\\')])
 
-class have:
-    '''A helper class which checks whether object contains something.'''
-    def __init__(self, obj):
-        self.support = [str, list, dict, frozenset, set, tuple]
-        self.obj = obj
-        self.type = type(obj)
-        self.empty = self.obj.__new__(self.type)
-        self.empty.__init__()
-        if self.type not in self.support:
-             raise DataTypeError
-
-    def which(self, *args):
-        '''Check which elements of args are contained in the obj.'''
-        contain = [ arg for arg in args if arg in self.obj ]
-        if contain:
-            if len(contain) == 1:
-                return contain[0]
-            return contain
-        return self.empty
-
-    def all(self, *args):
-        '''Check whether obj contains any element of the args.'''
-        if args == ():
-            return True
-        for arg in args:
-            if arg not in self.obj:
-                return False
-        return True
-
-    def any(self, *args):
-        '''Check whether obj contains all the elements of args.'''
-        if args == ():
-            return True
-        for arg in args:
-            if arg in self.obj:
-                return True
+def isMultiple(obj1, obj2):
+    '''Check whether obj1 is the multiple of obj2'''
+    type1 = type(obj1)
+    assert type1 == type(obj2), 'Inconsistent data type'
+    if type1 == int: return obj1 % obj2 == 0
+    length1 = len(obj1)
+    length2 = len(obj2)
+    if length1 % length2:
         return False
-
-    def in_sub(self, element):
-        '''Check whether the element is in the subset of obj.'''
-        if self.type == str:
-            raise DataTypeError
-        for sub in self.obj:
-            if element in sub:
-                return True
-        return False
-
-    def start(self, *args):
-        '''Check whether the string starts with any occurrence in args.'''
-        if self.type != str:
-            raise DataTypeError
-        for arg in args:
-            if len(self.obj) >= len(arg):
-                 if self.obj[:len(arg)] == arg:
-                     return True
-            else:
-                return False
-        return False
-
-    begin = start
-
-    def end(self, *args):
-        '''Check whether the string ends with any occurrence in args.'''
-        if self.type != str:
-            raise DataTypeError
-        for arg in args:
-            if len(self.obj) >= len(arg):
-                 if self.obj[-len(arg):] == arg:
-                     return True
-            else:
-                return False
-        return False
-
-    def multiple(self, obj2):
-        '''Check whether obj is the multiple of obj2'''
-        if self.type not in [str, list, tuple]:
-            raise DataTypeError
-        if self.type != type(obj2):
-            raise Exception('Only data of the same type can be compared!')
-        length1 = len(self.obj)
-        length2 = len(obj2)
-        if length1 % length2:
-            return False
-        for i in range(0, length1, length2):
-            if self.obj[i:i + length2] != obj2:
-                return False
-        return True
+    return all(obj1[i:i + length2] == obj2 for i in range(0, length1, length2))
 
 class find:
     '''A helper class which finds something in the object.'''
     def __init__(self, obj):
-        self.support = [str, list, dict, tuple, set]
         self.type = type(obj)
-        if self.type not in self.support:
+        self.empty = self.type()
+        self.obj = obj
+        if self.type != Iterable:
             print('Unsupported data type automatically is converted to str.')
             self.obj = repr(obj)
             self.type = str
-        else:
-            self.obj = obj
-        self.empty = self.obj.__new__(self.type)
 
     def before(self, occurrence):
         '''Return the obj before the occurrence.'''
-        if self.type == str:
+        try:
             return self.obj[:self.obj.index(occurrence)]
-        elif self.type in [list, tuple]:
-            return self.obj[:self.obj.index(occurrence)]
-        raise DataTypeError
+        except:
+            raise DataTypeError
 
     def after(self, occurrence):
         '''Return the obj after the occurrence.'''
-        if self.type == str:
-            return self.obj[self.obj.index(occurrence) + len(occurrence):]
-        elif self.type in [list, tuple]:
-            return self.obj[self.obj.index(occurrence) + 1:]
-        raise DataTypeError
+        try:
+            return self.obj[self.obj.index(occurrence) + (self.type != str or len(occurrence)):]
+        except:
+            raise DataTypeError
 
     def all(self, occurrence):
-        '''Find all the occurring positions in an obj.'''
+        '''Find all the occurring indices in an obj.'''
         if self.type == str:
-            return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx:idx+len(occurrence)] ]
-        if self.type in [list, tuple]:
-            return [ idx for idx in range(len(self.obj)) if occurrence == self.obj[idx] ]
-        raise DataTypeError
+            return [ idx for idx in range(len(self.obj)) if self.obj[idx:].startswith(occurence) ]
+        try:
+            return [ idx for idx in range(len(self.obj)) if self.obj[idx] == occurrence ]
+        except:
+            raise DataTypeError
 
-    def any(self, *args):
-        '''Find any elements of args in obj.'''
-        return [arg for arg in args if arg in self.obj]
-
-    def second(self, occurrence):
-        '''Find the second occurring positions in an obj.'''
-        count = 0
-        if self.type == str:
-            for idx in range(len(self.obj)):
-                if occurrence == self.obj[idx:idx+len(occurrence)]:
-                    count += 1
-                    if count == 2:
-                        return idx
-        elif self.type in [list, tuple]:
-            for idx in range(len(self.obj)):
-                if occurrence == self.obj[idx]:
-                    count += 1
-                    if count == 2:
-                        return idx
-        raise DataTypeError
+    def nth(self, occurrence, nth = 1):
+        '''Find the nth occurring index in an obj.'''
+        try:
+            return self.all(occurrence)[nth - 1]
+        except IndexError:
+            return -1
 
     def between(self, obj1 = None, obj2 = None):
         '''Return the obj between obj1 and obj2 (not included).
            Start from the first occurrence.'''
-        if self.type not in [str, list, tuple]:
-            raise DataTypeError
         try:
             start = 0
             if obj1 != None:
@@ -504,19 +409,8 @@ class find:
             return self.obj[start:end]
         except ValueError:
             return self.empty
-
-    def count(self):
-        '''Count the occurrences of each element and return a dict.
-            Please use collections.Counter'''
-        obj = self.obj
-        if self.type == str:
-            obj = list(obj)
-        elif self.type not in [list, tuple]:
+        except:
             raise DataTypeError
-        d = {}
-        for item in obj:
-            d[item] = d.get(item, 0)+1
-        return d
 
     def consecutive(self):
         '''Count the longest consecutive occurrences.'''
@@ -524,9 +418,9 @@ class find:
             raise DataTypeError
         maxStreak = streak = 1
         for i, ch in enumerate(self.obj):
-            if i>0:
-                if ch == self.obj[i-1]:
-                    streak+= 1
+            if i > 0:
+                if ch == self.obj[i - 1]:
+                    streak += 1
                 else:
                     if streak >= maxStreak:
                         maxStreak = streak
@@ -544,21 +438,8 @@ class find:
         return tuple(k for k in self.obj if self.obj[k] == value)
 
     def last(self, occurrence):
-        '''Find the last occurring position in an obj.'''
-        if occurrence not in self.obj:
-            return -1
-        index = self.obj.index(occurrence)
-        if self.type == str:
-            for idx in range(len(self.obj) - 1, index, -1):
-                if self.obj[idx:idx + len(occurrence)] == occurrence:
-                    index = idx
-                    break
-        elif self.type in [list, tuple]:
-            for idx in range(len(self.obj) - 1, index, -1):
-                if self.obj[idx:] == occurrence:
-                    index = idx
-                    break
-        return index
+        '''Find the last occurring index in an obj.'''
+        return self.all(occurrence)[-1]
 
     def power_set(self):
         '''Find all the subs of obj except the empty sub and itself.
@@ -566,7 +447,16 @@ class find:
         length = len(self.obj)
         return [self.obj[j:j + i] for i in range(1, length) for j in range(length + 1 - i)]
 
-flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
+##flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
+def flatten(items, ignore_types = (str, bytes)):
+    '''Flattens an iterable if not ignored.'''
+    def generator(items):
+        for item in items:
+            if isinstance(item, Iterable):
+                yield from flatten(item)
+            else:
+                yield item
+    return items if isinstance(items, ignore_types) else type(items)(generator(items))
 
 def rmdup(obj):
     '''Return a list without duplicates.'''
@@ -574,38 +464,23 @@ def rmdup(obj):
     for i in obj:
         if i not in new:
             new.append(i)
-    typ = type(obj)
-    if typ == list:
-        return new
-    elif typ == tuple:
-        return tuple(new)
+    return type(obj)(new)
 
 def without(obj, *args):
     '''Return an obj without elements of args.'''
     typ = type(obj)
-    if typ == list:
-        return [ i for i in obj if i not in args]
-    if typ == tuple:
-        return ( i for i in obj if i not in args )
+    generator = (i for i in obj if i not in args)
+    if typ in [list, tuple]:
+        return type(obj)(generator)
     if typ == str:
         for arg in args:
             obj = obj.replace(arg, '')
         return obj
     if typ == dict:
-        return { k:obj[k] for k in obj if k not in args }
+        return { k: obj[k] for k in obj if k not in args }
     if typ in [set, frozenset]:
         return obj.difference(args)
     raise DataTypeError
-
-def delta_days(day1, day2):
-    '''Please enter an 8-digit number with the format YYYYMMDD like 20170101'''
-    year = lambda x: x // 10000
-    month = lambda x:(x % 10000) // 100
-    day = lambda x: x % 100
-    start = datetime.datetime(year(day1), month(day1), day(day1))
-    end = datetime.datetime(year(day2), month(day2), day(day2))
-    delta = (end - start).days + 1
-    print(abs(delta))
 
 def substitute(obj, *args):
     '''obj supported data type: str, tuple, list, set.
@@ -615,31 +490,25 @@ def substitute(obj, *args):
     if num == 0:
         return
     if num % 2:
-        raise Exception('Incorrect number of words!')
+        raise Exception('Incorrect number of words')
     typ = type(obj)
     if typ == str:
         new = obj
         for i in range(0, num, 2):
             new = new.replace(str(args[i]), str(args[i + 1]))
     else:
-        if typ == tuple:
-            new = ()
-        elif typ == list:
-            new = []
-        elif typ == set:
-            new = set()
+        if typ in [tuple, list, set]:
+            new = typ()
         else:
             raise DataTypeError
         for item in obj:
             for i in range(0, num, 2):
                 if item == args[i]:
                     item = args[i + 1]
-            if typ == tuple:
-                new += (item, )
-            elif typ == list:
-                new += [item]
-            elif typ == set:
+            if typ == set:
                 new.add(item)
+            else:
+                new = new.__add__(typ([item]))
     return new
 
 ##abbreviation
@@ -674,3 +543,13 @@ def formatted():
 
 #abbreviation
 fmt = formatted
+
+def delta_days(date1, date2):
+    '''Date must be in the format of YYYYMMDD.'''
+    year = lambda x: x // 10000
+    month = lambda x:(x % 10000) // 100
+    day = lambda x: x % 100
+    start = datetime.datetime(year(date1), month(date1), day(date1))
+    end = datetime.datetime(year(date2), month(date2), day(date2))
+    delta = abs((end - start).days + 1)
+    return delta
