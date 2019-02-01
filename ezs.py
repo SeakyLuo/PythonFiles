@@ -5,7 +5,7 @@ from decimal import Decimal
 from functools import reduce
 
 def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
-    '''matrix can be any 2d iterable'''
+    '''Matrix can be any 2d iterable'''
     r = len(matrix)
     c = len(matrix[0])
     result = ml(r, c, ' '.join(str(entry) for row in matrix for entry in row))
@@ -19,8 +19,12 @@ def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
 ##abbreviation
 nl = npMatrixToLatex
 
-def multiply(*numbers):
-    return reduce(lambda x, y: x * y, numbers)
+def product(iterator, start = 1):
+    '''Return the product of a 'start' value (default: 1) times an iterable of numbers
+    When the iterable is empty, return the start value.
+    This function is intended specifically for use with numeric values and may
+    reject non-numeric types.'''
+    return start * reduce(lambda x, y: x * y, iterator) if iterator else start
 
 def accurateCalculation(formula = '', scin = False):
     '''Function calls not supported.
@@ -75,9 +79,6 @@ def accurateCalculation(formula = '', scin = False):
 
 ##abbreviation
 ac = accurateCalculation
-
-def intToList(integer):
-    return list(map(int, str(integer)))
 
 def scientificNotation(num, pr = True):
     '''Abbreviation: scin'''
@@ -495,9 +496,9 @@ def combination(n, m):
     ''' n choose m
         factorial(n)/(factorial(m)*factorial(n-m))
         n!/(m!*(n-m)!)'''
-    if m>n:
+    if m > n:
         return 0
-    if m>n//2:
+    if m > n // 2:
         return combination(n, n - m)
     num = 1
     for i in range(n - m + 1, n + 1):
@@ -510,7 +511,7 @@ c = combination
 
 def npickm(n, m):
     '''n cannot have duplicates.
-        Please use builtin func: itertools.combinations, itertools.combinations_with_replacement'''
+       Please use builtin func: itertools.combinations, itertools.combinations_with_replacement'''
     methods = []
     def recursive(method = set()):
         for item in n:
@@ -528,7 +529,7 @@ def fraction(n, m):
     '''Reduce n/m'''
     output = '{}/{}'.format(n, m)
     negative = ''
-    if n * m<0:
+    if n * m < 0:
         negative = '-'
         n = abs(n)
         m = abs(m)
@@ -582,24 +583,22 @@ fact = factorial
 def factorialSkip(n):
     if n in [0, 1] :
         return 1
-    return n * factorialSkip(n-2)
+    return n * factorialSkip(n - 2)
 
 def isPrime(n):
-    if type(n) == int and n >= 2:
-        for i in range(2, int(n ** 0.5) + 1):
-            if n % i == 0:
-                return False
-        return True
+    if type(n) == int and n > 3:
+        return all(n % i for i in range(2, int(n ** 0.5) + 1))
     return False
 
 def findPrimeFactors(num, printResult = True, return_dict = False):
-    '''Automatically regarded as a non-negative number'''
+    '''Automatically Converts to Non-Negative.
+        Abbreviation: fpf'''
     num = abs(num)
-    if isPrime(num) or num in [0, 1]:
+    if num in [0, 1] or isPrime(num) :
         return [num]
     i = num
     d = {}
-    for k in range(2, num//2 + 1):
+    for k in range(2, num // 2 + 1):
         while i % k == 0:
             d[k] = d.get(k, 0) + 1
             i /= k
@@ -607,11 +606,11 @@ def findPrimeFactors(num, printResult = True, return_dict = False):
     if d != {}:
         for key in d:
             if d[key] == 1:
-                s += str(key) + '*'
+                s += f'{key}*'
             else:
-                s += '(' + str(key) + '^' + str(d[key]) + ')*'
+                s += f'({key}^{d[key]})*'
     if printResult:
-        print(str(num) + ' = ' + s[:-1])
+        print(f'{num} = {s[:-1]}')
     if return_dict:
         return d
     else:
@@ -621,45 +620,42 @@ def findPrimeFactors(num, printResult = True, return_dict = False):
 fpf = findPrimeFactors
 
 def findAllFactors(num):
-    smallFactors = [ i for i in range(1, int(num ** 0.5) + 1) if num % i == 0 ]
-    bigFactors = [ num // i for i in reversed(smallFactors)]
+    '''Return a list of numbers.'''
+    if num in [0, 1]: return [num]
+    smallFactors = [i for i in range(1, int(num ** 0.5) + 1) if num % i == 0]
+    bigFactors = [num // i for i in reversed(smallFactors)]
     return smallFactors + bigFactors
 
-def findCofactors(num1, num2):
-    '''Automatically regarded as non-negative numbers.'''
-    if num1 == 0:
-        return findAllFactors(num2)
-    elif num2 == 0:
-        return findAllFactors(num1)
-    return [ i for i in range(1, min([abs(num1), abs(num2)])//2 + 1) if num1 % i == num2 % i == 0]
+##abbreviation
+faf = findAllFactors
+
+def findCofactors(*numbers):
+    '''Return a list of cofactors.
+       Abbreviation: fc'''
+    if 0 in numbers: return [0]
+    return [i for i in findAllFactors(min(numbers)) if all(num % i == 0 for num in numbers) ]
 
 ##abbreviation
 fc = findCofactors
 
-def gcd(n1, n2):
-    '''Greatest common divisor'''
-    if abs(n1 - n2) == 1:
-        return 1
-    return findCofactors(n1, n2)[-1]
+def gcd(*numbers):
+    '''Greatest Common Divisor.'''
+    return reduce(lambda n1, n2: findCofactors(n1, n2)[-1], sorted(numbers))
 
-def lcm(n1, n2):
-    '''Least common multiple'''
-    if any([n1, n2]) == 0:
-        return 0
-    if n1 % n2 == 0:
-        return n1
-    elif n2 % n1 == 0:
-        return n2
-    elif gcd(n1, n2) == 1:
-        return n1 * n2
-    n1_dict = findPrimeFactors(n1, printResult = 0, return_dict = 1)
-    n2_dict = findPrimeFactors(n2, printResult = 0, return_dict = 1)
-    for factor in n2_dict:
-        n1_dict[factor] = max(n2_dict[factor], n1_dict.get(factor, 0))
-    num = 1
-    for factor in n1_dict:
-        num *= factor ** n1_dict[factor]
-    return num
+def lcm(*numbers):
+    '''Least Common Multiple.'''
+    if 0 in numbers: return 0
+    def lcm2(n1, n2):
+        if n2 % n1 == 0:
+            return n2
+        elif gcd(n1, n2) == 1:
+            return n1 * n2
+        n1_dict = findPrimeFactors(n1, printResult = 0, return_dict = 1)
+        n2_dict = findPrimeFactors(n2, printResult = 0, return_dict = 1)
+        for factor in n2_dict:
+            n1_dict[factor] = max(n2_dict[factor], n1_dict.get(factor, 0))
+        return product(factor ** n1_dict[factor] for factor in n1_dict)
+    return reduce(lcm2, sorted(numbers))
 
 formLst = ['a', 'l', 's', 'b']
 
@@ -929,32 +925,22 @@ def matrixMultiplication():
 ##abbreviation
 mtp = matrixMultiplication
 
-def determinantCalculation(inputDet = ''):
+def determinantCalculation(det):
     '''inputDet can be in LaTeX form or in Array form'''
-    det = inputDet or input('Please input your determinant in LaTeX form or in Array form: ')
-    if formJudge(det) not in ['dl', 'a']:
-        print('Please type in the correct form!\n')
-        determinantCalculation()
-        return
-    else:
-        det = eval(matrixConvert('a', det))
-        def compute(determinant):
-            if len(determinant) == 1:
-                determinantValue = determinant[0][0]
-            else:
-                determinantValue = 0
-                for i in range(len(determinant)):
-                    n = [[row[j] for j in range(len(determinant)) if j != i] for row in determinant[1:]]
-                    if i % 2 == 0:
-                        determinantValue += determinant[0][i] * compute(n)
-                    else:
-                        determinantValue -= determinant[0][i] * compute(n)
-            return determinantValue
-        detValue = compute(det)
-    if inputDet:
-        return detValue
-    else:
-        print(f'Value: {detValue}')
+    assert formJudge(det) in ['dl', 'a'], 'Please type in the correct form!\n'
+    def compute(determinant):
+        if len(determinant) == 1:
+            determinantValue = determinant[0][0]
+        else:
+            determinantValue = 0
+            for i in range(len(determinant)):
+                n = [[row[j] for j in range(len(determinant)) if j != i] for row in determinant[1:]]
+                if i % 2 == 0:
+                    determinantValue += determinant[0][i] * compute(n)
+                else:
+                    determinantValue -= determinant[0][i] * compute(n)
+        return determinantValue
+    return compute(eval(matrixConvert('a', det)))
 
 ##abbreviation
 dc = determinantCalculation
@@ -973,9 +959,7 @@ br = boldedRLaTeX
 def vectorLaTeX(entries, overRightArrow = True):
     '''entries needs to be a string separted by a comma.
         if overRightArrow, will use \\overrightarrow instead of \\vec'''
-    entries = entries
-    result = '\\overrightarrow{%s}' % entries if overRightArrow else '\\vec{%s}' % entries
-    return result
+    return '\\overrightarrow{%s}' % entries if overRightArrow else '\\vec{%s}' % entries
 
 ##abbreviation
 vl = vectorLaTeX
@@ -993,6 +977,6 @@ def advancedSplit(s):
            item = ''
            ch = ''
         item += ch
-        if i == len(s)-1:
+        if i == len(s) - 1:
             lst.append(item)
     return lst

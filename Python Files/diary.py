@@ -13,7 +13,7 @@ def main(startYear = 0, endYear = 0):
     for year in range(startYear, endYear + 1):
         days = 365 + leapYear(year)
         t += 86400 * days * (year - startYear)
-        s = ''.join([strftime('%Y年%m月%d日   星期%a   天气：\n1、\n2、\n\n',localtime(t + 86400 * day)) for day in range(days)])
+        s = ''.join([strftime('%Y年%m月%d日   星期%a   天气：\n\n',localtime(t + 86400 * day)) for day in range(days)])
         s = ez.sub(s, *d)
         document = Document()
         paragraph = document.add_paragraph(s)
