@@ -106,7 +106,7 @@ def handlepy(directory, func, reminder = False):
     else:
         raise Exception('Invalid directory!')
 
-def exportpy(directory, withConsole, zip = True, reminder = False):
+def exportpy(directory, withConsole, zipFile = True, reminder = False):
     '''Exports a GUI python app.'''
     ## Add '-noconfirm' ?
     path = os.path.dirname(directory)
@@ -115,18 +115,18 @@ def exportpy(directory, withConsole, zip = True, reminder = False):
         args.pop()
     def export(filename):
         subprocess.run(args + [filename])
-        if not zip: return
+        if not zipFile: return
         currDir = os.getcwd()
         path, file = ntpath.split(filename)
         os.chdir(path)
         prefix = find(file).before('.py')
         zipname = prefix + '.zip'
-        with zipfile.ZipFile(zipname, 'w') as zip:
+        with zipfile.ZipFile(zipname, 'w') as zipFile:
             for f in [prefix + '.exe', prefix + '.spec']:
-                zip.write(f)
+                zipFile.write(f)
                 os.remove(f)
             for f in os.listdir(prefix):
-                zip.write(os.path.join(prefix, f))
+                zipFile.write(os.path.join(prefix, f))
             shutil.rmtree(prefix)
         os.chdir(currDir)
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
