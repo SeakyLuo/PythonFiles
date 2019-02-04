@@ -7,6 +7,7 @@ import threading, subprocess, zipfile, ntpath, shutil
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
+from collections import Counter
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = Exception('This data type is not supported!')
@@ -287,9 +288,9 @@ def similar(obj1, obj2, capital = True):
             return 0
         len_o1 = len(o1)
         len_o2 = len(o2)
-        score = len_o2/len_o1
+        score = len_o2 / len_o1
         if score == 1:
-            result = sum((i == j)+(i != j)*(i.lower() == j.lower()) * 0.9 for i, j in zip(o1, o2)) / len_o1
+            result = sum((i == j) + (i != j) * (i.lower() == j.lower()) * 0.9 for i, j in zip(o1, o2)) / len_o1
             return eval(format(result, '.4f'))
         if len_o2 <= 15 and score > 0.6:
             ps = list(reversed(find(o2).power_set() + [o2]))
@@ -321,12 +322,12 @@ def similar(obj1, obj2, capital = True):
                 return 0
             for key in d1:
                 if key in d2:
-##                    score *= (d2[key]/d1[key])**((d1[key] >= d2[key])*2-1)
-                    if d1[key]>d2[key]:
+##                    score *= (d2[key] / d1[key]) ** ((d1[key] >= d2[key]) * 2 - 1)
+                    if d1[key] > d2[key]:
                         score *= d2[key]/d1[key]
                     else:
                         score *= d1[key]/d2[key]
-            score *= 1-sum([d2.get(item) for item in sd ])/len_o2
+            score *= 1 - sum([d2.get(item) for item in sd ]) / len_o2
 ##            不乘0.8的话similar('12345678', '23')跟similar('12345678', '24')都是0.25
             score *= 0.8
         return eval(format(score, '.4f'))
@@ -366,7 +367,7 @@ class find:
         self.type = type(obj)
         self.empty = self.type()
         self.obj = obj
-        if self.type != Iterable:
+        if isinstance(obj, Iterable):
             print('Unsupported data type automatically is converted to str.')
             self.obj = repr(obj)
             self.type = str

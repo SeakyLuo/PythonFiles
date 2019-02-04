@@ -463,7 +463,10 @@ class Generator(Frame):
                     # Maybe ], \\\n?
                     result = result.replace('],', '],\n')
             arrayOption = settings[ARRAY_OPTION]
+            # Numpy Array
             if arrayOption != NORMAL_ARRAY:
+                if r == 1:
+                    result = result[1:-1]
                 prefix = 'np' if arrayOption == NP_ARRAY else 'numpy'
                 result = f'{prefix}.array({result})'
         if settings[COPY_GENERATION_RESULT]:
