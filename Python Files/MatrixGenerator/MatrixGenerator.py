@@ -45,6 +45,8 @@ class Generator(Frame):
         self.insertMenu.add_separator()
         self.insertMenu.add_command(label = ONE_TO_N, accelerator = shortcuts[ONE_TO_N], command = self.oneToN)
         self.insertMenu.add_command(label = A_TO_Z, accelerator = shortcuts[A_TO_Z], command = self.aToZ)
+        self.insertMenu.add_command(label = 'Fibonacci', command = self.fibonacci)
+        self.insertMenu.add_separator()
         self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
         self.randomMenu.add_command(label = RANDOM_REORDER, accelerator = shortcuts[RANDOM_REORDER], command = self.randomReorder)
@@ -98,9 +100,11 @@ class Generator(Frame):
         ## Result Type Menu
         self.matMenu = Menu(self)
         self.matMenu.add_command(label = IDENTITY_MATRIX, accelerator = shortcuts[IDENTITY_MATRIX], command = self.identityMatrix)
-        self.matMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
         self.matMenu.add_command(label = ZERO_MATRIX, accelerator = shortcuts[ZERO_MATRIX], command = self.zeroMatrix)
         self.matMenu.add_command(label = UNIT_MATRIX, accelerator = shortcuts[UNIT_MATRIX], command = self.unitMatrix)
+        self.matMenu.add_separator()
+        self.matMenu.add_command(label = PERMUTATION_MATRIX, accelerator = shortcuts[PERMUTATION_MATRIX], command = self.permutationMatrix)
+        self.matMenu.add_command(label = PERMUTATION_MATRIX_TO_VECTOR, accelerator = shortcuts[PERMUTATION_MATRIX_TO_VECTOR], command = self.permutationConversion)
         self.matMenu.add_separator()
         self.matMenu.add_command(label = 'Unknown Matrix', command = self.unknownMatrix)
         self.detMenu = Menu(self)
@@ -111,6 +115,7 @@ class Generator(Frame):
                             SHOW_CALCULATION_RESULT, COPY_CALCULATION_RESULT, 'After Calculation')
         self.vecMenu = Menu(self)
         self.vecMenu.add_command(label = PERMUTATION_VECTOR, accelerator = shortcuts[PERMUTATION_VECTOR], command = self.permutationVector)
+        self.vecMenu.add_command(label = PERMUTATION_VECTOR_TO_MATRIX, accelerator = shortcuts[PERMUTATION_VECTOR_TO_MATRIX], command = self.permutationConversion)
         self.vecOptionMenu = Menu(self, tearoff = False)
         self.arrayVecVar = BooleanVar(self, value = settings.setdefault(ARRAY_VECTOR, False))
         self.vecOptionMenu.add_checkbutton(label = 'Array Vector', variable = self.arrayVecVar, \
@@ -210,6 +215,7 @@ class Generator(Frame):
         self.master.bind('<Control-E>', lambda event: self.clear(1))
         self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
+        self.master.bind('<Control-P>', lambda event: self.permutationConversion())
         self.master.bind('<Control-R>', lambda event: self.randomReorder())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
         self.master.bind('<Control-Z>', lambda event: self.clear(0))
@@ -296,6 +302,8 @@ class Generator(Frame):
                 row = col
                 self.setRow(row)
             self.setCol(1)
+            if self.getFocusEntry() == self.colEntry:
+                self.rowEntry.focus()
             self.colEntry['state'] = DISABLED
             if row:
                 self.generateEntries(row, 1)
@@ -892,6 +900,19 @@ class Generator(Frame):
             setEntry(self.entries[divmod(i, col)], chr(ordA + char) * (count + 1))
         self.modifyState()
 
+    def fibonacci(self):
+        row, col = self.getRowCol()
+        if not row or not col or not self.entries:
+            return
+        def fib(num):
+            a, b = 1, 1
+            for _ in range(num):
+                yield a
+                a, b = b, a + b
+        for i, n in enumerate(fib(row * col)):
+            setEntry(self.entries[divmod(i, col)], n)
+        self.modifyState()
+
     def setRandomVar(self):
         result = settings[RANDOM_VAR]
         fEntry = self.getFocusEntry()
@@ -1089,6 +1110,28 @@ class Generator(Frame):
             shuffle(values)
         for entry in self.entries.values():
             setEntry(entry, values.pop(0))
+        self.modifyState()
+
+    def permutationConversion(self):
+        resultType = self.resultType.get()
+        r, c = self.getRowCol()
+        isNormal = settings[ARRAY_OPTION] == NORMAL_ARRAY
+        notVector = resultType != VECTOR
+        entries = self.collectEntries(r, c, True, notVector)
+        if notVector:
+            for i, row in enumerate(entries):
+                if row.count(1) != 1 and row.count(0) != len(row) - 1:
+                    return
+                setEntry(self.entries[(i, 0)], row.index(1) + isNormal)
+            self.setResultType(VECTOR)
+        else:
+            if any(i not in entries for i in range(isNormal, r + isNormal)):
+                return
+            self.setResultType(MATRIX)
+            self.syncRowCol(r)
+            for i in range(r):
+                for j in range(r):
+                    setEntry(self.entries[(i, j)], entries[i] == j + isNormal)
         self.modifyState()
 
     def calculateDet(self):

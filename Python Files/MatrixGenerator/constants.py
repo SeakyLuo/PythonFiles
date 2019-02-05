@@ -82,6 +82,8 @@ SWITCH_ROWS = 'Switch ' + ROW
 SWITCH_COLUMNS = 'Switch ' + COLUMN
 FILL_ROW = 'Fill Row'
 FILL_COLUMN = 'Fill Column'
+PERMUTATION_VECTOR_TO_MATRIX = 'Permutation Vector To Matrix'
+PERMUTATION_MATRIX_TO_VECTOR = 'Permutation Matrix To Vector'
 
 ## Settings
 settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RANDOM_VAR, RANDOM_MIN, RANDOM_MAX, RANDOM_MATRIX_OPTION, ENTRY_WIDTH, \
@@ -91,7 +93,7 @@ settingOptions = [RESULT_TYPE, RESULT_FORMAT, REMEMBER_SIZE, VECTOR_OPTION, RAND
 ## Shortcuts
 shortcuts = { GENERATE: 'Enter/Return', ADD: 'Ctrl+=', ZERO_MATRIX: 'Ctrl+0', IDENTITY_MATRIX: 'Ctrl+I', RANDOM_MATRIX: 'Ctrl+R', UNIT_MATRIX: 'Ctrl+U', EXIT: 'Ctrl+W', \
               MULTIPLY: 'Ctrl+M', PERMUTATION_MATRIX: 'Ctrl+P', PERMUTATION_VECTOR: 'Ctrl+P', FIND_VALUE: 'Ctrl+F', REPLACE: 'Ctrl+H', REDO: 'Ctrl+Y', UNDO: 'Ctrl+Z', \
-              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', CLEAR_ZEROS: 'Ctrl+Shift+Z', \
+              CLEAR_ALL: 'Ctrl+Shift+A', CALCULATE: 'Ctrl+Shift+C', CLEAR_ENTRIES: 'Ctrl+Shift+E', FIND_LOCATION: 'Ctrl+Shift+F', LOWER_TRIANGULAR: 'Ctrl+Shift+L', PERMUTATION_MATRIX_TO_VECTOR: 'Ctrl+Shift+P', PERMUTATION_VECTOR_TO_MATRIX: 'Ctrl+Shift+P', RANDOM_REORDER: 'Ctrl+Shift+R', UPPER_TRIANGULAR: 'Ctrl+Shift+U', CLEAR_ZEROS: 'Ctrl+Shift+Z', \
               A_TO_Z: 'Alt+A', SWITCH_COLUMNS: 'Alt+C',APPEND_END: 'Alt+E', APPEND_INDEX: 'Alt+I', ONE_TO_N: 'Alt+N', SWITCH_ROWS: 'Alt+R', APPEND_START: 'Alt+S', TRANSPOSE: 'Alt+T', \
               FROM_ARRAY: 'Alt+Shift+A', FILL_COLUMN: 'Alt+Shift+C', FROM_LATEX: 'Alt+Shift+L', FILL_ROW: 'Alt+Shift+R'}
 otherShortcutFormatter = lambda command, shortcut: '{:<25}{:<15}'.format(command, shortcut)
