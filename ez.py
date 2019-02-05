@@ -329,6 +329,7 @@ def similar(obj1, obj2, capital = True):
                         score *= d1[key]/d2[key]
             score *= 1 - sum([d2.get(item) for item in sd ]) / len_o2
 ##            不乘0.8的话similar('12345678', '23')跟similar('12345678', '24')都是0.25
+##          可以用距离
             score *= 0.8
         return eval(format(score, '.4f'))
 
@@ -552,12 +553,14 @@ def formatted():
 #abbreviation
 fmt = formatted
 
-def delta_days(date1, date2):
-    '''Date must be in the format of YYYYMMDD.'''
+def delta_days(date1, date2 = None):
+    '''Return the days difference between two dates.
+       Date must be in the format of YYYYMMDD.
+       If date2 is None, then it will be regarded as today.'''
     year = lambda x: x // 10000
     month = lambda x:(x % 10000) // 100
     day = lambda x: x % 100
     start = datetime.datetime(year(date1), month(date1), day(date1))
-    end = datetime.datetime(year(date2), month(date2), day(date2))
+    end = datetime.datetime(year(date2), month(date2), day(date2)) if date2 else datetime.datetime.today()
     delta = abs((end - start).days + 1)
     return delta
