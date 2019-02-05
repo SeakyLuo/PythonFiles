@@ -427,17 +427,17 @@ class Generator(Frame):
                 continue
             if not asked:
                 result = messagebox.askyesnocancel(title = 'Warning', message = 'Not All Entries are Filled\nDo you want to fill them with zeros?')
+                if not result:
+                    break
                 asked = True
-            if result:
-                entry.insert(0, 0)
-            elif result == None:
-                break
+            entry.insert(0, 0)
         else:
             result = True
         return result
 
     def generate(self):
-        if self.checkEmpty() == None: return
+        checkEmpty = self.checkEmpty()
+        if checkEmpty == None: return
         result = ''
         r, c = self.getRowCol()
         resultType = self.resultType.get()
@@ -445,17 +445,22 @@ class Generator(Frame):
         if resultFormat == LATEX:
             vecOption = settings[VECTOR_OPTION]
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
-                result = ezs.vl(','.join(self.collectEntries(r, c, False, False, False)), vecOption == OVERRIGHTARROW)
+                result = ezs.vl(','.join(self.collectEntries(r, c, False, False, checkEmpty)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False, False, False)), resultType == DETERMINANT, settings[LATEX_NEWLINE])
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False, False, checkEmpty)), resultType == DETERMINANT, settings[LATEX_NEWLINE])
         elif resultFormat == ARRAY:
             arrayOption = settings[ARRAY_OPTION]
-            notNormal = arrayOption != NORMAL_ARRAY
+            normalArray = arrayOption == NORMAL_ARRAY
             if resultType == VECTOR and settings[ARRAY_VECTOR]:
-                result = str(self.collectEntries(r, c, True, True, False))
+                result = str(self.collectEntries(r, c, True, False, checkEmpty))
             else:
-                result_list = self.collectEntries(r, c, True, True, False)
-                result = str(result_list if len(result_list) > 1 else result_list[0])
+                result_list = self.collectEntries(r, c, True, True, checkEmpty)
+                result = str(result_list)
+                if settings[ARRAY_VECTOR]:
+                    try:
+                        if len(result_list) == 1 or len(result_list[0]) == 1:
+                            result = str(ez.flatten(result_list))
+                    except: pass
                 for row in result_list:
                     for entry in row:
                         ## if is expression
@@ -464,7 +469,7 @@ class Generator(Frame):
                 if settings[ARRAY_NEWLINE]:
                     # Maybe ], \\\n?
                     result = result.replace('],', '],\n')
-            if notNormal:
+            if not normalArray:
                 prefix = 'np' if arrayOption == NP_ARRAY else 'numpy'
                 result = f'{prefix}.array({result})'
         if settings[COPY_GENERATION_RESULT]:
@@ -1058,10 +1063,9 @@ class Generator(Frame):
         cols = list(range(size))
         shuffle(cols)
         for i in range(size):
-            c = cols.pop()
             for j in range(size):
                 setEntry(self.entries[(i, j)], 0)
-            setEntry(self.entries[(i, c)], 1)
+            setEntry(self.entries[(i, cols.pop())], 1)
         self.modifyState()
 
     def unknownMatrix(self):
@@ -1077,10 +1081,12 @@ class Generator(Frame):
         row = self.getRow()
         if not row:
             row = randrange(maxSize) + 1
-        values = list(range(1, row + 1))
-        shuffle(values)
-        for i, entry in enumerate(self.entries.values()):
-            setEntry(entry, values[i])
+        values = list(range(row) if settings[ARRAY_OPTION] != NORMAL_ARRAY and self.resultFormat.get() == ARRAY else range(1, row + 1))
+        current = self.collectEntries(row, 1)
+        while values == current:
+            shuffle(values)
+        for entry in self.entries.values():
+            setEntry(entry, values.pop())
         self.modifyState()
 
     def calculateDet(self):
