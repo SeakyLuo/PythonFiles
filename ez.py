@@ -367,7 +367,7 @@ class find:
         self.type = type(obj)
         self.empty = self.type()
         self.obj = obj
-        if isinstance(obj, Iterable):
+        if not isinstance(obj, Iterable):
             print('Unsupported data type automatically is converted to str.')
             self.obj = repr(obj)
             self.type = str

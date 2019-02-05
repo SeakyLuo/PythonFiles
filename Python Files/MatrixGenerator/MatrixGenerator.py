@@ -445,15 +445,17 @@ class Generator(Frame):
         if resultFormat == LATEX:
             vecOption = settings[VECTOR_OPTION]
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
-                result = ezs.vl(','.join(self.collectEntries(r, c, False)), vecOption == OVERRIGHTARROW)
+                result = ezs.vl(','.join(self.collectEntries(r, c, False, False, False)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False)), resultType == DETERMINANT, settings[LATEX_NEWLINE])
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False, False, False)), resultType == DETERMINANT, settings[LATEX_NEWLINE])
         elif resultFormat == ARRAY:
+            arrayOption = settings[ARRAY_OPTION]
+            notNormal = arrayOption != NORMAL_ARRAY
             if resultType == VECTOR and settings[ARRAY_VECTOR]:
-                result = str(self.collectEntries(r, c))
+                result = str(self.collectEntries(r, c, True, True, False))
             else:
-                result_list = self.collectEntries(r, c, True, True)
-                result = str(result_list)
+                result_list = self.collectEntries(r, c, True, True, False)
+                result = str(result_list if len(result_list) > 1 else result_list[0])
                 for row in result_list:
                     for entry in row:
                         ## if is expression
@@ -462,11 +464,7 @@ class Generator(Frame):
                 if settings[ARRAY_NEWLINE]:
                     # Maybe ], \\\n?
                     result = result.replace('],', '],\n')
-            arrayOption = settings[ARRAY_OPTION]
-            # Numpy Array
-            if arrayOption != NORMAL_ARRAY:
-                if r == 1:
-                    result = result[1:-1]
+            if notNormal:
                 prefix = 'np' if arrayOption == NP_ARRAY else 'numpy'
                 result = f'{prefix}.array({result})'
         if settings[COPY_GENERATION_RESULT]:
@@ -480,16 +478,17 @@ class Generator(Frame):
             self.clear(2)
         return result
 
-    def collectEntries(self, r, c, evaluate = True, nested = False):
+    def collectEntries(self, r, c, evaluate = True, nested = False, withEmpty = True):
         entries = []
         for i in range(r):
             if nested: lst = []
             for j in range(c):
                 text = self.entries[(i, j)].get()
-                if evaluate: text = ezs.numEval(text)
+                if not withEmpty and not text: continue
+                if evaluate and text: text = ezs.numEval(text)
                 if nested: lst.append(text)
                 else: entries.append(text)
-            if nested: entries.append(lst)
+            if nested and (lst or withEmpty): entries.append(lst)
         return entries
 
     def switchResultType(self, move):
@@ -1198,12 +1197,14 @@ class Generator(Frame):
         except: return self.rowEntry
 
     def getFocusEntryIndex(self):
+        index = (0, 0, END)
         try:
             entry = self.master.focus_get()
             f = ez.find(str(entry))
-            return (int(f.between('frame', '.') or 1) - 1, int(f.after('.!entry') or 1) - 1, entry.index(ANCHOR) if entry.selection_present() else entry.index(INSERT))
+            index = (int(f.between('frame', '.') or 1) - 1, int(f.after('.!entry') or 1) - 1, entry.index(ANCHOR) if entry.selection_present() else entry.index(INSERT))
         except:
-            return (0, 0, END)
+            pass
+        return index
 
     def getLastFocusEntry(self, col = None):
         focus = self.states[self.stateIndex][2]
