@@ -962,10 +962,12 @@ class Generator(Frame):
         self.modifyState()
 
     def randomReorder(self):
-        values = [entry.get() for entry in self.entries.values()]
-        shuffle(values)
-        for i, entry in enumerate(self.entries.values()):
-            setEntry(entry, values[i])
+        current = self.collectEntries(self.getRow(), self.getCol())
+        values = current
+        while current == values:
+            shuffle(values)
+        for entry in self.entries.values():
+            setEntry(entry, values.pop(0))
         self.modifyState()
 
     def sort(self):
@@ -1086,7 +1088,7 @@ class Generator(Frame):
         while values == current:
             shuffle(values)
         for entry in self.entries.values():
-            setEntry(entry, values.pop())
+            setEntry(entry, values.pop(0))
         self.modifyState()
 
     def calculateDet(self):
