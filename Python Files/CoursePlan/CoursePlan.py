@@ -5,7 +5,7 @@ import atexit
 ## 1. Undetermined cource  2. schedule conflict 3. multiple schedule
 
 TBA = 'T.B.A.'
-aweekdays = ['m', 't', 'w', 'r', 'f']
+aweekdays = ['M', 'T', 'W', 'R', 'F']
 weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 
 def evaluateTime(time):
@@ -108,8 +108,7 @@ class CoursePlan(Frame):
         self.exception = False
 
     def putLabel(self, name, datetime, loc, instructor, original = 0):
-        datetime = datetime.lower()
-        datetime = datetime.replace(' ', '')
+        datetime = datetime.upper().replace(' ', '')
         try:
             weekindex = weekIndex(datetime)
             if weekindex == 0: raise SyntaxError
@@ -148,8 +147,7 @@ class CoursePlan(Frame):
         start, end = time.split('-')
         grids = length(start, end) // 30 + 1
         datetime = datetime[:weekindex] + time
-        courseButton = Button(self, text = name + (' --- ' + loc if loc != TBA else ''), bg = 'Moccasin', \
-                          bd = 0, width = 2 * self.labelWidth, height = 1)
+        courseButton = Button(self, text = name + ' --- ' + (datetime if instructor == TBA else instructor), bg = 'Moccasin', bd = 0, width = 2 * self.labelWidth, height = 1)
         courseButton['command'] = lambda: self.showCourseInfo(courseButton)
         index = -1
         if original:
@@ -192,9 +190,11 @@ class CoursePlan(Frame):
         info = name, datetime, loc, instructor = (box.get() for box in self.boxList)
         if datetime in ('', self.exampleText) or info in self.courseInfo:
             return
-        if name == '':
+        if not name:
             messagebox.showerror('Error', 'Please input course name!')
             return
+        if not loc: loc = TBA
+        if not instructor: instructor = TBA
         self.putLabel(name, datetime, loc, instructor, original)
         if self.exception:
             self.exception = False
@@ -212,7 +212,7 @@ class CoursePlan(Frame):
         if self.readInfo:
             for name, datetime, loc, instructor in self.readInfo:
                 self.putLabel(name, datetime, loc, instructor)
-
+                
     def asksave(self):
         Tk().withdraw()
         if self.courseInfo != self.readInfo:
@@ -235,10 +235,9 @@ class CoursePlan(Frame):
 
     def copy(self, button):
         index = evalInfo(button.grid_info()['row']) - len(self.boxList) - 1
-        info = self.courseInfo[index]
         self.clear()
         self.focusIn(1)
-        for i, box in enumerate(self.boxList):
+        for box, info in zip(self.boxList, self.courseInfo[index]):
             box.insert(0, info[i])
 
     def modify(self, button):
