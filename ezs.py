@@ -48,11 +48,11 @@ def accurateCalculation(formula = '', scin = False):
                     pass
                 else:
                     if num:
-                        ni += 'Decimal("{}")'.format(num)
+                        ni += f'Decimal("{num}")'
                         num = ''
                     ni += ch
             if num:
-                ni += 'Decimal("{}")'.format(num)
+                ni += f'Decimal("{num}")'
         except:
             raise Exception('Invalid expression: ' + num)
         result = eval(repr(eval(ni))[9:-2])

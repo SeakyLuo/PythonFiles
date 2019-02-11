@@ -78,7 +78,7 @@ class Simplifier(Tk):
         self.fontSize()
 
     def monitor(self, event):
-        t = gettxt(self.t1)
+        t = getText(self.t1)
         if not t or t == self.history[-1]:
             return
         if self.ctrlCounter and 'Control' in event.keysym:
@@ -94,8 +94,8 @@ class Simplifier(Tk):
     def countLines(self):
         if self.wrappers['lines']:
             count = lambda t: t.count('\n')+(t[-1] != '\n') if t else 0
-            up = count(gettxt(self.t1))
-            down = count(gettxt(self.t2))
+            up = count(getText(self.t1))
+            down = count(getText(self.t2))
             self.w1['text'] = f'Lines↑{up}↓{down}'
         else:
             self.w1['text'] = 'LineCount'
@@ -104,8 +104,8 @@ class Simplifier(Tk):
         self.countLines()
     def countChars(self):
         if self.wrappers['chars']:
-            up = len(gettxt(self.t1))
-            down = len(gettxt(self.t2))
+            up = len(getText(self.t1))
+            down = len(getText(self.t2))
             self.w2['text'] = f'Chars↑{up}↓{down}'
         else:
             self.w2['text'] = 'CharCount'
@@ -113,24 +113,24 @@ class Simplifier(Tk):
         self.wrappers['chars'] = int(not self.wrappers['chars'])
         self.countChars()
     def clear(self):
-        deltxt(self.t1)
-        deltxt(self.t2)
+        clearText(self.t1)
+        clearText(self.t2)
     def autocopy(self):
         self.switchButtonState(self.w4, 'autocopy')
         ez.fwrite(self.btxt, self.wrappers)
-        ez.cpc(gettxt(self.t2))
+        ez.cpc(getText(self.t2))
     def paste(self):
         win32clipboard.OpenClipboard()
         data = win32clipboard.GetClipboardData()
         win32clipboard.CloseClipboard()
-        instxt(self.t1, data)
+        setText(self.t1, data)
         self.wrapper()
     def undo(self):
         if not self.pointer:
             return
         self.pointer -= 1
-        deltxt(self.t1)
-        instxt(self.t1, self.history[self.pointer])
+        clearText(self.t1)
+        setText(self.t1, self.history[self.pointer])
         self.ctrlCounter = self.yzCounter = 1
     def Undo(self):
         self.undo()
@@ -139,8 +139,8 @@ class Simplifier(Tk):
         if self.pointer == len(self.history) - 1:
             return
         self.pointer += 1
-        deltxt(self.t1)
-        instxt(self.t1, self.history[self.pointer])
+        clearText(self.t1)
+        setText(self.t1, self.history[self.pointer])
         self.ctrlCounter = self.yzCounter = 1
     def Redo(self):
         self.redo()
@@ -151,7 +151,7 @@ class Simplifier(Tk):
         self.w8['label'] = f'FontSize: {value}'
         self.t2['font'] = ('TkFixedFont', value)
     def wrapper(self):
-        string = gettxt(self.t1)
+        string = getText(self.t1)
         for func in self.wd:
             if not self.wrappers[func]: continue
             if func == 'newline': string = self.newline_remover(string)
@@ -164,8 +164,8 @@ class Simplifier(Tk):
         if self.wrappers['space']: string = self.space_remover(string)
         if self.wrappers['translate']: string = self.translate(string)
         ez.fwrite(self.btxt, self.wrappers)
-        deltxt(self.t2)
-        instxt(self.t2, string)
+        clearText(self.t2)
+        setText(self.t2, string)
         self.countLines()
         self.countChars()
         if self.wrappers['autocopy']:

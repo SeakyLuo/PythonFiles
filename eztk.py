@@ -1,13 +1,13 @@
 from tkinter import END
 
-def gettxt(text):
+def getText(text):
     return text.get(1.0, END).strip()
 
-def deltxt(text):
+def clearText(text):
     text.delete(1.0, END)
 
-def instxt(textwidget, text):
-    textwidget.insert(1.0, text)
+def setText(text, content):
+    text.insert(1.0, content)
 
 def setEntry(entry, text):
     entry.delete(0, END)

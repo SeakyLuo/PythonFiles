@@ -506,7 +506,7 @@ def substitute(obj, *args):
         for i in range(0, num, 2):
             new = new.replace(str(args[i]), str(args[i + 1]))
     else:
-        if typ in [tuple, list, set]:
+        if typ in [tuple, list]:
             new = typ()
         else:
             raise DataTypeError
