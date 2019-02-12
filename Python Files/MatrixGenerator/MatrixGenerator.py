@@ -606,10 +606,11 @@ class Generator(Frame):
                         except:
                             matrix = [[matrix]]
                     self.setResultType(getType(matrix))
-                else:
-                    raise Exception()
                 r = len(matrix)
                 c = len(matrix[0])
+                if r == 1 and c > 1 and settings[VECTOR_OPTION] == COLUMN_VECTOR:
+                    r, c = c, r
+                    matrix = [[item] for item in matrix[0]]
                 if (r * c > maxSize ** 2):
                     messagebox.showerror(title = 'Error', message = 'Matrix Too Large')
                 break
@@ -1027,10 +1028,11 @@ class Generator(Frame):
         size = r * c
         if size <= 1:
             return 'break'
-        if ezs.isPrime(size) or (size > maxSize and len(ezs.findAllFactors(size)) == 4):
+        factors = ezs.findAllFactors(size)
+        if ezs.isPrime(size) or (size > maxSize and len(factors) == 4):
             x, y = c, r
         else:
-            result = ''
+            result = f'{c},{r}' if len(factors) == 4 else ''
             fEntry = self.getFocusEntry()
             while True:
                 result = simpledialog.askstring(title = 'Reshape', prompt = 'Input Shape in the Form of x,y', initialvalue = result)
