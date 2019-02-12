@@ -586,9 +586,7 @@ def factorialSkip(n):
     return n * factorialSkip(n - 2)
 
 def isPrime(n):
-    if type(n) == int and n > 3:
-        return all(n % i for i in range(2, int(n ** 0.5) + 1))
-    return False
+    return type(n) == int and all(n % i for i in range(2, int(n ** 0.5) + 1))
 
 def findPrimeFactors(number, printResult = True, return_dict = False):
     '''Automatically Converts to Non-Negative.
