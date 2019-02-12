@@ -597,7 +597,7 @@ class Generator(Frame):
                 elif fromFormat == ARRAY:
                     matrix = ez.tryEval(result)
                     if type(matrix) == str:
-                        matrix = matrix.replace(',', ' ').split()
+                        matrix = ez.sub(matrix, ',', ' ', '[', '', ']', '').split()
                     if matrix == ez.flatten(matrix):
                         matrix = [matrix]
                     else:

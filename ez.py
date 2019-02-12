@@ -459,13 +459,14 @@ class find:
 ##flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
 def flatten(items, ignore_types = (str, bytes)):
     '''Flattens an iterable if not ignored.'''
+    typ = type(items)
     def generator(items):
         for item in items:
-            if isinstance(item, Iterable):
+            if isinstance(item, typ):
                 yield from flatten(item)
             else:
                 yield item
-    return items if isinstance(items, ignore_types) else type(items)(generator(items))
+    return items if isinstance(items, ignore_types) else typ(generator(items))
 
 def rmdup(obj):
     '''Return a list without duplicates.'''
@@ -490,6 +491,11 @@ def without(obj, *args):
     if typ in [set, frozenset]:
         return obj.difference(args)
     raise DataTypeError
+
+def replaceWith(obj, withObject, *args):
+    argList = []
+    for arg in args: argList += [arg, withObject]
+    return sub(obj, *argList)
 
 def substitute(obj, *args):
     '''obj supported data type: str, tuple, list, set.
