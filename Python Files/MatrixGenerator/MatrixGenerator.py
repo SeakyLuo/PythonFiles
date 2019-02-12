@@ -573,12 +573,7 @@ class Generator(Frame):
 
     def insert(self, fromFormat):
         '''fromFormat can only be LaTeX or Array'''
-        def getResultType(matrix):
-            if len(matrix) == 1 and len(matrix[0]) == 1:
-                return MATRIX
-            elif len(matrix[0]) == 1:
-                return VECTOR
-            return MATRIX
+        getType = lambda matrix: VECTOR if len(matrix) > 1 and len(matrix[0]) == 1 else MATRIX
         result = ''
         fEntry = self.getFocusEntry()
         while True:
@@ -591,7 +586,7 @@ class Generator(Frame):
                     if 'matrix' in result:
                         matrix = [row.split('&') for row in ez.find(result).between('}', '\\end').split('\\\\')]
                         if 'bmatrix' in result:
-                            self.setResultType(getResultType(matrix))
+                            self.setResultType(getType(matrix))
                         elif 'vmatrix' in result:
                             self.setResultType(DETERMINANT)
                         else:
@@ -610,24 +605,23 @@ class Generator(Frame):
                             len(matrix) + len(matrix[0])
                         except:
                             matrix = [[matrix]]
-                    self.setResultType(getResultType(matrix))
+                    self.setResultType(getType(matrix))
                 else:
                     raise Exception()
                 r = len(matrix)
                 c = len(matrix[0])
                 if (r * c > maxSize ** 2):
                     messagebox.showerror(title = 'Error', message = 'Matrix Too Large')
-                    break
-                self.setRowCol(r, c)
-                self.generateEntries(r, c)
-                for i in range(r):
-                    for j in range(c):
-                        setEntry(self.entries[(i, j)], matrix[i][j])
                 break
             except:
                 messagebox.showerror(title = 'Error', message = 'Invalid Input')
         fEntry.focus()
         if result:
+            self.setRowCol(r, c)
+            self.generateEntries(r, c)
+            for i in range(r):
+                for j in range(c):
+                    setEntry(self.entries[(i, j)], matrix[i][j])
             self.modifyState()
 
     def appendIndex(self):
@@ -642,9 +636,7 @@ class Generator(Frame):
         fEntry = self.getFocusEntry()
         result = ''
         while True:
-            result = simpledialog.askstring(title = title, \
-                                            prompt = title + ' k With x. \nInput k and x in the Form of k,x', \
-                                            initialvalue = result)
+            result = simpledialog.askstring(title = title, prompt = title + ' k With x. \nInput k and x in the Form of k,x', initialvalue = result)
             if not result:
                 break
             try:
@@ -660,7 +652,6 @@ class Generator(Frame):
                     k = eval(k) - 1
                 for i in range(col if isRow else row):
                     setEntry(self.entries[(k, i) if isRow else (i, k)], x)
-                break
             except:
                 messagebox.showerror('Error', 'Invalid Input')
                 continue

@@ -20,10 +20,10 @@ def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
 ##abbreviation
 nl = npMatrixToLatex
 
-def product(*numbers):
+def product(iterable):
     ''' Return the numerical product of numbers.
     For Cartesian Product, please use itertools.product instead.'''
-    return reduce(lambda x, y: x * y, numbers)
+    return reduce(lambda x, y: x * y, iterable)
 
 def accurateCalculation(formula = '', scin = False):
     '''Function calls not supported.
