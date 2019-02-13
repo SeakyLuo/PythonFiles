@@ -8,9 +8,27 @@ from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
 from collections import Counter
+from functools import reduce
+from types import GeneratorType
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
-DataTypeError = Exception('This data type is not supported!')
+DataTypeError = TypeError('Unsupported data type.')
+
+def summation(iterable):
+    '''Call the __add__ or update function of the iterable.'''
+    if isinstance(iterable, GeneratorType):
+        iterable = list(iterable)
+        typ = type(iterable[0])
+    else:
+        typ = type(iterable[0])
+    if '__add__' in dir(typ):
+        return reduce(typ.__add__, iterable)
+    if 'update' in dir(typ):
+        def u(a, b):
+            a.update(b)
+            return a
+        return reduce(u, iterable)
+    raise DataTypeError
 
 def countLines(path, filetype):
     '''Count the lines of all the files with the specified type in the path.'''
