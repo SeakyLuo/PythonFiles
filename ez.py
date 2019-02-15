@@ -361,6 +361,30 @@ def similar(obj1, obj2, capital = True):
     else:
         return grade(obj2, obj1)
 
+def levenshteinDistance(s1, s2):
+    if len(s1) > len(s2):
+        s1, s2 = s2, s1
+
+    distances = range(len(s1) + 1)
+    for i2, c2 in enumerate(s2):
+        distances_ = [i2+1]
+        for i1, c1 in enumerate(s1):
+            if c1 == c2:
+                distances_.append(distances[i1])
+            else:
+                distances_.append(1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
+        distances = distances_
+    return distances[-1]
+
+def similar2(obj1, obj2, capital = True):
+    '''Check the how similar string obj1 to obj2 is using Levenshtein Distance.
+        Set capital to False to ignore capital.'''
+    if capital:
+        obj1 = obj1.lower()
+        obj2 = obj2.lower()
+    ld = levenshteinDistance(obj1, obj2)
+    return 1 - ld / len(obj2)    
+
 def predir():
     '''Go back to the parent folder (not root).'''
     path = os.getcwd()

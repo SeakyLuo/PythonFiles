@@ -1,10 +1,8 @@
 from tkinter import *
-from atexit import register
 from eztk import setEntry
 import os
 import ez
 
-settingsFile = 'Settings.json'
 PATH_OPTION = 'PathOption'
 PATH_OPTIONS = ['\\\\', '/']
 AUTO_COPY = 'AutoCopy'
