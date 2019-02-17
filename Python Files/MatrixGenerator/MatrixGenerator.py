@@ -71,6 +71,8 @@ class Generator(Frame):
         self.editMenu.add_separator()
         self.editMenu.add_command(label = SWITCH_ROWS, accelerator = shortcuts[SWITCH_ROWS], command = lambda: self.switch(ROW))
         self.editMenu.add_command(label = SWITCH_COLUMNS, accelerator = shortcuts[SWITCH_COLUMNS], command = lambda: self.switch(COLUMN))
+        self.editMenu.add_command(label = 'Duplicate ' + ROW, command = lambda: self.duplicateRC(ROW))
+        self.editMenu.add_command(label = 'Duplicate ' + COLUMN, command = lambda: self.duplicateRC(COLUMN))
         self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ZEROS, accelerator = shortcuts[CLEAR_ZEROS], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(1))
@@ -637,25 +639,74 @@ class Generator(Frame):
         fEntry = self.getFocusEntry()
         result = ''
         while True:
-            result = simpledialog.askstring(title = title, prompt = title + ' k With x. \nInput k and x in the Form of k,x', initialvalue = result)
-            if not result:
-                break
-            try:
-                resultLst = result.split(',')
-                row, col = self.getRowCol()
-                if len(resultLst) == 1:
-                    if (row == 1 and isRow) or (col == 1 and not isRow):
-                        k, x = 0, resultLst[0]
+            result = simpledialog.askstring(title = title, prompt = title + ' N With x. \nInput N,x', initialvalue = result)
+            if result:
+                try:
+                    resultLst = result.split(',')
+                    row, col = self.getRowCol()
+                    if len(resultLst) == 1:
+                        if (row == 1 and isRow) or (col == 1 and not isRow):
+                            k, x = 0, resultLst[0]
+                        else:
+                            raise Exception()
                     else:
+                        k, x = list(map(str.strip, resultLst))
+                        k = eval(k) - 1
+                    for i in range(col if isRow else row):
+                        setEntry(self.entries[(k, i) if isRow else (i, k)], x)
+                except:
+                    messagebox.showerror('Error', 'Invalid Input')
+                    continue
+            break
+        fEntry.focus()
+
+    def duplicateRC(self, title):
+        isRow = title == ROW
+        fEntry = self.getFocusEntry()
+        result = ''
+        prompt = f'Input N to make other {title} the duplicate of {title[:-1]} N.'
+        while True:
+            r, c = self.getRowCol()
+            entries = self.collectEntries(r, c, False, True)
+            auto = 0
+            if isRow:
+                for i, row in enumerate(entries):
+                    if all(entry for entry in row):
+                        auto += 1
+                        if auto > 1:
+                            auto = 0
+                            result = ''
+                            break
+                        result = i
+            else:
+                for i in range(c):
+                    if all(row[i] for row in entries):
+                        auto += 1
+                        if auto > 1:
+                            auto = 0
+                            result = ''
+                            break
+                        result = i
+            if not auto:
+                result = simpledialog.askstring(title = 'Duplicate ' + title[:-1], prompt = prompt, initialvalue = result)
+                if not result:
+                    break
+                try:
+                    result = eval(result)
+                    if not isinstance(result, int) or not result or (isRow and result > r) or (not isRow and result > c):
                         raise Exception()
-                else:
-                    k, x = list(map(str.strip, resultLst))
-                    k = eval(k) - 1
-                for i in range(col if isRow else row):
-                    setEntry(self.entries[(k, i) if isRow else (i, k)], x)
-            except:
-                messagebox.showerror('Error', 'Invalid Input')
-                continue
+                    result -= 1
+                except Exception as e:
+                    print(e)
+                    messagebox.showerror('Error', 'Invalid Input')
+                    continue
+            if isRow:
+                entries = [entries[result]] * r
+            else:
+                entries = [[entries[i][result]] * c for i in range(r)]
+            for i in range(r):
+                for j in range(c):
+                    setEntry(self.entries[(i, j)], entries[i][j])
             break
         fEntry.focus()
 
@@ -740,7 +791,7 @@ class Generator(Frame):
             result = ''
             fEntry = self.getFocusEntry()
             while True:
-                result = simpledialog.askstring(title = findType, prompt = 'Input Location in the Form of x,y', initialvalue = result)
+                result = simpledialog.askstring(title = findType, prompt = 'Input Location x,y', initialvalue = result)
                 if not result:
                     break
                 try:
@@ -831,7 +882,7 @@ class Generator(Frame):
             if autoSwitch:
                 size1, size2 = 0, 1
             else:
-                result = simpledialog.askstring(title = 'Switch ' + target, prompt = f'Input {target} in the Form of x,y', initialvalue = result)
+                result = simpledialog.askstring(title = 'Switch ' + target, prompt = f'Input {target[:-1]} numbers x,y', initialvalue = result)
                 if not result:
                     break
                 try:
@@ -1035,7 +1086,7 @@ class Generator(Frame):
             result = f'{c},{r}' if len(factors) == 4 else ''
             fEntry = self.getFocusEntry()
             while True:
-                result = simpledialog.askstring(title = 'Reshape', prompt = 'Input Shape in the Form of x,y', initialvalue = result)
+                result = simpledialog.askstring(title = 'Reshape', prompt = 'Input New Shape r,c', initialvalue = result)
                 if not result:
                     return
                 try:
