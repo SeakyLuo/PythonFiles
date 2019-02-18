@@ -250,9 +250,7 @@ class Generator(Frame):
             if c > 0:
                 setEntry(self.colEntry, c)
             self.generateEntries(r, c)
-            self.modifyState()
-        else:
-            self.modifyState()
+        self.modifyState()
 
     def getRow(self):
         try: return int(self.rowEntry.get())
@@ -273,7 +271,7 @@ class Generator(Frame):
         self.setCol(col)
 
     def getRowCol(self):
-        return (self.getRow(), self.getCol())
+        return self.getRow(), self.getCol()
 
     def syncRowCol(self, size):
         self.setRowCol(size, size)

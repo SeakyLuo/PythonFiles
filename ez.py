@@ -383,7 +383,7 @@ def similar2(obj1, obj2, capital = True):
         obj1 = obj1.lower()
         obj2 = obj2.lower()
     ld = levenshteinDistance(obj1, obj2)
-    return 1 - ld / len(obj2)    
+    return 1 - ld / len(obj2)
 
 def predir():
     '''Go back to the parent folder (not root).'''
@@ -606,9 +606,14 @@ def delta_days(date1, date2 = None):
        Date must be in the format of YYYYMMDD.
        If date2 is None, then it will be regarded as today.'''
     year = lambda x: x // 10000
-    month = lambda x:(x % 10000) // 100
+    month = lambda x: (x % 10000) // 100
     day = lambda x: x % 100
     start = datetime.datetime(year(date1), month(date1), day(date1))
     end = datetime.datetime(year(date2), month(date2), day(date2)) if date2 else datetime.datetime.today()
     delta = abs((end - start).days + 1)
     return delta
+
+def ndays_ago(nDays):
+    '''Return the date n days ago.'''
+    d = datetime.datetime.today() - datetime.timedelta(days = nDays)
+    return int(d.strftime('%Y%m%d'))
