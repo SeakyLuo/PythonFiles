@@ -601,8 +601,9 @@ class Generator(Frame):
                         matrix = [entries]
                     else:
                         # Avoid Arithmatric Expression Evaluation
-                        r = len(matrix) if '__len__' in dir(matrix) else 1
-                        c = len(matrix[0]) if '__len__' in dir(matrix[0]) else 1
+                        hasLen = '__len__' in dir(matrix)
+                        r = len(matrix) if hasLen else 1
+                        c = len(matrix[0]) if hasLen and '__len__' in dir(matrix[0]) else 1
                         matrix = [entries[i:i + c] for i in range(r)]
                     self.setResultType(getType(matrix))
                 r = len(matrix)
