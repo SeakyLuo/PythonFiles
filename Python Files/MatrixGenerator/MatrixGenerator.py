@@ -596,15 +596,14 @@ class Generator(Frame):
                         self.setResultType(VECTOR)
                 elif fromFormat == ARRAY:
                     matrix = ez.tryEval(result)
+                    entries = [item.strip() for item in ez.without(result, '[', ']').split(',')]
                     if type(matrix) == str:
-                        matrix = ez.sub(matrix, ',', ' ', '[', '', ']', '').split()
-                    if matrix == ez.flatten(matrix):
-                        matrix = [matrix]
+                        matrix = [entries]
                     else:
-                        try:
-                            len(matrix) + len(matrix[0])
-                        except:
-                            matrix = [[matrix]]
+                        # Avoid Arithmatric Expression Evaluation
+                        r = len(matrix) if '__len__' in dir(matrix) else 1
+                        c = len(matrix[0]) if '__len__' in dir(matrix[0]) else 1
+                        matrix = [entries[i:i + c] for i in range(r)]
                     self.setResultType(getType(matrix))
                 r = len(matrix)
                 c = len(matrix[0])

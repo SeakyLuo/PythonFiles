@@ -11,7 +11,7 @@ class FindDialog(Toplevel):
         Toplevel.__init__(self, master)
         self.master = master
         self.transient(master)
-        self.grab_set()
+        # self.grab_set()
         self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
         self.title('Search Dialog')
 
@@ -96,7 +96,7 @@ class ReplaceDialog(Toplevel):
         Toplevel.__init__(self, master)
         self.master = master
         self.transient(master)
-        self.grab_set()
+        # self.grab_set()
         self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
         self.title('Replace Dialog')
 
