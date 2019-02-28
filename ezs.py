@@ -658,9 +658,17 @@ def lcm(*numbers):
 
 formLst = ['a', 'l', 's', 'b']
 
-def matrixLaTeX(row, column, formula, isDeterminant = False, newline = False):
-    ''' Abbreviation: ml.'''
-    matrix = advancedSplit(formula)
+def matrixLaTeX(row, column, entries, determinant = False, newline = False, parentheses = False):
+    '''
+    Arguments:
+    row: int row number
+    column: int column number
+    entries: string matrix entries separated by space
+    determinant: if True print Determinant else Matrix
+    newline: new line ending after each row
+    paretheses: if True use () False else [].
+    Abbreviation: ml.'''
+    matrix = advancedSplit(entries)
     expected = row * column
     if len(matrix) != expected:
         print('{} entr{} expected. Found {}.'.format(expected, 'y' if expected == 1 else 'ies', len(matrix)))
@@ -670,8 +678,12 @@ def matrixLaTeX(row, column, formula, isDeterminant = False, newline = False):
             '&'.join([matrix[i * column + j] for j in range(column)])
             for i in range(row)
         ])
-        header = '{%smatrix}' % ('v' if isDeterminant else 'b')
-        output = f'\\begin{header}{output}\\end{header}'
+        header = '{array}' if parentheses else '{%smatrix}' % ('v' if determinant else 'b')
+        begin_header = header + '{%s}' % ('c' * column) if parentheses else header
+        end_header = header
+        output = f'\\begin{begin_header}{output}\\end{end_header}'
+        if parentheses:
+            output = f'\\left({output}\\right)'
         return output
 
 ##abbreviation
@@ -976,6 +988,6 @@ def advancedSplit(s):
            item = ''
            ch = ''
         item += ch
-        if i == len(s) - 1:
+        if i == len(s) - 1 and item:
             lst.append(item)
     return lst

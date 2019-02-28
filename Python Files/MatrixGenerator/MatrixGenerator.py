@@ -137,6 +137,12 @@ class Generator(Frame):
         self.latexNewlineVar = BooleanVar(self, value = settings.setdefault(LATEX_NEWLINE, False))
         self.latexMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.latexNewlineVar, \
                                        command = lambda: settings.set(LATEX_NEWLINE, self.latexNewlineVar.get()))
+        self.latexMenu.add_separator()
+        self.latexOptionVar = StringVar(self)
+        for option in [PARENTHESE, SQUARE_BRACKET]:
+            self.latexMenu.add_radiobutton(label = option, variable = self.latexOptionVar, \
+                                           command = lambda: settings.set(LATEX_OPTION, self.latexOptionVar.get()))
+        self.latexOptionVar.set(settings.setdefault(LATEX_OPTION, SQUARE_BRACKET))
         self.arrayMenu = Menu(self)
         self.arrayNewlineVar = BooleanVar(self, value = settings.setdefault(ARRAY_NEWLINE, False))
         self.arrayMenu.add_checkbutton(label = NEWLINE_ENDING, variable = self.arrayNewlineVar, \
@@ -455,7 +461,7 @@ class Generator(Frame):
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
                 result = ezs.vl(','.join(self.collectEntries(r, c, False, False, checkEmpty)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False, False, checkEmpty)), resultType == DETERMINANT, settings[LATEX_NEWLINE])
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False, False, checkEmpty)), resultType == DETERMINANT, settings[LATEX_NEWLINE], settings[LATEX_OPTION])
         elif resultFormat == ARRAY:
             arrayOption = settings[ARRAY_OPTION]
             normalArray = arrayOption == NORMAL_ARRAY
