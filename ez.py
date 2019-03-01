@@ -405,7 +405,8 @@ def contains(obj, *args):
     return any(arg in obj for arg in args)
 
 class find:
-    '''A helper class which finds something in the object.'''
+    '''A helper class which finds something in the object.
+       An empty object will result in undefined behaviors.'''
     def __init__(self, obj):
         self.type = type(obj)
         self.empty = self.type()
@@ -425,7 +426,8 @@ class find:
     def after(self, occurrence):
         '''Return the obj after the occurrence.'''
         try:
-            return self.obj[self.obj.index(occurrence) + (self.type != str or len(occurrence)):]
+            isStr = self.type != str
+            return self.obj[self.obj.index(occurrence) + (isStr or len(occurrence)):]
         except:
             raise DataTypeError
 
@@ -497,6 +499,31 @@ class find:
     def count(self):
         '''Calls collections.Counter'''
         return dict(Counter(self.obj))
+
+    def switch(self, obj1, obj2):
+        ''''Switch obj1 and obj2 in obj'''
+        assert type(obj1) == type(obj2) == type(self.obj[0]), 'Inconsistent Datatype'
+        isStr = self.type == str
+        add = lambda obj, item: obj + item if isStr else obj + self.type([item])
+        obj = self.type()
+        lenObj = len(self.obj)
+        len1 = len(obj1) if '__len__' in dir(obj1) else 1
+        len2 = len(obj2) if '__len__' in dir(obj2) else 1
+        nexti = -1
+        for i, n in enumerate(self.obj):
+            if i < nexti:
+                continue
+            else:
+                nexti = -1
+            if i + len1 <= lenObj and self.obj[i:i + len1] == add(self.empty, obj1):
+                nexti = i + len1
+                obj = add(obj, obj2)
+            elif i + len2 <= lenObj and self.obj[i:i + len2] == add(self.empty, obj2):
+                nexti = i + len2
+                obj = add(obj, obj1)
+            else:
+                obj = add(obj, n)
+        return obj
 
 ##flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
 def flatten(items, ignore_types = (str, bytes)):
