@@ -14,6 +14,29 @@ from types import GeneratorType
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = TypeError('Unsupported data type.')
 
+def dupFile(file, copies, pattern = None, numbersOnly = False):
+    '''If no pattern, it will be "filename1".
+    pattern: Use ? for number. Pattern is the suffix.
+    Sample pattern: " (?)" -> "filename (1)"'''
+    pattern = pattern or '?'
+    path = os.path.dirname(file)
+    filename = os.path.basename(file)
+    dotNotFound = '.' not in filename
+    if dotNotFound:
+        for f in os.listdir(path):
+            if filename in f :
+                filename = f
+                break
+        else:
+            raise FileNotFoundError(f'No such file or directory: {file}')
+    dot = find(filename).last('.')
+    suffix = filename[dot:]
+    filename = filename[:dot]
+    if dotNotFound:
+        file += suffix
+    for i in range(1, copies + 1):
+        shutil.copy(file, os.path.join(path, ('' if numbersOnly else filename) + pattern.replace('?', str(i)) + suffix))
+
 def summation(iterable):
     '''Call the __add__ or update function of the iterable.'''
     if isinstance(iterable, GeneratorType):
