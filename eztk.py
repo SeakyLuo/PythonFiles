@@ -28,3 +28,4 @@ def setEntryHint(entry, hint, hintTextColor = 'grey39'):
     entry.bind('<FocusIn>', focusIn)
     entry.bind('<FocusOut>', focusOut)
     setEntry(entry, hint)
+    entry['fg'] = hintTextColor

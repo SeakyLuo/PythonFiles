@@ -14,12 +14,15 @@ from types import GeneratorType
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = TypeError('Unsupported data type.')
 
-def dupFile(file: str, copies: int, pattern: str = None, numbersOnly: bool = False, start: int = 1):
+def dupFile(file: str, copies: int, pattern: str = '', numbersOnly: bool = False, start: int = 1):
     '''If no pattern, it will be "filename1".
     pattern: Use ? for number. Pattern is the suffix.
     Sample pattern: " (?)" -> "filename (1)"
-    start: if not specified, number starts from 1.'''
+    start: if not specified, number starts from 1.
+    Raise AssertionError if '?' is not in pattern.
+    Raise FileNotFoundError if file not found.'''
     pattern = pattern or '?'
+    assert '?' in pattern, 'Invalid Pattern'
     path = os.path.dirname(file)
     filename = os.path.basename(file)
     dotNotFound = '.' not in filename
