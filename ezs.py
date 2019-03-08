@@ -263,7 +263,7 @@ def burn_equation(formula):
     product = '{}{}'.format(new_d['CO2'], new_d['H2O'])[1:]
     print(reactant + product)
 
-def truth_table(formula, output= 'a'):
+def truth_table(formula, output= 'a', saveAsFile = False):
     '''Please enter the formula in terms of a string.
        Use " = >" or "->" for "imply", " + " for "exclusive or".
        Please use () for precendence in case of miscalculations.
@@ -306,7 +306,7 @@ def truth_table(formula, output= 'a'):
                 previous_variable = ''
                 if len(corresponding_stack) == 0:
                     if new_formula.find('(') == -1:
-                        new_formula = 'not {} or'.format(new_formula)
+                        new_formula = f'not {new_formula} or '
                     else:
                         idx = -1
                         while True:
@@ -314,7 +314,7 @@ def truth_table(formula, output= 'a'):
                             if new_formula[idx] == '(':
                                 break
                             idx -= 1
-                        new_formula = new_formula[:idx] + 'not {} or'.format(previous_variable.strip())
+                        new_formula = new_formula[:idx] + 'not {} or '.format(previous_variable.strip())
                 else:
                     idx = -1
                     while True:
@@ -322,7 +322,7 @@ def truth_table(formula, output= 'a'):
                         idx -= 1
                         if idx + 1 == corresponding_stack[-1]-len(new_formula):
                             break
-                    new_formula = new_formula[:idx + 1] + 'not {} or'.format(previous_variable.strip())
+                    new_formula = new_formula[:idx + 1] + 'not {} or '.format(previous_variable.strip())
                 continue
             elif ch == '>':
                 continue
@@ -332,7 +332,7 @@ def truth_table(formula, output= 'a'):
                 if variable not in connective:
                     if variable not in var_lst:
                         var_lst.append(variable)
-                    new_formula += 'method[\'{}\']'.format(variable)
+                    new_formula += f'method[\'{variable}\']'
                 else:
                     new_formula += variable
                 variable = ''
@@ -348,7 +348,7 @@ def truth_table(formula, output= 'a'):
     for col in col_lst:
         length = [6, len(col) + 1][len(col)>5]
         var_len[col] = length
-        first_line += ('{:' + str(length) + '}').format(col)
+        first_line += ('{:%d}' % length).format(col)
     print(first_line)
 
     printout = ''
@@ -358,10 +358,10 @@ def truth_table(formula, output= 'a'):
     ##assign values
     def recursive(method = {}):
         length = len(method)
-        if length<var_num:
+        if length < var_num:
             for tf in TF:
                 method[var_lst[length]] = tf
-                if length == var_num-1:   ## after appending if length == var_num
+                if length == var_num - 1:   ## after appending if length == var_num
                     table.append(repr(method))
                 recursive()
                 del method[var_lst[length]]
@@ -376,10 +376,10 @@ def truth_table(formula, output= 'a'):
             elif col == formula:
                 row.append((eval(new_formula), var_len[col]))
             else:
-                row.append((eval('method[\'{}\']'.format(col)), var_len[col]))
+                row.append((eval(f'method[\'{col}\']'), var_len[col]))
         for tf, length in row:
-            printout += ('{:' + str(length) + '}').format(repr(tf))
-            file_content += '{}, '.format(tf)
+            printout += ('{:%d}' % length).format(repr(tf))
+            file_content += f'{tf}, '
         printout += '\n'
         file_content = file_content[:-1] + '\n'
     printout = printout[:-1]
@@ -391,11 +391,9 @@ def truth_table(formula, output= 'a'):
 ##        file_content = ez.sub(file_content, 'and', '∧', 'or', '∨', 'not', '￢')
         file_content = ez.sub(file_content, 'True', 'T', 'False', 'F')
 
-    try:
-        ez.fwrite(ez.desktop + 'TruthTable.csv', file_content)
-    except:
-        print('傻逼关进程啊！')
-        return
+    if saveAsFile:
+        try: ez.fwrite(ez.desktop + 'TruthTable.csv', file_content)
+        except: print('傻逼关进程啊！')
 
 def integer(number):
     '''Convert a number to an integer if appropriate.

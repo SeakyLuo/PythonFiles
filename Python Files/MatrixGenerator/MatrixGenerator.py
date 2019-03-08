@@ -1,7 +1,7 @@
 from tkinter import *
 from tkinter import messagebox, simpledialog
 from eztk import setEntry, clearEntry
-from random import randrange, shuffle
+from random import randrange, shuffle, randint
 import ez, ezs, os
 from dialog import *
 from constants import *
@@ -59,6 +59,10 @@ class Generator(Frame):
         self.randomMenu.add_separator()
         self.randomMenu.add_command(label = 'Set Random Range', command = self.setRandomRange)
         self.randomMenu.add_command(label = 'Set Random Var', command = self.setRandomVar)
+        self.randomMenu.add_separator()
+        self.uniqueRandomVar = BooleanVar(self, value = settings.setdefault(UNIQUE_RANDOM, True))
+        self.randomMenu.add_checkbutton(label = 'Unique Randomness', variable = self.uniqueRandomVar, \
+                                        command = lambda: settings.set(UNIQUE_RANDOM, self.uniqueRandomVar.get()))
         self.insertMenu.add_cascade(label = RANDOM, menu = self.randomMenu)
         ## Edit Menu
         self.editMenu = Menu(self)
@@ -88,8 +92,17 @@ class Generator(Frame):
         self.modifyMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
         self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
         self.modifyMenu.add_separator()
-        self.modifyMenu.add_command(label = SORT, command = self.sort)
-        self.modifyMenu.add_command(label = REVERSE, command = self.reverse)
+        self.sortMenu = Menu(self, tearoff = False)
+        self.sortMenu.add_command(label = SORT + ' ' + ROW, command = lambda: self.sort(ROW))
+        self.sortMenu.add_command(label = SORT + ' ' + COLUMN, command = lambda: self.sort(COLUMN))
+        self.sortMenu.add_command(label = SORT + ' ' + ALL, command = lambda: self.sort(ALL))
+        self.modifyMenu.add_cascade(label = SORT, menu = self.sortMenu)
+        self.reverseMenu = Menu(self, tearoff = False)
+        self.reverseMenu.add_command(label = REVERSE + ' ' + ROW, command = lambda: self.reverse(ROW))
+        self.reverseMenu.add_command(label = REVERSE + ' ' + COLUMN, command = lambda: self.reverse(COLUMN))
+        self.reverseMenu.add_command(label = REVERSE + ' ' + ALL, command = lambda: self.reverse(ALL))
+        self.modifyMenu.add_cascade(label = REVERSE, menu = self.reverseMenu)
+
         ## Generate Menu
         self.generateMenu = Menu(self)
         self.generateMenu.add_command(label = GENERATE, accelerator = shortcuts[GENERATE], command = self.generate)
@@ -162,7 +175,7 @@ class Generator(Frame):
         self.helpMenu.add_command(label = 'Adjust Entry Width', command = self.adjustWidth)
         self.rememberSizeVar = BooleanVar(self, value = settings.setdefault(REMEMBER_SIZE, (-1, -1)) != (-1, -1))
         self.helpMenu.add_checkbutton(label = 'Remember Size', variable = self.rememberSizeVar, \
-                                          command = lambda: settings.set(REMEMBER_SIZE, (self.getRow(), self.getCol()) if self.rememberSizeVar.get() else (-1, -1)))
+                                      command = lambda: settings.set(REMEMBER_SIZE, self.getRowCol() if self.rememberSizeVar.get() else (-1, -1)))
         self.helpMenu.add_separator()
         self.helpMenu.add_command(label = 'Other Keyboard Shortcuts', command = lambda: messagebox.showinfo(title = 'Shortcuts', message = otherShortcuts))
         for name, menu in zip(['Insert', 'Edit', 'Modify', 'Generate', 'Result', 'Help'], [self.insertMenu, self.editMenu, self.modifyMenu, self.generateMenu, self.resultMenu, self.helpMenu]):
@@ -266,6 +279,9 @@ class Generator(Frame):
         try: return int(self.colEntry.get())
         except ValueError: return 0
 
+    def getRowCol(self):
+        return self.getRow(), self.getCol()
+
     def setRow(self, row):
         setEntry(self.rowEntry, row)
 
@@ -275,9 +291,6 @@ class Generator(Frame):
     def setRowCol(self, row, col):
         self.setRow(row)
         self.setCol(col)
-
-    def getRowCol(self):
-        return self.getRow(), self.getCol()
 
     def syncRowCol(self, size):
         self.setRowCol(size, size)
@@ -497,7 +510,7 @@ class Generator(Frame):
             self.clear(2)
         return result
 
-    def collectEntries(self, r, c, evaluate = True, nested = False, withEmpty = True):
+    def collectEntries(self, r: int, c: int, evaluate: bool = True, nested: bool = False, withEmpty: bool = True):
         entries = []
         for i in range(r):
             if nested: lst = []
@@ -907,7 +920,6 @@ class Generator(Frame):
         fEntry.focus()
         self.modifyState()
 
-
     def transpose(self):
         resultType = self.resultType.get()
         if resultType not in [MATRIX, DETERMINANT, VECTOR]:
@@ -999,6 +1011,7 @@ class Generator(Frame):
     def randomFill(self):
         resultType = self.resultType.get()
         row, col = self.getRowCol()
+        total = row * col
         if not row or not col:
             if resultType == MATRIX:
                 if not row:
@@ -1012,21 +1025,26 @@ class Generator(Frame):
             self.setRowCol(row, col)
             self.generateEntries(row, col)
         option = settings[RANDOM_MATRIX_OPTION]
-        if option == RANDOM_INT_MATRIX:
-            setEntryFunc = lambda entry: setEntry(entry, randrange(settings[RANDOM_MIN], settings[RANDOM_MAX] + 1))
-        elif option == RANDOM_VAR_MATRIX:
-            isLatex = self.resultFormat.get() == LATEX
-            setEntryFunc = lambda entry: setEntry(entry, settings[RANDOM_VAR] + ('_{%s}' % randrange(settings[RANDOM_MIN], settings[RANDOM_MAX] + 1) if isLatex else str(randrange(settings[RANDOM_MIN], settings[RANDOM_MAX] + 1))))
+        randMin = settings[RANDOM_MIN]
+        randMax = settings[RANDOM_MAX]
+        if option in [RANDOM_INT_MATRIX, RANDOM_VAR_MATRIX]:
+            if settings[UNIQUE_RANDOM]:
+                values = list(range(randMin, randMax + 1)) + [randint(randMin, randMax) for _ in range(randMin + total - randMax - 1)]
+                shuffle(values)
+            else:
+                values = [randint(randMin, randMax)  for _ in range(total)]
+            if option == RANDOM_VAR_MATRIX and self.resultFormat.get() == LATEX:
+                values = ['{%s}_{%d}' % (settings[RANDOM_VAR], value) for value in values]
         elif option == RANDOM_MULTIVAR_MATRIX:
-            setEntryFunc = lambda entry: setEntry(entry, chr(randrange(ord('a'), ord('z') + 1)))
+            values = [chr(randrange(ord('a'), ord('z') + 1)) for _ in range(total)]
         hasEmpty = False
         for entry in self.entries.values():
             if not entry.get():
                 hasEmpty = True
-                setEntryFunc(entry)
+                setEntry(entry, values.pop())
         if not hasEmpty:
             for entry in self.entries.values():
-                setEntryFunc(entry)
+                setEntry(entry, values.pop())
         self.modifyState()
 
     def randomReorder(self):
@@ -1038,10 +1056,10 @@ class Generator(Frame):
             setEntry(entry, values.pop(0))
         self.modifyState()
 
-    def sort(self):
+    def sort(self, target):
         row, col = self.getRowCol()
         if not row or not col or not self.entries:
-            return 'break'
+            return
         varFormat = True
         vars = []
         for i in range(row):
@@ -1055,34 +1073,61 @@ class Generator(Frame):
                     break
                 elif varType == int:
                     vars.append((fText.before('_'), varNumber))
-        if varFormat:
-            values = [f'{var}_' + '{' + str(number) + '}' for var, number in sorted(vars)]
+        if target == ALL:
+            if varFormat:
+                values = [f'{var}_{number}' for var, number in sorted(vars)]
+            else:
+                try: values = sorted(self.collectEntries(row, col))
+                except: values = sorted(self.collectEntries(row, col, False))
+            for i in range(row * col):
+                setEntry(self.entries[divmod(i, col)], values[i])
         else:
-            try: values = sorted(self.collectEntries(row, col))
-            except: values = sorted(self.collectEntries(row, col, False))
-        for i in range(row * col):
-            setEntry(self.entries[divmod(i, col)], values[i])
+            if varFormat:
+                vars = [vars[i:i + col] for i in range(row)]
+                if target == ROW:
+                    values = [sorted(row) for row in vars]
+                else:
+                    values = sorted(values)
+                values = [f'{var}_{number}' for var, number in sorted(vars)]
+            else:
+                try: values = self.collectEntries(row, col, True, True)
+                except: values = self.collectEntries(row, col, False, True)
+                if target == ROW:
+                    values = [sorted(row) for row in values]
+                else:
+                    values = sorted(values)
+            for i in range(row):
+                for j in range(col):
+                    setEntry(self.entries[(i, j)], values[i][j])
         self.modifyState()
-        return 'break'
 
-    def reverse(self):
+    def reverse(self, target):
         row, col = self.getRowCol()
         if not row or not col or not self.entries:
-            return 'break'
-        for i in range(row * col // 2):
-            r, c = divmod(i, col)
-            e1, e2 = self.entries[(r, c)], self.entries[(row - r - 1, col - c - 1)]
-            t1, t2 = e2.get(), e1.get()
-            setEntry(e1, t1)
-            setEntry(e2, t2)
+            return
+        if target == ALL:
+            for i in range(row * col // 2):
+                r, c = divmod(i, col)
+                e1, e2 = self.entries[(r, c)], self.entries[(row - r - 1, col - c - 1)]
+                t1, t2 = e2.get(), e1.get()
+                setEntry(e1, t1)
+                setEntry(e2, t2)
+        else:
+            values = self.collectEntries(row, col, False, True)
+            if target == ROW:
+                values = [list(reversed(row)) for row in values]
+            else:
+                values = list(reversed(values))
+            for i in range(row):
+                for j in range(col):
+                    setEntry(self.entries[(i, j)], values[i][j])
         self.modifyState()
-        return 'break'
 
     def reshape(self):
         r, c = self.getRowCol()
         size = r * c
         if size <= 1:
-            return 'break'
+            return
         factors = ezs.findAllFactors(size)
         if ezs.isPrime(size) or (size > maxSize and len(factors) == 4):
             x, y = c, r
@@ -1112,7 +1157,6 @@ class Generator(Frame):
         for i, value in enumerate(values):
             setEntry(self.entries[divmod(i, y)], value)
         self.modifyState()
-        return 'break'
 
     def triangularMatrix(self, mode):
         for i, j in self.entries:
