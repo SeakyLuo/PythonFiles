@@ -891,7 +891,6 @@ class Generator(Frame):
         row, col = self.getRowCol()
         if row == 0 or col == 0 or (isRow and row == 1) or (not isRow and col == 1):
             return
-        size = col if isRow else row
         autoSwitch = (isRow and row == 2) or (not isRow and col == 2)
         fEntry = self.getFocusEntry()
         result = ''
@@ -899,18 +898,19 @@ class Generator(Frame):
             if autoSwitch:
                 size1, size2 = 0, 1
             else:
-                result = simpledialog.askstring(title = 'Switch ' + target, prompt = f'Input {target[:-1]} numbers x,y', initialvalue = result)
+                result = simpledialog.askstring(title = 'Switch ' + target, prompt = f'Input {target[:-1]} Numbers x,y', initialvalue = result)
                 if not result:
                     break
                 try:
+                    size = row if isRow else col
                     size1, size2 = result.split(',')
                     size1, size2 = eval(size1) - 1, eval(size2) - 1
-                    if size1 < 0 or size1 >= size or size2 < 0 or size2 >= size:
+                    if not (0 <= size1 < size and 0 <= size2 < size):
                         raise Exception()
                 except:
                     messagebox.showerror(title = 'Error', message = 'Invalid Input')
                     continue
-            for i in range(size):
+            for i in range(col if isRow else row):
                 e1 = self.entries[(size1, i) if isRow else (i, size1)]
                 e2 = self.entries[(size2, i) if isRow else (i, size2)]
                 t1, t2 = e1.get(), e2.get()
