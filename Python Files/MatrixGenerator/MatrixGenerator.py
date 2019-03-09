@@ -386,7 +386,7 @@ class Generator(Frame):
                     continue
                 entry = Entry(self.entryFrame, width = width)
                 self.bindMoveFocus(entry)
-                entry.bind('<KeyRelease>', lambda event: self.onEntryChange())
+                entry.bind('<KeyRelease>', self.onEntryChange)
                 bindtags = entry.bindtags()
                 entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
                 entry.grid(row = i + 1, column = j + 1, sticky = NSEW)
@@ -403,7 +403,8 @@ class Generator(Frame):
                 self.entryLabels[(0, j)].grid_forget()
                 del self.entryLabels[(0, j)]
 
-    def onEntryChange(self):
+    def onEntryChange(self, event):
+        print(event.keysym)
         self.modifyState()
 
     def bindMoveFocus(self, entry):
