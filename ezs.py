@@ -265,11 +265,12 @@ def burn_equation(formula):
 
 def truth_table(formula, output= 'a', saveAsFile = False):
     '''Please enter the formula in terms of a string.
-       Use " = >" or "->" for "imply", " + " for "exclusive or".
+       Use "=>" or "->" for "imply".
        Please use () for precendence in case of miscalculations.
        Default output table will be of Ts and Fs.
        Change the value of output to "full" to output a complete table,
-       to "num" to output a table of 1s and 0s.'''
+       to "num" to output a table of 1s and 0s.
+       Abbreviation: tt'''
     TF = [True, False]
     connective = ['and', 'or', 'not']
 
@@ -302,7 +303,7 @@ def truth_table(formula, output= 'a', saveAsFile = False):
                 compound = formula[start_pos:i].strip()
                 if compound not in compound_dict:
                     is_compound = True
-            elif (ch == ' = ' or ch == '-') and formula[i + 1] == '>':
+            elif ch in ['=', '-'] and formula[i + 1] == '>':
                 previous_variable = ''
                 if len(corresponding_stack) == 0:
                     if new_formula.find('(') == -1:
@@ -314,19 +315,17 @@ def truth_table(formula, output= 'a', saveAsFile = False):
                             if new_formula[idx] == '(':
                                 break
                             idx -= 1
-                        new_formula = new_formula[:idx] + 'not {} or '.format(previous_variable.strip())
+                        new_formula = new_formula[:idx] + f'not {previous_variable.strip()} or '
                 else:
                     idx = -1
                     while True:
                         previous_variable = new_formula[idx] + previous_variable
                         idx -= 1
-                        if idx + 1 == corresponding_stack[-1]-len(new_formula):
+                        if idx + 1 == corresponding_stack[-1] - len(new_formula):
                             break
-                    new_formula = new_formula[:idx + 1] + 'not {} or '.format(previous_variable.strip())
+                    new_formula = new_formula[:idx + 1] + f'not {previous_variable.strip()} or '
                 continue
             elif ch == '>':
-                continue
-            elif ch == ' + ': ##(p and not q) or (not p and q)
                 continue
             if variable:
                 if variable not in connective:
@@ -346,7 +345,7 @@ def truth_table(formula, output= 'a', saveAsFile = False):
     var_len = {}
     first_line = ''
     for col in col_lst:
-        length = [6, len(col) + 1][len(col)>5]
+        length = (len(col) + 1) if len(col) > 5 else 6
         var_len[col] = length
         first_line += ('{:%d}' % length).format(col)
     print(first_line)
@@ -394,6 +393,8 @@ def truth_table(formula, output= 'a', saveAsFile = False):
     if saveAsFile:
         try: ez.fwrite(ez.desktop + 'TruthTable.csv', file_content)
         except: print('傻逼关进程啊！')
+## Abbreviation: tt
+tt = truth_table
 
 def integer(number):
     '''Convert a number to an integer if appropriate.
