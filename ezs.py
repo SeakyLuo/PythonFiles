@@ -272,73 +272,64 @@ def truth_table(formula, output= 'a', saveAsFile = False):
        to "num" to output a table of 1s and 0s.
        Abbreviation: tt'''
     TF = [True, False]
-    connective = ['and', 'or', 'not']
+    keyword = ['and', 'or', 'not', 'True', 'False']
 
-    new_formula = ''
+    new = '' ## new formula
     var_lst = []  ## for p, q, r
-    compound_dict = {} ## for (p and q):"method['p'] and method['q']"
+    compound_dict = {} ## for (p and q): "method['p'] and method['q']"
     col_lst = []  ## for display
     parentheses_stack = []  ## put parentheses' indice
     corresponding_stack = [] ## put parentheses' indice of new_formula
     variable = ''
     compound = ''
-    is_compound = False
+    isCompound = False
 
-    formula.strip()
+    formula = formula.strip()
     if formula[-1].isalpha():
         formula += ' '
     for i, ch in enumerate(formula):
         if ch.isalpha():
             variable += ch
-        else:
-            if ch == '(':
-                parentheses_stack.append(i)
-                corresponding_stack.append(len(new_formula) + 1)
-            elif ch == ')':
-                try:
-                    start_pos = parentheses_stack.pop() + 1
-                except:
-                    print('The numbers of left and right parentheses do not match!')
-                    return
-                compound = formula[start_pos:i].strip()
-                if compound not in compound_dict:
-                    is_compound = True
-            elif ch in ['=', '-'] and formula[i + 1] == '>':
-                previous_variable = ''
-                if len(corresponding_stack) == 0:
-                    if new_formula.find('(') == -1:
-                        new_formula = f'not {new_formula} or '
-                    else:
-                        idx = -1
-                        while True:
-                            previous_variable = new_formula[idx] + previous_variable
-                            if new_formula[idx] == '(':
-                                break
-                            idx -= 1
-                        new_formula = new_formula[:idx] + f'not {previous_variable.strip()} or '
+            continue
+        elif ch == '(':
+            parentheses_stack.append(i)
+            corresponding_stack.append(len(new) + 1)
+        elif ch == ')':
+            try:
+                start = parentheses_stack.pop() + 1
+            except:
+                print('The numbers of left and right parentheses do not match!')
+                return
+            compound = formula[start:i].strip()
+            if compound not in compound_dict:
+                isCompound = True
+        if variable:
+            if variable in keyword:
+                new += variable
+            else:
+                if variable not in var_lst:
+                    var_lst.append(variable)
+                new += f'method[\'{variable}\']'
+            variable = ''
+        if isCompound:
+            compound_dict[compound] = new[corresponding_stack.pop():]
+            isCompound = False
+        if ch in ['=', '-'] and formula[i + 1] == '>':
+            if len(corresponding_stack) == 0:
+                left_p = new.find('(')
+                if left_p == -1:
+                    new = f'not {new} or '
                 else:
-                    idx = -1
-                    while True:
-                        previous_variable = new_formula[idx] + previous_variable
-                        idx -= 1
-                        if idx + 1 == corresponding_stack[-1] - len(new_formula):
-                            break
-                    new_formula = new_formula[:idx + 1] + f'not {previous_variable.strip()} or '
-                continue
-            elif ch == '>':
-                continue
-            if variable:
-                if variable not in connective:
-                    if variable not in var_lst:
-                        var_lst.append(variable)
-                    new_formula += f'method[\'{variable}\']'
-                else:
-                    new_formula += variable
-                variable = ''
-            if is_compound:
-                compound_dict[compound] = new_formula[corresponding_stack.pop():]
-                is_compound = False
-            new_formula += ch
+                    prev = new[left_p:].strip()
+                    new = new[:left_p] + f'not {prev} or '
+            else:
+                idx = corresponding_stack[-1]
+                prev = new[idx:].strip()
+                new = new[:idx] + f'not {prev} or '
+            continue
+        elif ch == '>':
+            continue
+        new += ch
 
     var_num = len(var_lst)
     col_lst = var_lst + list(compound_dict.keys()) + [formula]
@@ -373,7 +364,7 @@ def truth_table(formula, output= 'a', saveAsFile = False):
             if col in compound_dict:
                 row.append((eval(compound_dict[col]), var_len[col]))
             elif col == formula:
-                row.append((eval(new_formula), var_len[col]))
+                row.append((eval(new), var_len[col]))
             else:
                 row.append((eval(f'method[\'{col}\']'), var_len[col]))
         for tf, length in row:
