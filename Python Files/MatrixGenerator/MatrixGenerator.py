@@ -15,6 +15,8 @@ class Generator(Frame):
         self.master = master
 
         ## init variables
+        self.row = 0
+        self.col = 0
         self.entries = {}
         self.entryLabels = {}
         self.stateIndex = 0
@@ -197,6 +199,10 @@ class Generator(Frame):
         self.rowEntry = Entry(self.topFrame)
         self.colLabel = Label(self.topFrame, text = COLUMN + ':')
         self.colEntry = Entry(self.topFrame)
+        # Move focus before Emptry Delete
+        # bindtags = self.colEntry.bindtags()
+        # self.colEntry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
+        # self.colEntry.bind('<BackSpace>', self.rowEntry.focus())
         self.sizeEntries = [self.rowEntry, self.colEntry]
         self.rowEntry.focus()
 
@@ -272,12 +278,10 @@ class Generator(Frame):
         self.modifyState()
 
     def getRow(self):
-        try: return int(self.rowEntry.get())
-        except ValueError: return 0
+        return int(self.rowEntry.get() or self.row)
 
     def getCol(self):
-        try: return int(self.colEntry.get())
-        except ValueError: return 0
+        return int(self.colEntry.get() or self.col)
 
     def getRowCol(self):
         return self.getRow(), self.getCol()
@@ -364,6 +368,8 @@ class Generator(Frame):
         self.generateEntries(r, c)
         if self.rememberSizeVar.get():
             settings[REMEMBER_SIZE] = (r, c)
+        self.row = r
+        self.col = c
         self.modifyState()
 
     def generateEntries(self, row, col):
@@ -387,6 +393,7 @@ class Generator(Frame):
                 entry = Entry(self.entryFrame, width = width)
                 self.bindMoveFocus(entry)
                 entry.bind('<KeyRelease>', self.onEntryChange)
+                entry.bind('<BackSpace>', self.beforeDelete)
                 bindtags = entry.bindtags()
                 entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
                 entry.grid(row = i + 1, column = j + 1, sticky = NSEW)
@@ -403,8 +410,20 @@ class Generator(Frame):
                 self.entryLabels[(0, j)].grid_forget()
                 del self.entryLabels[(0, j)]
 
+    def beforeDelete(self, event):
+        entry = self.getFocusEntry()
+        if entry.get(): return
+        info = entry.grid_info()
+        r, c = info['row'] - 1, info['column'] - 1
+        col = self.getCol()
+        if r == 0 and c == 0:
+            self.colEntry.focus()
+        elif c == 0:
+            self.entries[(r - 1, col - 1)].focus()
+        else:
+            self.entries[(r, c - 1)].focus()
+
     def onEntryChange(self, event):
-        print(event.keysym)
         self.modifyState()
 
     def bindMoveFocus(self, entry):
@@ -1038,14 +1057,16 @@ class Generator(Frame):
                 values = ['{%s}_{%d}' % (settings[RANDOM_VAR], value) for value in values]
         elif option == RANDOM_MULTIVAR_MATRIX:
             values = [chr(randrange(ord('a'), ord('z') + 1)) for _ in range(total)]
-        hasEmpty = False
-        for entry in self.entries.values():
-            if not entry.get():
-                hasEmpty = True
-                setEntry(entry, values.pop())
-        if not hasEmpty:
+        if any(not entry.get() for entry in self.entries.values()):
+            copy = values[:]
             for entry in self.entries.values():
-                setEntry(entry, values.pop())
+                content = ez.tryEval(entry.get())
+                if content not in values:
+                    values = copy
+                    break
+                values.remove(content)
+        for entry in self.entries.values():
+            setEntry(entry, values.pop())
         self.modifyState()
 
     def randomReorder(self):
