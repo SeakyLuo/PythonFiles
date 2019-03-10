@@ -1057,16 +1057,14 @@ class Generator(Frame):
                 values = ['{%s}_{%d}' % (settings[RANDOM_VAR], value) for value in values]
         elif option == RANDOM_MULTIVAR_MATRIX:
             values = [chr(randrange(ord('a'), ord('z') + 1)) for _ in range(total)]
-        if any(not entry.get() for entry in self.entries.values()):
-            copy = values[:]
-            for entry in self.entries.values():
-                content = ez.tryEval(entry.get())
-                if content not in values:
-                    values = copy
-                    break
-                values.remove(content)
+        hasEmpty = False
         for entry in self.entries.values():
-            setEntry(entry, values.pop())
+            if not entry.get():
+                hasEmpty = True
+                setEntry(entry, values.pop())
+        if not hasEmpty:
+            for entry in self.entries.values():
+                setEntry(entry, values.pop())
         self.modifyState()
 
     def randomReorder(self):
