@@ -10,6 +10,7 @@ from collections.abc import Iterable
 from collections import Counter
 from functools import reduce
 from types import GeneratorType
+from itertools import chain, combinations
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = TypeError('Unsupported data type.')
@@ -520,8 +521,12 @@ class find:
     def power_set(self):
         '''Find all the subs of obj except the empty sub and itself.
            This fuction returns a list because set is not ordered.'''
-        length = len(self.obj)
-        return [self.obj[j:j + i] for i in range(1, length) for j in range(length + 1 - i)]
+        return list(chain.from_iterable(combinations(self.obj, r) for r in range(len(self.obj) + 1)))
+##        res = [[]]
+##        for n in self.obj:
+##            for i in range(len(res)):
+##                res.append(res[i] + [n])
+##        return res
 
     def count(self):
         '''Calls collections.Counter'''

@@ -473,12 +473,9 @@ def permutations(*args):
     #     if len(p) == length and p not in methods:
     #         methods.append(p)
     #         return
-    #     lst = list(args)
-    #     for i in p:
-    #         lst.remove(i)
-    #     for arg in lst:
-    #         recursive(p + (arg, ))
-
+    #     for n in args:
+    #         if n not in p:
+    #             recursive(p + (n, ))
     # recursive()
     # return methods
 
