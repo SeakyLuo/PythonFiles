@@ -4,6 +4,7 @@ import time
 import urllib.request, urllib.parse
 import platform
 import threading, subprocess, zipfile, ntpath, shutil
+import random
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
@@ -14,6 +15,10 @@ from itertools import chain, combinations
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = TypeError('Unsupported data type.')
+
+def random_pop(iterable: list):
+    '''Randomly remove and return an item from the list'''
+    return iterable.pop(random.randrange(0, len(iterable)))
 
 def dupFile(file: str, copies: int, pattern: str = '', numbersOnly: bool = False, start: int = 1):
     '''If no pattern, it will be "filename1".
@@ -188,7 +193,7 @@ def py2pyw(directory, pywname = '', reminder = False):
     threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
                      args = (directory, lambda filename: fwrite(pywname or filename + 'w', fread(filename, False)), reminder)).start()
 
-def rmlnk(path = None):
+def rmlnk(path = desktop):
     ''' Remove "- 快捷方式"'''
     for folder in os.listdir(path):
         folder = os.path.join(path, folder)
@@ -394,14 +399,14 @@ def levenshteinDistance(s1, s2):
         s1, s2 = s2, s1
 
     distances = range(len(s1) + 1)
-    for i2, c2 in enumerate(s2):
-        distances_ = [i2+1]
-        for i1, c1 in enumerate(s1):
+    for i, c2 in enumerate(s2):
+        lst = [i + 1]
+        for j, c1 in enumerate(s1):
             if c1 == c2:
-                distances_.append(distances[i1])
+                lst.append(distances[j])
             else:
-                distances_.append(1 + min((distances[i1], distances[i1 + 1], distances_[-1])))
-        distances = distances_
+                lst.append(1 + min(distances[j], distances[j + 1], lst[-1]))
+        distances = lst
     return distances[-1]
 
 def similar2(obj1, obj2, capital = True):

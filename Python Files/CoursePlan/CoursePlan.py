@@ -238,7 +238,7 @@ class CoursePlan(Frame):
         self.clear()
         self.focusIn(1)
         for box, info in zip(self.boxList, self.courseInfo[index]):
-            box.insert(0, info[i])
+            box.insert(0, info)
 
     def modify(self, button):
         self.clear()

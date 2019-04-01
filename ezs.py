@@ -5,6 +5,16 @@ from decimal import Decimal
 from functools import reduce
 import itertools
 
+def argmax(dictionary: dict) -> list:
+    '''Return a list of keys with the maximum value.'''
+    target = max(dictionary.values())
+    return [ key for key, value in dictionary.items() if value == target ]
+
+def argmix(dictionary: dict) -> list:
+    '''Return a list of keys with the maximum value.'''
+    target = min(dictionary.values())
+    return [ key for key, value in dictionary.items() if value == target ]
+
 def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
     '''Matrix can be any 2d iterable'''
     r = len(matrix)
