@@ -5,15 +5,30 @@ from decimal import Decimal
 from functools import reduce
 import itertools
 
-def argmax(dictionary: dict) -> list:
-    '''Return a list of keys with the maximum value.'''
-    target = max(dictionary.values())
-    return [ key for key, value in dictionary.items() if value == target ]
+def argmax(obj) -> list:
+    '''Input obj type can be list, tuple or dict.
+    Return a list of indices/keys with the maximum value.'''    
+    return __arghelper(obj, lambda v, value: v > value)
 
-def argmix(dictionary: dict) -> list:
-    '''Return a list of keys with the maximum value.'''
-    target = min(dictionary.values())
-    return [ key for key, value in dictionary.items() if value == target ]
+def argmin(obj) -> list:
+    '''Input obj type can be list, tuple or dict.
+    Return a list of indices/keys with the minimum value.''' 
+    return __arghelper(obj, lambda v, value: v < value)
+
+def __arghelper(obj, booleanExpression) -> list:
+    if not isinstance(obj, dict):
+        obj = { i: n for i, n in enumerate(obj) }
+    key, value = [], None
+    for k, v in obj.items():
+        if not key:
+            key.append(k)
+            value = v
+        elif booleanExpression(v, value):
+            key = [k]
+            value = v
+        elif v == value:
+            key.append(k)
+    return key
 
 def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
     '''Matrix can be any 2d iterable'''
