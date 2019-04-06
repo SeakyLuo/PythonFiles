@@ -537,9 +537,12 @@ def npickm(n, m):
     # recursive()
     # return methods
 
-def fraction(n, m):
-    '''Reduce n/m'''
-    output = '{}/{}'.format(n, m)
+def fraction(n, m, add = 0):
+    '''Reduce n/m.
+       If add, reduce n/m + add, which is (n + m * add) / m'''
+    add_sign = '+' if add > 0 else ''
+    output = f'{n}/{m}{add_sign}{add}'
+    n += add * m
     negative = ''
     if n * m < 0:
         negative = '-'
@@ -575,7 +578,7 @@ def fraction(n, m):
     elif set(findPrimeFactors(new_m, False)).issubset({2, 5}):
         output += ' = '
     else:
-        output += '≈'
+        output += ' ≈ '
     output += negative + repr(quotient)
     print(output)
 
