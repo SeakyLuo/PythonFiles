@@ -21,7 +21,8 @@ def random_pop(iterable: list):
     return iterable.pop(random.randrange(0, len(iterable)))
 
 def dupFile(file: str, copies: int, pattern: str = '', numbersOnly: bool = False, start: int = 1):
-    '''If no pattern, it will be "filename1".
+    '''Duplicate a file into some copies with names following a pattern.
+    If no pattern, it will be "filename1".
     pattern: Use ? for number. Pattern is the suffix.
     Sample pattern: " (?)" -> "filename (1)"
     start: if not specified, number starts from 1.
@@ -48,19 +49,18 @@ def dupFile(file: str, copies: int, pattern: str = '', numbersOnly: bool = False
         shutil.copy(file, os.path.join(path, ('' if numbersOnly else filename) + pattern.replace('?', str(i)) + suffix))
 
 def summation(iterable):
-    '''Call the __add__ or update function of the iterable.'''
+    '''Add all the elements of an iterable together.
+    Call the __add__ or update function of the element of the iterable.'''
     if isinstance(iterable, GeneratorType):
         iterable = list(iterable)
-        typ = type(iterable[0])
-    else:
-        typ = type(iterable[0])
-    if '__add__' in dir(typ):
+    typ = type(iterable[0])
+    if hasattr(typ, '__add__'):
         return reduce(typ.__add__, iterable)
-    if 'update' in dir(typ):
-        def u(a, b):
+    if hasattr(typ, 'update'):
+        def update(a, b):
             a.update(b)
             return a
-        return reduce(u, iterable)
+        return reduce(update, iterable)
     raise DataTypeError
 
 def countLines(path, filetype):
@@ -77,7 +77,9 @@ def countLines(path, filetype):
     return count
 
 class Settings:
-    '''Recommend passing __file__ to file'''
+    '''Settings is for remembering user settings using a dict.
+    It saves the settings automatically on program exit.
+    Recommend passing __file__ to file'''
     def __init__(self, file, settingsName = 'settings.json'):
         self.path = os.path.dirname(file)
         self.settingsName = settingsName
@@ -194,7 +196,7 @@ def py2pyw(directory, pywname = '', reminder = False):
                      args = (directory, lambda filename: fwrite(pywname or filename + 'w', fread(filename, False)), reminder)).start()
 
 def rmlnk(path = desktop):
-    ''' Remove "- 快捷方式"'''
+    ''' Remove "- 快捷方式" from a path.'''
     for folder in os.listdir(path):
         folder = os.path.join(path, folder)
         if folder.endswith('.lnk'):
@@ -394,7 +396,7 @@ def similar(obj1, obj2, capital = True):
     else:
         return grade(obj2, obj1)
 
-def levenshteinDistance(s1, s2):
+def __levenshteinDistance(s1, s2):
     if len(s1) > len(s2):
         s1, s2 = s2, s1
 
@@ -415,7 +417,7 @@ def similar2(obj1, obj2, capital = True):
     if capital:
         obj1 = obj1.lower()
         obj2 = obj2.lower()
-    ld = levenshteinDistance(obj1, obj2)
+    ld = __levenshteinDistance(obj1, obj2)
     return 1 - ld / len(obj2)
 
 def predir():
@@ -424,7 +426,7 @@ def predir():
     os.chdir(path[:find(path).last('\\')])
 
 def isMultiple(obj1, obj2):
-    '''Check whether obj1 is the multiple of obj2'''
+    '''Check whether obj1 is a multiple of obj2'''
     type1 = type(obj1)
     assert type1 == type(obj2), 'Inconsistent data type'
     if type1 == int: return obj1 % obj2 == 0
@@ -435,6 +437,7 @@ def isMultiple(obj1, obj2):
     return all(obj1[i:i + length2] == obj2 for i in range(0, length1, length2))
 
 def contains(obj, *args):
+    '''Check whether obj contains any of the args.'''
     return any(arg in obj for arg in args)
 
 class find:
@@ -598,9 +601,10 @@ def without(obj, *args):
         return obj.difference(args)
     raise DataTypeError
 
-def replaceWith(obj, withObject, *args):
+def replaceWith(obj, withObj, *args):
+    '''Replace the occurence of args in obj with withObj.'''
     argList = []
-    for arg in args: argList += [arg, withObject]
+    for arg in args: argList += [arg, withObj]
     return sub(obj, *argList)
 
 def substitute(obj, *args):
