@@ -20,18 +20,26 @@ def random_pop(iterable: list):
     '''Randomly remove and return an item from the list'''
     return iterable.pop(random.randrange(0, len(iterable)))
 
-def dupFile(file: str, copies: int, pattern: str = '', numbersOnly: bool = False, start: int = 1):
+def dupFolder(path: str, copies: int, pattern: str = '?', start: int = 1):
+    '''Duplicate a folder into some copies with names following a pattern.
+    pattern: Use ? for number. Pattern is the suffix.
+    Sample pattern: "folder (?)" -> "folder (1)"
+    start: if not specified, number starts from 1.
+    Raise AssertionError if '?' is not in pattern.'''
+    assert '?' in pattern, 'Invalid Pattern'
+    for i in range(start, start + copies):
+        os.makedirs(os.path.join(path, pattern.replace('?', str(i))))
+
+def dupFile(name: str, copies: int, pattern: str = '?', start: int = 1):
     '''Duplicate a file into some copies with names following a pattern.
-    If no pattern, it will be "filename1".
     pattern: Use ? for number. Pattern is the suffix.
     Sample pattern: " (?)" -> "filename (1)"
     start: if not specified, number starts from 1.
     Raise AssertionError if '?' is not in pattern.
     Raise FileNotFoundError if file not found.'''
-    pattern = pattern or '?'
     assert '?' in pattern, 'Invalid Pattern'
-    path = os.path.dirname(file)
-    filename = os.path.basename(file)
+    path = os.path.dirname(name)
+    filename = os.path.basename(name)
     dotNotFound = '.' not in filename
     if dotNotFound:
         for f in os.listdir(path):
@@ -39,14 +47,14 @@ def dupFile(file: str, copies: int, pattern: str = '', numbersOnly: bool = False
                 filename = f
                 break
         else:
-            raise FileNotFoundError(f'No such file or directory: {file}')
+            raise FileNotFoundError(f'No such file or directory: {name}')
     dot = find(filename).last('.')
     suffix = filename[dot:]
     filename = filename[:dot]
     if dotNotFound:
-        file += suffix
+        name += suffix
     for i in range(start, start + copies):
-        shutil.copy(file, os.path.join(path, ('' if numbersOnly else filename) + pattern.replace('?', str(i)) + suffix))
+        shutil.copy(name, os.path.join(path, pattern.replace('?', str(i)) + suffix))
 
 def summation(iterable):
     '''Add all the elements of an iterable together.
@@ -141,7 +149,7 @@ def translate(string, to_l = 'zh', from_l = 'en'):
     target = sub(target, "&#39;", "'")
     return target
 
-def handlepy(directory, func, reminder = False):
+def __handlepy(directory, func, reminder = False):
     ''' Do something, meaning that func(directory), to a py file or a folder of py files.
         func must has exactly one argument filename.
         '''
@@ -183,7 +191,7 @@ def exportpy(directory, withConsole, zipFile = True, reminder = False):
                 zipFile.write(os.path.join(prefix, f))
             shutil.rmtree(prefix)
         os.chdir(currDir)
-    threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
+    threading.Thread(target = lambda directory, func, reminder: __handlepy(directory, func, reminder), \
                      args = (directory, export, reminder)).start()
 
 def py2pyw(directory, pywname = '', reminder = False):
@@ -192,7 +200,7 @@ def py2pyw(directory, pywname = '', reminder = False):
         pywname is empty, set to pyw filename wil be set to the name of py file.'''
     suffix = '.pyw'
     if pywname and not pywname.endswith(suffix): pywname += suffix
-    threading.Thread(target = lambda directory, func, reminder: handlepy(directory, func, reminder), \
+    threading.Thread(target = lambda directory, func, reminder: __handlepy(directory, func, reminder), \
                      args = (directory, lambda filename: fwrite(pywname or filename + 'w', fread(filename, False)), reminder)).start()
 
 def rmlnk(path = desktop):
