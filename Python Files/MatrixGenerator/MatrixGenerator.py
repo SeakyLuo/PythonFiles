@@ -75,10 +75,12 @@ class Generator(Frame):
         self.editMenu.add_command(label = FIND_LOCATION, accelerator = shortcuts[FIND_LOCATION], command = lambda: self.find(FIND_LOCATION))
         self.editMenu.add_command(label = REPLACE, accelerator = shortcuts[REPLACE], command = self.replace)
         self.editMenu.add_separator()
-        self.editMenu.add_command(label = SWITCH_ROWS, accelerator = shortcuts[SWITCH_ROWS], command = lambda: self.switch(ROW))
-        self.editMenu.add_command(label = SWITCH_COLUMNS, accelerator = shortcuts[SWITCH_COLUMNS], command = lambda: self.switch(COLUMN))
-        self.editMenu.add_command(label = 'Duplicate ' + ROW, command = lambda: self.duplicateRC(ROW))
-        self.editMenu.add_command(label = 'Duplicate ' + COLUMN, command = lambda: self.duplicateRC(COLUMN))
+        self.editMenu.add_command(label = SWITCH_ROWS, accelerator = shortcuts[SWITCH_ROWS], command = lambda: self.switch(ROWS))
+        self.editMenu.add_command(label = SWITCH_COLUMNS, accelerator = shortcuts[SWITCH_COLUMNS], command = lambda: self.switch(COLS))
+        self.editMenu.add_command(label = 'Copy ' + ROW, command = lambda: self.copyRC(ROW))
+        self.editMenu.add_command(label = 'Copy ' + COL, command = lambda: self.copyRC(COL))
+        self.editMenu.add_command(label = 'Duplicate ' + ROWS, command = lambda: self.duplicateRC(ROWS))
+        self.editMenu.add_command(label = 'Duplicate ' + COLS, command = lambda: self.duplicateRC(COLS))
         self.editMenu.add_separator()
         self.editMenu.add_command(label = CLEAR_ZEROS, accelerator = shortcuts[CLEAR_ZEROS], command = lambda: self.clear(0))
         self.editMenu.add_command(label = CLEAR_ENTRIES, accelerator = shortcuts[CLEAR_ENTRIES], command = lambda: self.clear(1))
@@ -95,13 +97,13 @@ class Generator(Frame):
         self.modifyMenu.add_command(label = UPPER_TRIANGULAR, accelerator = shortcuts[UPPER_TRIANGULAR], command = lambda: self.triangularMatrix(UPPER))
         self.modifyMenu.add_separator()
         self.sortMenu = Menu(self, tearoff = False)
-        self.sortMenu.add_command(label = SORT + ' ' + ROW, command = lambda: self.sort(ROW))
-        self.sortMenu.add_command(label = SORT + ' ' + COLUMN, command = lambda: self.sort(COLUMN))
+        self.sortMenu.add_command(label = SORT + ' ' + ROWS, command = lambda: self.sort(ROWS))
+        self.sortMenu.add_command(label = SORT + ' ' + COLS, command = lambda: self.sort(COLS))
         self.sortMenu.add_command(label = SORT + ' ' + ALL, command = lambda: self.sort(ALL))
         self.modifyMenu.add_cascade(label = SORT, menu = self.sortMenu)
         self.reverseMenu = Menu(self, tearoff = False)
-        self.reverseMenu.add_command(label = REVERSE + ' ' + ROW, command = lambda: self.reverse(ROW))
-        self.reverseMenu.add_command(label = REVERSE + ' ' + COLUMN, command = lambda: self.reverse(COLUMN))
+        self.reverseMenu.add_command(label = REVERSE + ' ' + ROWS, command = lambda: self.reverse(ROWS))
+        self.reverseMenu.add_command(label = REVERSE + ' ' + COLS, command = lambda: self.reverse(COLS))
         self.reverseMenu.add_command(label = REVERSE + ' ' + ALL, command = lambda: self.reverse(ALL))
         self.modifyMenu.add_cascade(label = REVERSE, menu = self.reverseMenu)
 
@@ -195,9 +197,9 @@ class Generator(Frame):
         self.resultFormat = StringVar(self)
         self.resultFormatDropdown = OptionMenu(self.topFrame, self.resultFormat, *resultFormatOptions, command = lambda event: self.onResultFormatChange())
 
-        self.rowLabel = Label(self.topFrame, text = ROW + ':')
+        self.rowLabel = Label(self.topFrame, text = ROWS + ':')
         self.rowEntry = Entry(self.topFrame)
-        self.colLabel = Label(self.topFrame, text = COLUMN + ':')
+        self.colLabel = Label(self.topFrame, text = COLS + ':')
         self.colEntry = Entry(self.topFrame)
         # Move focus before Emptry Delete
         # bindtags = self.colEntry.bindtags()
@@ -247,11 +249,11 @@ class Generator(Frame):
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
         self.master.bind('<Control-Z>', lambda event: self.clear(0))
         self.master.bind('<Alt-a>', lambda event: self.aToZ())
-        self.master.bind('<Alt-c>', lambda event: self.switch(COLUMN))
+        self.master.bind('<Alt-c>', lambda event: self.switch(COLS))
         self.master.bind('<Alt-e>', lambda event: self.append(APPEND_END))
         self.master.bind('<Alt-i>', lambda event: self.appendIndex())
         self.master.bind('<Alt-n>', lambda event: self.oneToN())
-        self.master.bind('<Alt-r>', lambda event: self.switch(ROW))
+        self.master.bind('<Alt-r>', lambda event: self.switch(ROWS))
         self.master.bind('<Alt-s>', lambda event: self.append(APPEND_START))
         self.master.bind('<Alt-t>', lambda event: self.transpose())
         self.master.bind('<Alt-[>', lambda event: self.switchResultFormat(-1))
@@ -697,44 +699,68 @@ class Generator(Frame):
             break
         fEntry.focus()
 
+    def copyRC(self, title):
+        isRow = title == ROWS
+        fEntry = self.getFocusEntry()
+        result = ''
+        prompt = f'Input i,j to Copy {title} i to {title} j.'
+        r, c = self.getRowCol()
+        while True:
+            result = simpledialog.askstring(title = f'Copy {title}', prompt = prompt, initialvalue = result)
+            if not result: break
+            try:
+                i, j = map(int, result.split(','))
+                i, j = i - 1, j - 1
+                if (isRow and not (0 <= i <= r and 0 <= j <= r)) or \
+                   (not isRow and not (0 <= i <= c and 0 <= j <= c)):
+                    raise Exception()
+            except:
+                messagebox.showerror('Error', 'Invalid Input')
+                continue
+            if isRow:
+                for _ in range(c):
+                    setEntry(self.entries[(j, _)], self.entries[(i, _)].get())
+            else:
+                for _ in range(r):
+                    setEntry(self.entries[(_, j)], self.entries[(_, i)].get())
+            break
+        fEntry.focus()
+
     def duplicateRC(self, title):
-        isRow = title == ROW
+        isRow = title == ROWS
         fEntry = self.getFocusEntry()
         result = ''
         prompt = f'Input N to make other {title} the duplicate of {title[:-1]} N.'
+        r, c = self.getRowCol()
+        entries = self.collectEntries(r, c, False, True)
+        auto = 0
+        if isRow:
+            for i, row in enumerate(entries):
+                if all(entry for entry in row):
+                    auto += 1
+                    if auto > 1:
+                        auto = 0
+                        result = ''
+                        break
+                    result = i
+        else:
+            for i in range(c):
+                if all(row[i] for row in entries):
+                    auto += 1
+                    if auto > 1:
+                        auto = 0
+                        result = ''
+                        break
+                    result = i
         while True:
-            r, c = self.getRowCol()
-            entries = self.collectEntries(r, c, False, True)
-            auto = 0
-            if isRow:
-                for i, row in enumerate(entries):
-                    if all(entry for entry in row):
-                        auto += 1
-                        if auto > 1:
-                            auto = 0
-                            result = ''
-                            break
-                        result = i
-            else:
-                for i in range(c):
-                    if all(row[i] for row in entries):
-                        auto += 1
-                        if auto > 1:
-                            auto = 0
-                            result = ''
-                            break
-                        result = i
             if not auto:
-                result = simpledialog.askstring(title = 'Duplicate ' + title[:-1], prompt = prompt, initialvalue = result)
-                if not result:
-                    break
+                result = simpledialog.askinteger(title = f'Duplicate {title}', prompt = prompt, initialvalue = result)
+                if not result: break
                 try:
-                    result = eval(result)
-                    if not isinstance(result, int) or not result or (isRow and result > r) or (not isRow and result > c):
+                    if (isRow and not 0 <= result <= r) or (not isRow and not 0 <= result <= c):
                         raise Exception()
                     result -= 1
                 except Exception as e:
-                    print(e)
                     messagebox.showerror('Error', 'Invalid Input')
                     continue
             if isRow:
@@ -907,7 +933,7 @@ class Generator(Frame):
         return 'break'
 
     def switch(self, target):
-        isRow = target == ROW
+        isRow = target == ROWS
         row, col = self.getRowCol()
         if row == 0 or col == 0 or (isRow and row == 1) or (not isRow and col == 1):
             return
@@ -1104,7 +1130,7 @@ class Generator(Frame):
         else:
             if varFormat:
                 vars = [vars[i:i + col] for i in range(row)]
-                if target == ROW:
+                if target == ROWS:
                     values = [sorted(row) for row in vars]
                 else:
                     values = sorted(values)
@@ -1112,7 +1138,7 @@ class Generator(Frame):
             else:
                 try: values = self.collectEntries(row, col, True, True)
                 except: values = self.collectEntries(row, col, False, True)
-                if target == ROW:
+                if target == ROWS:
                     values = [sorted(row) for row in values]
                 else:
                     values = sorted(values)
@@ -1134,7 +1160,7 @@ class Generator(Frame):
                 setEntry(e2, t2)
         else:
             values = self.collectEntries(row, col, False, True)
-            if target == ROW:
+            if target == ROWS:
                 values = [list(reversed(row)) for row in values]
             else:
                 values = list(reversed(values))

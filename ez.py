@@ -12,9 +12,15 @@ from collections import Counter
 from functools import reduce
 from types import GeneratorType
 from itertools import chain, combinations
+import win32com.client
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
 DataTypeError = TypeError('Unsupported data type.')
+
+def cdlnk(path):
+    shell = win32com.client.Dispatch("WScript.Shell")
+    shortcut = shell.CreateShortCut(path)
+    os.chdir(shortcut.Targetpath)
 
 def random_pop(iterable: list):
     '''Randomly remove and return an item from the list'''
