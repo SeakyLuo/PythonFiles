@@ -700,7 +700,7 @@ class Generator(Frame):
         fEntry.focus()
 
     def copyRC(self, title):
-        isRow = title == ROWS
+        isRow = title == ROW
         fEntry = self.getFocusEntry()
         result = ''
         prompt = f'Input i,j to Copy {title} i to {title} j.'
@@ -730,7 +730,7 @@ class Generator(Frame):
         isRow = title == ROWS
         fEntry = self.getFocusEntry()
         result = ''
-        prompt = f'Input N to make other {title} the duplicate of {title[:-1]} N.'
+        prompt = f'Input n to make other {title} the duplicate of {title[:-1]} n.'
         r, c = self.getRowCol()
         entries = self.collectEntries(r, c, False, True)
         auto = 0
