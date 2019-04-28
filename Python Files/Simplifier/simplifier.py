@@ -118,7 +118,13 @@ class Simplifier(Tk):
     def autocopy(self):
         self.switchButtonState(self.w4, 'autocopy')
         ez.fwrite(self.btxt, self.wrappers)
-        ez.cpc(getText(self.t2))
+        self.copy(getText(self.t2))
+    def copy(self, text):
+        if text:
+            try:
+                ez.cpc(text)
+            except UnicodeError:
+                messagebox.showerror('Error','You need to copy it to your clipboard manually.')
     def paste(self):
         win32clipboard.OpenClipboard()
         data = win32clipboard.GetClipboardData()
@@ -169,10 +175,7 @@ class Simplifier(Tk):
         self.countLines()
         self.countChars()
         if self.wrappers['autocopy']:
-            try:
-                ez.cpc(string)
-            except UnicodeError:
-                messagebox.showerror('Error','You need to copy it to your clipboard manually.')
+            self.copy(string)
     def switchButtonState(self, button, name):
         if button['relief'] == GROOVE: # turn off
             button['relief'] = FLAT
