@@ -1,10 +1,7 @@
-import os
-import datetime
-import time
+import time, datetime
 import urllib.request, urllib.parse
-import platform
-import threading, subprocess, zipfile, ntpath, shutil
-import random
+import os, threading, subprocess, zipfile, ntpath, shutil, platform
+import random, csv
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
@@ -14,8 +11,22 @@ from types import GeneratorType
 from itertools import chain, combinations
 import win32com.client
 
-desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop')
+desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + '\\'
 DataTypeError = TypeError('Unsupported data type.')
+
+def prchoice(obj):
+    '''Probabilistic random choice. (Random choice with probability)
+       Obj should be two's iterable.'''
+    targets = []
+    probs = []
+    for target, prob in obj:
+        targets.append(target)
+        probs.append(prob)
+    probability = random.uniform(0, 1)
+    index = 0
+    while sum(probs[:index + 1]) < probability:
+        index += 1
+    return targets[index]
 
 def cdlnk(path):
     shell = win32com.client.Dispatch("WScript.Shell")
@@ -299,23 +310,20 @@ def fread(filename, evaluate = True, coding = 'utf8'):
     '''Read the file that has the filename.
         Set evaluate to true to evaluate the content.
         Default coding: utf8.'''
-    file = open(filename, encoding = coding)
-    content = file.read()
-    if evaluate:
-        try: content = eval(content)
-        except: pass
-    file.close()
-    return content
+    with open(filename, encoding = coding) as file:
+        content = file.read()
+        if evaluate:
+            content = tryEval(content)
+        return content
 
 def fwrite(filename, content, mode = 'w', coding = 'utf8'):
     ''' Write the file that has the filename with content.
         Default mode: "w"
         Default coding: utf8.'''
-    file = open(filename, mode, encoding = coding)
-    if type(content) != str:
-        content = repr(content)
-    file.write(content)
-    file.close()
+    with open(filename, mode, encoding = coding) as file:
+        if type(content) != str:
+            content = repr(content)
+        file.write(content)
 
 def fcopy(src, dst, coding = 'utf8'):
     '''Copy a file.
@@ -323,6 +331,14 @@ def fcopy(src, dst, coding = 'utf8'):
        Default coding: utf8.'''
     filename = src[:find(src).last('\\')]
     fwrite(dst if dst.endswith(filename) else os.path.join(dst, filename), fread(src, coding), coding = coding)
+
+def write_csv(filename: str, content: list):
+    ''''A simple csv writer.
+        Write each element of the content list into a row.'''
+    with open(filename, 'w', newline = '') as f:
+        writer = csv.writer(f)
+        for data in content:
+            writer.writerow(data)
 
 def advancedSplit(obj, *sep):
     '''Can have multiple seperators.'''
