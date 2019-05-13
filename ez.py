@@ -5,7 +5,7 @@ import random, csv
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
-from collections import Counter
+from collections import Counter, namedtuple
 from functools import reduce
 from types import GeneratorType
 from itertools import chain, combinations
@@ -335,6 +335,8 @@ def fcopy(src, dst, coding = 'utf8'):
 def write_csv(filename: str, content: list):
     ''''A simple csv writer.
         Write each element of the content list into a row.'''
+    if not filename.endswith('.csv'):
+        filename += '.csv'
     with open(filename, 'w', newline = '') as f:
         writer = csv.writer(f)
         for data in content:

@@ -6,12 +6,12 @@ from functools import reduce
 import itertools
 
 def argmax(obj) -> list:
-    '''Input obj type can be list, tuple or dict.
+    '''Input obj type can be array-like or a dict.
     Return a list of indices/keys with the maximum value.'''    
     return __arghelper(obj, lambda v, value: v > value)
 
 def argmin(obj) -> list:
-    '''Input obj type can be list, tuple or dict.
+    '''Input obj type can be array-like or a dict.
     Return a list of indices/keys with the minimum value.''' 
     return __arghelper(obj, lambda v, value: v < value)
 
