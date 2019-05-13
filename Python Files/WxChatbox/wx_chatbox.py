@@ -1,31 +1,68 @@
 from wxpy import *
 from rules import *
+import time, os
 
-if __name__ == '__main__':
-    bot = Bot(cache_path=True)  # 生成机器人实例，启动缓存避免重复登录
-
-    found = bot.friends().search('头像我老婆', sex = 1)  # 在好友列表中搜索名字是'头像我老婆'性别为1(男)的一项
-    boyfriend = ensure_one(found)  # 确保只有一个结果
-
-    recv = []
-    sent = []
-
-    @bot.register([boyfriend, bot.self], msg_types = TEXT, except_self = True)
-    def send(msg):
-        recv.append(msg)
-        message = '我有点笨，能不能迁就下我，我们说点别的？'
+def sendText(msg, allowChat = True):
+    message = Message()
+    info.recv.append(Message(msg.text))
+    if info.mode == Mode.horse_race:
+        message = info.action(msg)
+    else:
         for rule, reply in regex.items():
-            match = re.search(rule, msg.text, re.IGNORECASE)
+            match = re.search(rule, msg.text.strip(), re.IGNORECASE)
             if match:
                 try:
-                    message = reply(msg, match, recv, sent)
+                    message: Message = reply(msg, match)
+                    if message.mode == Mode.memo:
+                        memo.save()
                 except ResponseError as e:
-                    message = e.err_msg
-                    print(e.err_code, e.err_msg)  # 查看错误号和错误消息
+                    info.error.append(Message(e.err_msg, e.err_code))
+                    message.text = [e.err_msg]
+                    print(e.err_msg)
+                except Exception as e:
+                    message.text = [f'Error: {e.with_traceback()}']
+                    print(e)
                 finally:
                     break
-        msg.sender.send_msg(message)
-        sent.append(message)
+    if not allowChat or not message.isDefault():
+        for text, latency in message.text:
+            time.sleep(latency)
+            msg.sender.send_msg(text)
+        info.appendReply(message)
+
+def sendFile(msg):
+    match = re.search(r'file\((.*)\)', msg.text.strip(), re.IGNORECASE)
+    if not match:
+        return
+    path = match[1].replace('/', '\\')
+    if 'desktop' in path.lower() and not path.startswith(ez.desktop):
+        path = ez.desktop + re.search(r'desktop\\([\s\S]*)', path, re.IGNORECASE)[1]
+    if '.lnk' in path:
+        finder = ez.find(path)
+        shortcut = finder.before('.lnk') + '.lnk'
+        path = ez.getlnk(shortcut) + finder.after('.lnk')
+    dirname = os.path.dirname(path)
+    basename = os.path.basename(path)
+    if basename in os.listdir(dirname):
+        msg.sender.send_file(path)
+    else:
+        msg.sender.send_msg('文件没找到呜呜呜')
+
+if __name__ == '__main__':
+    bot = Bot(cache_path = True)
+    me = ensure_one(bot.friends().search('头像我老婆'))
+    # @bot.register([me], msg_types = TEXT)
+    # def test(msg):
+    #     sendText(msg, True)
+
+    friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['陈格', '耿沈琪Cathy', '王旖旎', 'Me']]
+    @bot.register(friends + [me], msg_types = TEXT)
+    def friendChat(msg):
+        sendText(msg, True)
+
+    # @bot.register([ensure_one(bot.friends().search(remark_name = 'Me'))])
+    # def fetchFile(msg):
+    #     sendFile(msg)
 
     # 进入 Python 命令行、让程序保持运行
     embed()

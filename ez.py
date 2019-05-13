@@ -29,13 +29,19 @@ def prchoice(obj):
     return targets[index]
 
 def cdlnk(path):
+    '''cd lnk path'''
+    os.chdir(getlnk(path))
+
+def getlnk(path):
+    '''Get lnk path'''
     shell = win32com.client.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(path)
-    os.chdir(shortcut.Targetpath)
+    return shortcut.Targetpath
 
-def random_pop(iterable: list):
-    '''Randomly remove and return an item from the list'''
-    return iterable.pop(random.randrange(0, len(iterable)))
+def random_pop(sequence: list):
+    '''Randomly remove and return an item from the sequence'''
+    index = random.randrange(0, len(sequence))
+    return sequence[:index] + sequence[index + 1:]
 
 def dupFolder(path: str, copies: int, pattern: str = '?', start: int = 1):
     '''Duplicate a folder into some copies with names following a pattern.
@@ -104,10 +110,13 @@ def countLines(path, filetype):
 class Settings:
     '''Settings is for remembering user settings using a dict.
     It saves the settings automatically on program exit.
-    Recommend passing __file__ to file'''
-    def __init__(self, file, settingsName = 'settings.json'):
-        self.path = os.path.dirname(file)
-        self.settingsName = settingsName
+    Recommend passing __file__ to path for simplicity.'''
+    suffix = '.json'
+    def __init__(self, path: str, settingsName: str = 'settings.json'):
+        self.path = os.path.dirname(path)
+        if '.' in settingsName:
+            assert Settings.suffix in settingsName
+        self.settingsName = settingsName if settingsName.endswith(Settings.suffix) else settingsName + Settings.suffix
         self.settingsFile = os.path.join(self.path, self.settingsName)
         self.load()
         register(self.save)
@@ -138,9 +147,18 @@ class Settings:
     def __repr__(self):
         return repr(self.settings)
 
+    def __contains__(self, key):
+        return key in self.settings
+
+    def pop(self, key) -> bool:
+        hasKey = key in self.settings
+        if hasKey:
+            self.settings.pop(key)
+        return hasKey
+
     def load(self):
         try:
-            self.settings = loads(fread(self.settingsFile, False))
+            self.settings: dict = loads(fread(self.settingsFile, False))
         except (FileNotFoundError, TypeError):
             self.settings = {}
 
@@ -515,14 +533,18 @@ class find:
         except IndexError:
             return -1
 
-    def between(self, obj1 = None, obj2 = None):
-        '''Return the obj between obj1 and obj2 (not included).
-           Start from the first occurrence.'''
+    def between(self, obj1 = None, obj2 = None, nth = 1):
+        '''Return the obj between obj1 and obj2 (both are not included).
+           Start after the first occurrence of obj1.
+           End before the nth occurrence of obj2.
+           Setting nth to -1 means the last occurrence.
+           '''
         try:
             start = 0
             if obj1 != None:
                 start = self.obj.index(obj1) + (len(obj1) if self.type == str else 1)
-            end = self.obj[start:].index(obj2) + start if obj2 != None else None
+            nth = nth - 1 if nth > 0 else nth
+            end = find(self.obj[start:]).all(obj2)[nth] + start if obj2 != None else None
             return self.obj[start:end]
         except ValueError:
             return self.empty
