@@ -1,6 +1,7 @@
 import random
 from header import *
 from HorseRace import *
+from Balloon import *
 
 THANK = r'.*(谢).*'
 def thank(msg, match: re.Match):
@@ -61,12 +62,12 @@ def lookat(msg, match: re.Match):
         lst = memo.get(name, [])
         message = [f'(๑‾ ꇴ ‾๑)好哒，这是你现在的{name}~', str(memo[name])] if lst else '列表不存在哦'
     return Message(message, Mode.memo)
-DIRTY = r'.*(操|傻逼|傻屌|脑残|靠|滚).*'
+DIRTY = r'.*(操|傻逼|傻屌|脑残|靠|滚|有病).*'
 def dirty(msg, match: re.Match):
     return Message(random.choice(['不可以说脏话嘤嘤嘤', '你骂我呜呜呜', '你不可以欺负我']))
 VOMIT = r'.*(呕|D区|口区).*'
 def vomit(msg, match: re.Match):
-    return Message(['我很可爱的嘤嘤嘤', '你欺负我呜呜呜'])
+    return Message(random.choice(['我很可爱的嘤嘤嘤', '你欺负我呜呜呜']))
 
 regex = {
     THANK: thank,
@@ -80,5 +81,6 @@ regex = {
     LOOKAT: lookat,
     DIRTY: dirty,
     VOMIT: vomit,
-    HORSE_RACE: horse_race
+    HORSE_RACE: horse_race,
+    BALLOON: balloon
 }
