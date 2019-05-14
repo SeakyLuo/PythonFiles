@@ -45,6 +45,7 @@ class Info:
         self.mode = Mode.standard
         self.action = None
         self.replies = []
+        self.inProcess = False
 
     def appendReply(self, message: Message):
         self.replies.append(message)

@@ -14,10 +14,10 @@ def repeat(msg, match: re.Match):
     return Message(info.sent[-1] if info.sent else '傻逼')
 TGTDZHYWSY = '舔狗舔到最后一无所有'
 def tgtdzhywsy(msg, match: re.Match):
-    return Message(u'\U0001f445\U0001f436\U0001f445\U0001f52a\U0001f444\U0001f435\U0001f21a\U0001f512\U0001f236')
+    return Message(u'\U0001f445\U0001f436\U0001f445\U0001f52a\U0001f444\U0001f435\U0001f595\U0001f21a\U0001f512\U0001f236')
 TGTDZHYYJY = '舔狗舔到最后应有尽有'
 def tgtdzhyyjy(msg, match: re.Match):
-    return Message(u'\U0001f445\U0001f436\U0001f445\U0001f52a\U0001f444\U0001f435\U0001f338\U0001f232\U0001f236')
+    return Message(u'\U0001f445\U0001f436\U0001f445\U0001f52a\U0001f444\U0001f435\U0001f338\U0001f236\U0001f232\U0001f236')
 CHESS = r'(象棋)'
 def chess(msg, match: re.Match):
     text = '''車馬象士将士象馬車
