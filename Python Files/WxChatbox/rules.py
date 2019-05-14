@@ -10,6 +10,7 @@ def rand(msg, match: re.Match):
     return Message(str(random.randint(int(match[1]), int(match[2]))))
 REPEAT = r'r'
 def repeat(msg, match: re.Match):
+    info = infoDict.get(msg.sender.name, Info())
     return Message(info.sent[-1] if info.sent else '傻逼')
 TGTDZHYWSY = '舔狗舔到最后一无所有'
 def tgtdzhywsy(msg, match: re.Match):
@@ -60,13 +61,12 @@ def lookat(msg, match: re.Match):
         lst = memo.get(name, [])
         message = [f'(๑‾ ꇴ ‾๑)好哒，这是你现在的{name}~', str(memo[name])] if lst else '列表不存在哦'
     return Message(message, Mode.memo)
-DIRTY = r'.*[操|傻逼|傻屌|脑残|靠].*'
+DIRTY = r'.*(操|傻逼|傻屌|脑残|靠|滚).*'
 def dirty(msg, match: re.Match):
     return Message(random.choice(['不可以说脏话嘤嘤嘤', '你骂我呜呜呜', '你不可以欺负我']))
 VOMIT = r'.*(呕|D区|口区).*'
 def vomit(msg, match: re.Match):
     return Message(['我很可爱的嘤嘤嘤', '你欺负我呜呜呜'])
-
 
 regex = {
     THANK: thank,

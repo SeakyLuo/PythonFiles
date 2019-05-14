@@ -53,5 +53,5 @@ class Info:
         for text in message.text:
             self.sent.append(text[0])
 
-info = Info()
+infoDict = {}
 memo = ez.Settings(__file__, 'memo')

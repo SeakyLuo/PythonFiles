@@ -3,6 +3,7 @@ from rules import *
 import time, os
 
 def sendText(msg, allowChat = True):
+    info = infoDict.get(msg.sender.name, Info())
     message = Message()
     info.recv.append(Message(msg.text))
     if info.mode == Mode.horse_race:
@@ -28,9 +29,11 @@ def sendText(msg, allowChat = True):
         for text, latency in message.text:
             time.sleep(latency)
             msg.sender.send_msg(text)
-        info.appendReply(message)
+    info.appendReply(message)
+    infoDict[msg.sender.name] = info
 
 def sendFile(msg):
+    info = infoDict.get(msg.sender.name, Info())
     match = re.search(r'file\((.*)\)', msg.text.strip(), re.IGNORECASE)
     if not match:
         return
@@ -55,8 +58,8 @@ if __name__ == '__main__':
     # def test(msg):
     #     sendText(msg, True)
 
-    friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['陈格', '耿沈琪Cathy', '王旖旎', 'Me']]
-    @bot.register(friends + [me], msg_types = TEXT)
+    friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['陈格', '王旖旎', 'Me', '刘恒宇', '林天承']]
+    @bot.register(friends, msg_types = TEXT)
     def friendChat(msg):
         sendText(msg, True)
 
