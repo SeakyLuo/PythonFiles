@@ -5,11 +5,10 @@ import random, csv
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
-from collections import Counter, namedtuple
+from collections import Counter
 from functools import reduce
 from types import GeneratorType
 from itertools import chain, combinations
-import win32com.client
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + '\\'
 DataTypeError = TypeError('Unsupported data type.')
@@ -34,6 +33,7 @@ def cdlnk(path):
 
 def getlnk(path):
     '''Get lnk path'''
+    import win32com.client
     shell = win32com.client.Dispatch("WScript.Shell")
     shortcut = shell.CreateShortCut(path)
     return shortcut.Targetpath
