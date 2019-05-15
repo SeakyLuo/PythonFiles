@@ -2,6 +2,8 @@ from enum import Enum
 import re, random
 import ez
 
+EXIT_CODE = '骆海天牛逼'
+
 class Mode(Enum):
     standard = 0 # default
     reply = 1 # needs reply
@@ -30,6 +32,12 @@ class Message:
     def appendTextList(self, lst: list):
         for i, text in enumerate(lst):
             self.appendText(text, 1 if i else 0)
+    def insertStart(self, startText):
+        if self.text:
+            text, latency = self.text[0]
+            if latency == 0:
+                self.text[0] = (text, 1)
+        self.text.insert(0, (startText, 0) if isinstance(startText, str) else startText)
     def __str__(self):
         return f'Message(text={self.text}, mode={self.mode}, action={self.action})'
     def __repr__(self):

@@ -1,4 +1,5 @@
 from header import *
+from HorseRace import horse_race1
 
 BALLOON = r'.*(打气球).*'
 __bossAim = 0
@@ -13,11 +14,11 @@ class Coupon: #'\n'.join(['=' * 21, '|' + ' ' * 40 + '|',  ])
 '''
     levels = ['一', '二', '三', '四', '五']
     awards = [
-        ['给老板发个红包'],
-        ['请老板吃一餐饭'],
-        ['谢谢惠顾再来玩'],
-        ['暗恋老板三十天'],
-        ['美国的新鲜空气']
+        ['给老板发个红包', '今天晚上会好梦'],
+        ['请老板吃一餐饭', '获得额外零张券'],
+        ['谢谢惠顾再来玩', '背诵一天圆周率'],
+        ['暗恋老板一辈子', '被老板嘲笑一天'],
+        ['美国的新鲜空气', '喊老板一次爸爸']
     ]
     def __init__(self, level):
         self.levelNum = level
@@ -42,9 +43,9 @@ def guaCoupon(coupons) -> list:
         for i, coupon in enumerate(coupons):
             if last:
                 num = f'第{i + 1}' if i < last else '最后一'
-                first = f'你拿到了{num}张奖券' + '~' * (i + 1)
+                first = f'你拿起了{num}张奖券' + '~' * (i + 1)
             else:
-                first = '你拿到了你唯一的一张奖券~'
+                first = '你拿起了你唯一的一张奖券~'
             level = 5 - coupon.levelNum
             text += [first, str(coupon), '你刮开了它', f'你获得了{coupon.level}' + '！' * level, coupon.gua()]
             text += ['对应的奖励是' + '~' * level, coupon.gua(), coupon.award + '！' * level]
@@ -140,7 +141,7 @@ def balloon_action1(msg):
         return balloon_aim_boss(msg.sender.nick_name)
     elif msg.text.isnumeric() and len(msg.text) == 2:
         return balloon_aim_balloon(msg.text, msg.sender.nick_name)
-    elif '骆海天牛逼' in msg.text:
+    elif EXIT_CODE in msg.text:
         return Message('被你知道这个可爱的小咒语了哈哈，游戏退出~', Mode.standard)
     return Message(['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()], Mode.balloon, balloon_action1)
 def balloon_aim_balloon(msgText, sender):
@@ -152,7 +153,9 @@ def balloon_aim_balloon(msgText, sender):
     result = game.shoot(row, col)
     typ = type(result)
     if typ == list and result and result[0] == BalloonGame.aimBoss:
-        return balloon_aim_boss(sender)
+        message: Message = balloon_aim_boss(sender)
+        message.insertStart('你不知道为什么突然手一抖，枪口瞄准了老板！')
+        return message
     elif typ == int:
         text = '这个气球已经被打爆啦，请再选一个' if result == BalloonGame.madeShot else '你不可以打那里啦'
         return Message([text, BalloonGame.askAim()], Mode.balloon, balloon_action1)
@@ -193,7 +196,7 @@ def balloon_aim_boss(sender, plot1 = None):
     global __bossAim
     __bossAim += 1
     print(__gameInfo)
-    plot1 = plot1 or random.randint(0, 3)
+    plot1 = plot1 if plot1 != None else random.randint(0, 3)
     print(plot1)
     if plot1 == 0:
         coupons = [Coupon(i) for i in range(5)]
@@ -229,8 +232,15 @@ def balloon_aim_boss(sender, plot1 = None):
                 text += [f'但看在你是{firstCommit}的份上原谅了你！', '小朋友，下次不要再干这么危险的事情了啊！', '你认真地嗯了一声（但老板看起来被吓出了心脏病）']
                 return Message(text + [game.getChanceLeft(), BalloonGame.askAim()], Mode.balloon, balloon_action1)
             else:
-                text += ['“你们这群人，一天想着搞事情！”老板愤怒地说，', f'“我今天已经总共被瞄准{__bossAim}次了！”', '老板不开心了！','老板收摊了！', '游戏结束！']
-                return Message(text)
+                text += ['“你们这群人，一天想着搞事情！”老板愤怒地说，', f'“我今天已经总共被瞄准{__bossAim}次了！”', '老板不开心了！']
+                if random.randint(0, __bossAim):
+                    text += ['老板收摊了！', '游戏结束！']
+                    return Message(text)
+                else:
+                    text += ['老板邀请你玩了赛马游戏！']
+                    hrMsg = horse_race1(sender)
+                    hrMsg.insertStart(text)
+                    return hrMsg
     elif plot1 == 2:
         plot2 = random.randint(0, 3)
         if plot2 == 0:

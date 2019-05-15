@@ -12,9 +12,10 @@ def sendText(msg, allowChat = True):
     if info.mode != Mode.standard:
         message = info.action(msg)
     else:
+        stripText = msg.text.strip()
         for rule, reply in regex.items():
-            match = re.search(rule, msg.text.strip(), re.IGNORECASE)
-            if match and len(match.groups()):
+            match = re.search(rule, stripText, re.IGNORECASE)
+            if match or rule == stripText:
                 try:
                     message: Message = reply(msg, match)
                     if message.mode == Mode.memo:
@@ -81,8 +82,8 @@ def balloonGame(msg):
 
 if __name__ == '__main__':
     bot = Bot(cache_path = True)
-    me = ensure_one(bot.friends().search('头像我老婆'))
-    # @bot.register([me], msg_types = TEXT)
+    # me = ensure_one(bot.friends().search(remark_name = 'Me'))
+    # @bot.register([ensure_one(bot.friends().search('郭颀')), me], msg_types = TEXT)
     # def test(msg):
     #     sendText(msg, True)
 

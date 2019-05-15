@@ -7,24 +7,25 @@ __horse = u'\U0001F40E'
 __dash = u'\U0001F4A8'
 __die = u'\U0001F480'
 __goodbye = r'.*(再见|退出|不玩|88|拜拜).*'
-__niubi = '骆海天牛逼'
 
 def __noGoodbye():
     return [random.choice(['这个游戏一旦开始就不能退出的哦嘻嘻', '你不可以离开我呜呜呜']), (info.sent[-1], 1)]
 def horse_race(msg, match: re.Match):
+    return horse_race1(msg.sender.nick_name)
+def horse_race1(sender):
     text = [
         '紧张激烈的赛马比赛马上就要开始啦~',
         '\n'.join([str(i) + ' ' * 20 + __horse for i in range(1, 7)]),
         '请选择一位你觉得会赢的选手~'
     ]
     global __zhende, __user
-    __zhende[msg.sender.name] = 1
-    __user[msg.sender.name] = 0
+    __zhende[sender] = 1
+    __user[sender] = 0
     return Message(text, Mode.horse_race, horse_race_action1)
 def horse_race_action1(msg):
     if re.match(__goodbye, msg.text):
         return Message(__noGoodbye(), Mode.horse_race, horse_race_action1)
-    elif msg.text == __niubi:
+    elif EXIT_CODE in msg.text:
         return Message('被你知道这个可爱的小咒语了哈哈，游戏退出~', Mode.standard)
     number = re.search(r'([1-6])', msg.text)
     if number:
