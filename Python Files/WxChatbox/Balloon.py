@@ -140,6 +140,8 @@ def balloon_action1(msg):
         return balloon_aim_boss(msg.sender.nick_name)
     elif msg.text.isnumeric() and len(msg.text) == 2:
         return balloon_aim_balloon(msg.text, msg.sender.nick_name)
+    elif msg.text == '骆海天牛逼':
+        return Message('被你知道这个可爱的小咒语了哈哈，游戏退出~', Mode.standard)
     return Message(['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()], Mode.balloon, balloon_action1)
 def balloon_aim_balloon(msgText, sender):
     col, row = divmod(int(msgText), 10)

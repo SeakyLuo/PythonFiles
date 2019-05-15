@@ -46,6 +46,7 @@ class Info:
         self.action = None
         self.replies = []
         self.inProcess = False
+        self.log = []
 
     def appendReply(self, message: Message):
         self.replies.append(message)

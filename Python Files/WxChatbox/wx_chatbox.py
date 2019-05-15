@@ -3,7 +3,7 @@ from rules import *
 import time, os
 
 def sendText(msg, allowChat = True):
-    info: Info = infoDict.setdefault(msg.sender.name, Info())
+    info: Info = infoDict.setdefault(msg.sender.nick_name, Info())
     if info.inProcess:
         return
     info.inProcess = True
@@ -14,7 +14,7 @@ def sendText(msg, allowChat = True):
     else:
         for rule, reply in regex.items():
             match = re.search(rule, msg.text.strip(), re.IGNORECASE)
-            if match:
+            if match and len(match.groups()):
                 try:
                     message: Message = reply(msg, match)
                     if message.mode == Mode.memo:
@@ -36,7 +36,7 @@ def sendText(msg, allowChat = True):
     info.inProcess = False
 
 def sendFile(msg):
-    info = infoDict.get(msg.sender.name, Info())
+    info = infoDict.get(msg.sender.nick_name, Info())
     match = re.search(r'file\((.*)\)', msg.text.strip(), re.IGNORECASE)
     if not match:
         return
@@ -54,6 +54,31 @@ def sendFile(msg):
     else:
         msg.sender.send_msg('文件没找到呜呜呜')
 
+def balloonGame(msg):
+    info: Info = infoDict.setdefault(msg.sender.nick_name, Info())
+    if info.inProcess:
+        return
+    info.inProcess = True
+    message = Message()
+    info.recv.append(Message(msg.text))
+    if info.mode != Mode.standard:
+        message = info.action(msg)
+    else:
+        try:
+            match = re.search(BALLOON, msg.text.strip(), re.IGNORECASE)
+            if match:
+                message: Message = balloon(msg, match)
+        except ResponseError as e:
+            info.error.append(Message(e.err_msg, e.err_code))
+            message.text = [e.err_msg]
+            print(e.err_msg)
+    if not message.isDefault():
+        for text, latency in message.text:
+            time.sleep(latency)
+            msg.sender.send_msg(text)
+    info.appendReply(message)
+    info.inProcess = False
+
 if __name__ == '__main__':
     bot = Bot(cache_path = True)
     me = ensure_one(bot.friends().search('头像我老婆'))
@@ -61,10 +86,11 @@ if __name__ == '__main__':
     # def test(msg):
     #     sendText(msg, True)
 
-    friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['Me', '耿沈琪Cathy', '陈格', '刘恒宇', '林天承', '王旖旎', '张子豪Dennis']]
-    @bot.register(friends, msg_types = TEXT)
-    def friendChat(msg):
-        sendText(msg, True)
+    # friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['Me', '耿沈琪Cathy', '陈格', '刘恒宇', '林天承', '王旖旎', '张子豪Dennis']]
+    # @bot.register(friends, msg_types = TEXT)
+    @bot.register()
+    def playGalloonGame(msg):
+        balloonGame(msg)
 
     # @bot.register([ensure_one(bot.friends().search(remark_name = 'Me'))])
     # def fetchFile(msg):
