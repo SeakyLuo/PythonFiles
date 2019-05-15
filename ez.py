@@ -41,7 +41,7 @@ def getlnk(path):
 def random_pop(sequence: list):
     '''Randomly remove and return an item from the sequence'''
     index = random.randrange(0, len(sequence))
-    return sequence[:index] + sequence[index + 1:]
+    return sequence.pop(index)
 
 def dupFolder(path: str, copies: int, pattern: str = '?', start: int = 1):
     '''Duplicate a folder into some copies with names following a pattern.

@@ -6,11 +6,10 @@ def sendText(msg, allowChat = True):
     info: Info = infoDict.setdefault(msg.sender.name, Info())
     if info.inProcess:
         return
-    else:
-        info.inProcess = True
+    info.inProcess = True
     message = Message()
     info.recv.append(Message(msg.text))
-    if info.mode == Mode.horse_race:
+    if info.mode != Mode.standard:
         message = info.action(msg)
     else:
         for rule, reply in regex.items():
@@ -62,7 +61,7 @@ if __name__ == '__main__':
     # def test(msg):
     #     sendText(msg, True)
 
-    friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['Me', '刘恒宇', '林天承']]
+    friends = [ensure_one(bot.friends().search(remark_name = name)) for name in ['Me', '耿沈琪Cathy', '陈格', '刘恒宇', '林天承', '王旖旎', '张子豪Dennis']]
     @bot.register(friends, msg_types = TEXT)
     def friendChat(msg):
         sendText(msg, True)

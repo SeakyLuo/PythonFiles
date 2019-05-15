@@ -1,14 +1,14 @@
 from enum import Enum
-import re
+import re, random
 import ez
 
 class Mode(Enum):
     standard = 0 # default
     reply = 1 # needs reply
-    sleep = 2
     memo = 10
     chess = 11
     horse_race = 12
+    balloon = 13
 
 class Message:
     defaultMessage = '我有点笨，能不能迁就下我，我们说点别的？'
@@ -22,14 +22,14 @@ class Message:
             self.appendTextList(text)
         self.mode = mode
         self.action = action
-    def appendText(self, text):
+    def appendText(self, text, latency = 1):
         if isinstance(text, str):
-            self.text.append((text, 0))
+            self.text.append((text, latency))
         else:
             self.text.append(text)
     def appendTextList(self, lst: list):
-        for text in lst:
-            self.appendText(text)
+        for i, text in enumerate(lst):
+            self.appendText(text, 1 if i else 0)
     def __str__(self):
         return f'Message(text={self.text}, mode={self.mode}, action={self.action})'
     def __repr__(self):

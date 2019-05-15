@@ -1,4 +1,3 @@
-import random
 from header import *
 from HorseRace import *
 from Balloon import *
