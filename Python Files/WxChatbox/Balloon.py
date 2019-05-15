@@ -48,7 +48,7 @@ def guaCoupon(coupons) -> list:
             level = 5 - coupon.levelNum
             text += [first, str(coupon), '你刮开了它', f'你获得了{coupon.level}' + '！' * level, coupon.gua()]
             text += ['对应的奖励是' + '~' * level, coupon.gua(), coupon.award + '！' * level]
-        text.append('这就是你所有的奖励啦~')
+        text += ['这就是你所有的奖励啦~', '完结撒花~']
     else:
         text.append('再接再厉呀')
     return text
@@ -86,7 +86,7 @@ class BalloonGame:
     def __repr__(self):
         return f'GameInfo(Shots: {self.shots}; Balloons: {self.balloons}; BossAimed: {self.bossAimed})'
     def getNeighbors(i, j):
-        return [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]
+        return list(filter(lambda x: 0 <= x[0] < BalloonGame.width and 0 <= x[1] < BalloonGame.height, [(i - 1, j), (i + 1, j), (i, j - 1), (i, j + 1)]))
     def shoot(self, i, j) -> list:
         self.handleDebris()
         if not 0 <= i < BalloonGame.width or not 0 <= j < BalloonGame.height:
@@ -105,8 +105,7 @@ class BalloonGame:
         pending = [(i, j)]
         self.balloons[i][j] = BalloonGame.boomCode
         for x, y in neighbors:
-            if 0 <= x < BalloonGame.width and 0 <= y < BalloonGame.height and \
-               self.balloons[i][j] == BalloonGame.balloonCode and random.randint(0, 1):
+            if self.balloons[i][j] == BalloonGame.balloonCode and random.randint(0, 1):
                 self.balloons[x][y] = BalloonGame.boomCode
                 pending.append((x, y))
                 self.pending.append((x, y))
@@ -139,22 +138,23 @@ class BalloonGame:
 
 def balloon(msg, match: re.Match):
     game = BalloonGame()
-    __gameInfo[msg.sender.name] = game
+    __gameInfo[msg.sender.signature] = game
     text = ['打气球咯', str(game), '击中的气球越多获得的奖励也会更多~', game.getChanceLeft(), BalloonGame.askAim()]
     return Message(text, Mode.balloon, balloon_action1)
 def balloon_action1(msg):
     if msg.text in ['A', 'a', '气球', BalloonGame.balloon]:
         return Message(f'请问你想瞄准哪个{BalloonGame.Balloon()}呢\n如果要瞄准第二行第三个回复23就好啦', Mode.balloon, balloon_action1)
     elif msg.text in ['B', 'b', '老板', BalloonGame.boss]:
-        return balloon_aim_boss(msg.sender.name)
+        return balloon_aim_boss(msg.sender.signature)
     elif msg.text.isnumeric() and len(msg.text) == 2:
-        return balloon_aim_balloon(msg.text, msg.sender.name)
+        return balloon_aim_balloon(msg.text, msg.sender.signature)
     return Message(['请回复A或者B或者一个两位数啦', BalloonGame.askAim()], Mode.balloon, balloon_action1)
 def balloon_aim_balloon(msgText, sender):
     col, row = divmod(int(msgText), 10)
     row -= 1
     col -= 1
     game: BalloonGame = __gameInfo[sender]
+    print(game)
     result = game.shoot(row, col)
     typ = type(result)
     if typ == list and result and result[0] == BalloonGame.aimBoss:
@@ -182,6 +182,7 @@ def balloon_aim_balloon(msgText, sender):
         text.append('啊，你打歪了！你什么都没打中！')
         text.append('别灰心啦，你下次一定可以的！' if game.shots else '哎哟，游戏而已啦，没什么的')
     text.append(game.getChanceLeft())
+    print(result)
     if game.ends():
         return Message(text + balloon_award(sender))
     else:
