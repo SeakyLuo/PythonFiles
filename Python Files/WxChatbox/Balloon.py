@@ -5,7 +5,7 @@ BALLOON = r'.*(打气球).*'
 __bossAim = 0
 __gameInfo = {}
 
-class Coupon: #'\n'.join(['=' * 21, '|' + ' ' * 40 + '|',  ])
+class Voucher: #'\n'.join(['=' * 21, '|' + ' ' * 40 + '|',  ])
     content = \
 '''====================
       ■■■■■■■■
@@ -18,13 +18,13 @@ class Coupon: #'\n'.join(['=' * 21, '|' + ' ' * 40 + '|',  ])
         ['请老板吃一餐饭', '获得额外零张券'],
         ['谢谢惠顾再来玩', '背诵一天圆周率'],
         ['暗恋老板一辈子', '陪老板傻笑一天'],
-        ['美国的新鲜空气', '喊老板一次爸爸']
+        ['美国的新鲜空气', '拍老板一年马屁']
     ]
     def __init__(self, level):
         self.levelNum = level
-        self.level = Coupon.levels[level] + '等奖'
-        self.award = random.choice(Coupon.awards[level])
-        self.string = Coupon.content
+        self.level = Voucher.levels[level] + '等奖'
+        self.award = random.choice(Voucher.awards[level])
+        self.string = Voucher.content
         self.guaTimes = 0
     def __str__(self):
         return self.string
@@ -36,19 +36,19 @@ class Coupon: #'\n'.join(['=' * 21, '|' + ' ' * 40 + '|',  ])
         self.guaTimes += 1
         return self.string
 
-def guaCoupon(coupons) -> list:
+def guaVoucher(vouchers) -> list:
     text = []
-    if coupons:
-        last = len(coupons) - 1
-        for i, coupon in enumerate(coupons):
+    if vouchers:
+        last = len(vouchers) - 1
+        for i, voucher in enumerate(vouchers):
             if last:
                 num = f'第{i + 1}' if i < last else '最后一'
                 first = f'你拿起了{num}张奖券' + '~' * (i + 1)
             else:
                 first = '你拿起了你唯一的一张奖券~'
-            level = 5 - coupon.levelNum
-            text += [first, str(coupon), '你刮开了它', f'你获得了{coupon.level}' + '！' * level, coupon.gua()]
-            text += ['对应的奖励是' + '~' * level, coupon.gua(), coupon.award + '！' * level]
+            level = 5 - voucher.levelNum
+            text += [first, str(voucher), '你刮开了它', f'你获得了{voucher.level}' + '！' * level, voucher.gua()]
+            text += ['对应的奖励是' + '~' * level, voucher.gua(), voucher.award + '！' * level]
         text += ['这就是你所有的奖励啦~', '完结撒花~']
     else:
         text.append('再接再厉呀')
@@ -124,7 +124,7 @@ class BalloonGame:
         return f'请问你要瞄准的是：\nA：{BalloonGame.Balloon()} （如果要瞄准第二行第三个气球直接回复23就好啦）\nB：老板{BalloonGame.boss}'
     def Balloon(bid = '') -> str:
         return f'气球{BalloonGame.balloon}{bid}'
-    def getCouponCount(self):
+    def getVoucherCount(self):
         return self.boomCount // 2
     def ends(self):
         return self.boomCount == BalloonGame.width * BalloonGame.height or self.shots == 0
@@ -186,10 +186,10 @@ def balloon_aim_balloon(msgText, sender):
         return Message(text + [BalloonGame.askAim()], Mode.balloon, balloon_action1)
 def balloon_award(name):
     game = __gameInfo[name]
-    count = game.getCouponCount()
+    count = game.getVoucherCount()
     level = list(range(5))
-    coupons = guaCoupon([Coupon(ez.random_pop(level)) for _ in range(count)])
-    return ['登登登！', '激动人心的颁奖典礼开始啦', f'“{name}”小朋友可以获得的奖券总共有', (f'{count}张' + count * '！', 2)] + coupons
+    vouchers = guaVoucher([Voucher(ez.random_pop(level)) for _ in range(count)])
+    return ['登登登！', '激动人心的颁奖典礼开始啦', f'“{name}”小朋友可以获得的奖券总共有', (f'{count}张' + count * '！', 2)] + vouchers
 def balloon_aim_boss(sender, plot1 = None):
     game: BalloonGame = __gameInfo[sender]
     game.bossAimed += 1
@@ -199,9 +199,9 @@ def balloon_aim_boss(sender, plot1 = None):
     plot1 = plot1 if plot1 != None else random.randint(0, 3)
     print(plot1)
     if plot1 == 0:
-        coupons = [Coupon(i) for i in range(5)]
-        random.shuffle(coupons)
-        coupons = guaCoupon(coupons)
+        vouchers = [Voucher(i) for i in range(5)]
+        random.shuffle(vouchers)
+        vouchers = guaVoucher(vouchers)
         text = ['“喂喂喂你干嘛！”老板很紧张，', '“你不要突然把枪对准我啊！！！你瞄准气球啊！！！”', '砰！']
         if random.randint(0, 1):
             person = '老板' if random.randint(0, 2) else '路人'
@@ -211,14 +211,14 @@ def balloon_aim_boss(sender, plot1 = None):
                 text.append(f'你对{person}的伤感到很内疚，但你仍然刮开了老板的奖券')
             else:
                 text.append(f'你对{person}的伤一点也不感到内疚，并且刮开了老板的奖券')
-            text += coupons
+            text += vouchers
             if person == '老板':
                 text += ['游戏结束了，老板的心也很受伤，再也不摆他那心爱的气球摊了']
             else:
                 text += ['游戏结束了，老板因为危害社会安全被警察叔叔带走了', '老板再摆不了他心爱的气球摊了', '老板希望你早日自首，也好去陪陪他这个孤寡老人']
         else:
             text += ['你一枪打在了气球上！', '还好没有人受伤！', '但老板被你吓出了心脏病！', '老板昏过去了！', '你很慌张，你不知道该怎么做', '但你觉得奖券更重要！', '所以你决定偷走了老板所有的奖券！', '你获得了5张奖券！', \
-                    '你逃跑了！', '在一个夜深人静的晚上，你缩在被窝里', '你对老板的事感到很内疚，但你仍然刮开了老板的奖券'] + coupons + ['游戏结束了，老板的心很受伤，再也不摆他那心爱的气球摊了']
+                    '你逃跑了！', '在一个夜深人静的晚上，你缩在被窝里', '你对老板的事感到很内疚，但你仍然刮开了老板的奖券'] + vouchers + ['游戏结束了，老板的心很受伤，再也不摆他那心爱的气球摊了']
         return Message(text)
     elif plot1 == 1:
         text = ['“喂喂喂你干嘛！”，老板把你的枪口转向了气球', '“你瞄准气球啊！！！瞄准我干什么！！！”']
