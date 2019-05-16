@@ -57,6 +57,7 @@ def sendFile(msg):
 
 def balloonGame(msg):
     info: Info = infoDict.setdefault(msg.sender.nick_name, Info())
+    print(msg.sender.name, msg.text)
     if info.inProcess:
         return
     info.inProcess = True
@@ -67,6 +68,7 @@ def balloonGame(msg):
     else:
         try:
             match = re.search(BALLOON, msg.text.strip(), re.IGNORECASE)
+            print('Match:', match)
             if match:
                 message: Message = balloon(msg, match)
         except ResponseError as e:
