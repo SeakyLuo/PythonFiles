@@ -1,7 +1,7 @@
 import time, datetime
 import urllib.request, urllib.parse
 import os, threading, subprocess, zipfile, ntpath, shutil, platform
-import random, csv
+import random, csv, re
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
@@ -12,6 +12,23 @@ from itertools import chain, combinations
 
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + '\\'
 DataTypeError = TypeError('Unsupported data type.')
+
+def replacePattern(pattern: str, string: str, substr: str = ''):
+    '''Replace the substring that follows a pattern from a string.
+        pattern: a Regex string or a re.Pattern object.
+        string: the target string.
+        substr: default is empty, which removes the pattern.'''
+    if type(pattern) == str:
+        pattern = re.compile(pattern)
+    if type(pattern) != re.Pattern:
+        raise DataTypeError
+    new = string
+    while True:
+        match = re.search(pattern, new)
+        if not match:
+            return new
+        target = match.group()
+        new = new.replace(target, substr)
 
 def prchoice(obj):
     '''Probabilistic random choice. (Random choice with probability)
@@ -570,17 +587,26 @@ class find:
         '''Find the distance between obj1 and obj2.'''
         return len(self.between(obj1, obj2))
 
-    def key(self, value):
-        '''Find all the keys with the value.'''
+    def key(self, value) -> tuple:
+        '''Find a tuple of all the keys with the value.'''
         if self.type != dict:
             raise DataTypeError
         return tuple(k for k in self.obj if self.obj[k] == value)
+
+    def uniqueKey(self, value):
+        '''Find the unique key that corresponds to the value.'''
+        if self.type != dict:
+            raise DataTypeError
+        for k, v in self.obj.items():
+            if v == value:
+                return k
+        return None
 
     def last(self, occurrence):
         '''Find the last occurring index in an obj.'''
         return self.all(occurrence)[-1]
 
-    def power_set(self):
+    def powerSet(self):
         '''Find all the subs of obj except the empty sub and itself.
            This fuction returns a list because set is not ordered.'''
         return list(chain.from_iterable(combinations(self.obj, r) for r in range(len(self.obj) + 1)))
