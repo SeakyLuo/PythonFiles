@@ -44,11 +44,11 @@ def prchoice(obj):
         index += 1
     return targets[index]
 
-def cdlnk(path):
+def cdlnk(path: str):
     '''cd lnk path'''
     os.chdir(getlnk(path))
 
-def getlnk(path):
+def getlnk(path: str):
     '''Get lnk path'''
     import win32com.client
     shell = win32com.client.Dispatch("WScript.Shell")
@@ -111,7 +111,7 @@ def summation(iterable):
         return reduce(update, iterable)
     raise DataTypeError
 
-def countLines(path, filetype):
+def countLines(path: str, filetype: str):
     '''Count the lines of all the files with the specified type in the path.'''
     count = 0
     for item in os.listdir(path):
@@ -182,12 +182,12 @@ class Settings:
     def save(self):
         fwrite(self.settingsFile, dumps(self.settings))
 
-def tryEval(string):
+def tryEval(string: str):
     '''Use eval() without dealing with exceptions.'''
     try: return eval(string)
     except: return string
 
-def translate(string, to_l = 'zh', from_l = 'en'):
+def translate(string: str, to_l: str = 'zh', from_l: str = 'en'):
     '''Translate string from from_l language to to_l language'''
     if not string: return ''
     header = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
@@ -220,7 +220,7 @@ def __handlepy(directory, func, reminder = False):
     else:
         raise Exception('Invalid directory!')
 
-def exportpy(directory, withConsole, zipFile = True, reminder = False):
+def exportpy(directory: str, withConsole: bool, zipFile: bool = True, reminder: bool = False):
     '''Exports a GUI python app.'''
     ## Add '-noconfirm' ?
     path = os.path.dirname(directory)
@@ -246,7 +246,7 @@ def exportpy(directory, withConsole, zipFile = True, reminder = False):
     threading.Thread(target = lambda directory, func, reminder: __handlepy(directory, func, reminder), \
                      args = (directory, export, reminder)).start()
 
-def py2pyw(directory, pywname = '', reminder = False):
+def py2pyw(directory: str, pywname: str = '', reminder: bool = False):
     ''' Converts a py file or a folder of py files to pyw files.
         pywname is the of pyw file and is only available when converting a file.
         pywname is empty, set to pyw filename wil be set to the name of py file.'''
@@ -255,7 +255,7 @@ def py2pyw(directory, pywname = '', reminder = False):
     threading.Thread(target = lambda directory, func, reminder: __handlepy(directory, func, reminder), \
                      args = (directory, lambda filename: fwrite(pywname or filename + 'w', fread(filename, False)), reminder)).start()
 
-def rmlnk(path = desktop):
+def rmlnk(path: str = desktop):
     ''' Remove "- 快捷方式" from a path.'''
     for folder in os.listdir(path):
         folder = os.path.join(path, folder)
@@ -293,7 +293,7 @@ def copyToClipboard(text):
 ## abbreviation
 cpc = copyToClipboard
 
-def checkfolders(folder1, folder2):
+def checkfolders(folder1: str, folder2: str):
     '''Check whether folder1 is exactly the same as folder2'''
     l1 = os.listdir(folder1)
     l2 = os.listdir(folder2)
@@ -307,7 +307,7 @@ def checkfolders(folder1, folder2):
                 return False
     return True
 
-def findFilePath(filename, path = ''):
+def findFilePath(filename: str, path: str = ''):
     '''Default path: All
        Find the first occurence only.
        Use smaller range to have faster searching speed.'''
@@ -334,14 +334,14 @@ def findFilePath(filename, path = ''):
                 return result
     return False
 
-def timer(func, iterations = 1000, *args):
+def timer(func, iterations: int = 1000, args: tuple = ()):
     '''If func has arguments, put them into args.'''
     t = time.time()
-    for i in range(int(iterations)):
+    for i in range(iterations):
         func(*args)
     return time.time() - t
 
-def fread(filename, evaluate = True, coding = 'utf8'):
+def fread(filename: str, evaluate: bool = True, coding: str = 'utf8'):
     '''Read the file that has the filename.
         Set evaluate to true to evaluate the content.
         Default coding: utf8.'''
@@ -351,7 +351,7 @@ def fread(filename, evaluate = True, coding = 'utf8'):
             content = tryEval(content)
         return content
 
-def fwrite(filename, content, mode = 'w', coding = 'utf8'):
+def fwrite(filename: str, content, mode: str = 'w', coding: str = 'utf8'):
     ''' Write the file that has the filename with content.
         Default mode: "w"
         Default coding: utf8.'''
@@ -360,7 +360,7 @@ def fwrite(filename, content, mode = 'w', coding = 'utf8'):
             content = repr(content)
         file.write(content)
 
-def fcopy(src, dst, coding = 'utf8'):
+def fcopy(src: str, dst: str, coding: str = 'utf8'):
     '''Copy a file.
        Requires source directory(src) and destination directory(dst).
        Default coding: utf8.'''
@@ -646,16 +646,16 @@ class find:
         return obj
 
 ##flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
-def flatten(items, ignore_types = (str, bytes)):
+def flatten(sequence, ignore_types = (str, bytes)):
     '''Flattens an iterable if not ignored.'''
-    typ = type(items)
-    def generator(items):
-        for item in items:
+    typ = type(sequence)
+    def generator(sequence):
+        for item in sequence:
             if isinstance(item, typ):
                 yield from flatten(item)
             else:
                 yield item
-    return items if isinstance(items, ignore_types) else typ(generator(items))
+    return sequence if isinstance(sequence, ignore_types) else typ(generator(sequence))
 
 def rmdup(obj):
     '''Return a list without duplicates.'''
@@ -749,7 +749,7 @@ def formatted():
 #abbreviation
 fmt = formatted
 
-def delta_days(date1, date2 = None):
+def delta_days(date1: int, date2 = None):
     '''Return the days difference between two dates.
        Date must be in the format of YYYYMMDD.
        If date2 is None, then it will be regarded as today.'''
@@ -761,7 +761,7 @@ def delta_days(date1, date2 = None):
     delta = abs((end - start).days + 1)
     return delta
 
-def ndays_ago(nDays):
+def ndays_ago(nDays: int):
     '''Return the date n days ago.'''
     d = datetime.datetime.today() - datetime.timedelta(days = nDays)
     return int(d.strftime('%Y%m%d'))
