@@ -234,7 +234,7 @@ def balloon_aim_boss(sender, plot1 = None):
                 text += [f'但看在你是{firstCommit}的份上原谅了你！', '小朋友，下次不要再干这么危险的事情了啊！', '你认真地嗯了一声（但老板看起来被吓出了心脏病）']
                 return Message(text + [game.getChanceLeft(), BalloonGame.askAim()], Mode.balloon, balloon_action1)
             else:
-                text += ['“你们这群人，一天想着搞事情！”老板愤怒地说，', f'“我今天已经总共被瞄准{__bossAim}次了！”', '老板不开心了！']
+                text += ['“你们这群人，整天想着搞事情！”老板愤怒地说，', f'“我今天已经总共被瞄准{__bossAim}次了！”', '老板不开心了！']
                 if random.randint(0, __bossAim):
                     text += ['老板收摊了！', '游戏结束！']
                     return Message(text)

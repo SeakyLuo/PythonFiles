@@ -1,32 +1,39 @@
-import math
-import random
-import ez
+import math, random, ez, itertools
 from decimal import Decimal
 from functools import reduce
-import itertools
 
-def argmax(obj) -> list:
+def argmax(obj, key = None, returnObj = True):
     '''Input obj type can be array-like or a dict.
-    Return a list of indices/keys with the maximum value.'''    
-    return __arghelper(obj, lambda v, value: v > value)
+    Return a list of indices/keys with the maximum value.
+    If returnObj, return the first max object. Otherwise, return a list obj max objects.'''
+    res = __arghelper(obj, lambda v, value: v > value, key)
+    return res[0] if returnObj else res
 
-def argmin(obj) -> list:
+def argmin(obj, key = None, returnObj = True):
     '''Input obj type can be array-like or a dict.
-    Return a list of indices/keys with the minimum value.''' 
-    return __arghelper(obj, lambda v, value: v < value)
+    Return a list of indices/keys with the minimum value.
+    If returnObj, return the first min object. Otherwise, return a list obj min objects.'''
+    res = __arghelper(obj, lambda v, value: v < value, key)
+    return res[0] if returnObj else res
 
-def __arghelper(obj, booleanExpression) -> list:
+def __arghelper(obj, booleanExpression, keyFunc) -> list:
+    if not obj:
+        raise TypeError('Expect Non-empty object.')
     if not isinstance(obj, dict):
-        obj = { i: n for i, n in enumerate(obj) }
+        obj = dict(enumerate(obj))
+    if not keyFunc:
+        keyFunc = lambda x: x
     key, value = [], None
     for k, v in obj.items():
+        V = keyFunc(v)
+        Value = keyFunc(value) if value else None
         if not key:
             key.append(k)
             value = v
-        elif booleanExpression(v, value):
+        elif booleanExpression(V, Value):
             key = [k]
             value = v
-        elif v == value:
+        elif V == Value:
             key.append(k)
     return key
 
@@ -46,7 +53,8 @@ def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
 nl = npMatrixToLatex
 
 def product(iterable):
-    ''' Return the numerical product of numbers.
+    ''' (Deprecated) Use math.prod (new function of python 3.8) instead.
+    Return the numerical product of numbers.
     For Cartesian Product, please use itertools.product instead.'''
     return reduce(lambda x, y: x * y, iterable)
 
