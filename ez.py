@@ -15,9 +15,9 @@ DataTypeError = TypeError('Unsupported data type.')
 
 def replacePattern(pattern: str, string: str, substr: str = ''):
     '''Replace the substring that follows a pattern from a string.
-        pattern: a Regex string or a re.Pattern object.
-        string: the target string.
-        substr: default is empty, which removes the pattern.'''
+       pattern: a Regex string or a re.Pattern object.
+       string: the target string.
+       substr: default is empty, which removes the pattern.'''
     if type(pattern) == str:
         pattern = re.compile(pattern)
     if type(pattern) != re.Pattern:
