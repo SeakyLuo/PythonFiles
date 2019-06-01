@@ -27,10 +27,12 @@ class server:
             message = Message(RECONNECT, self.name, len(self.blockChain))
             for name in names:
                 self.sendMessage(name, message)
+            print('RECONNECT message has been sent.')
         # for reconnection
         while True:
             conn, address = self.socket.accept()
             name = ez.find(config).uniqueKey(address)
+            print(f'{name} is reconnected.')
             self.serverSockets[name] = conn
             threading.Thread(target = self.server, args = (name, conn)).start()
 
@@ -120,7 +122,7 @@ class server:
                     self.leaders[self.name] = True
                     for name in self.serverSockets:
                         self.sendMessage(name, reply)
-                    print('ACCEPT message has been sent.')
+                    print('ACCEPT message has been sent to the other servers.')
                     self.acceptVal = myVal
                     self.acceptNum = ballotNum
                     self.ballot_pool.clear()
@@ -133,28 +135,34 @@ class server:
                         self.blockChain.append(self.block)
                         for name in self.serverSockets:
                             self.sendMessage(name, reply)
+                        print('DECISION message has been sent to the other servers.')
                         self.block = None
                         self.leaders[self.name] = False
                         self.ballot_pool.clear()
                         for i in range(2):
                             self.trans.pop(i)
                 else:
+                    print('ACCEPT message is received from the Leader.')
                     if ballot >= self.ballotNum:
                         self.leaders[name] = True
                         self.acceptNum = ballot
                         self.acceptVal = message.acceptVal
                         reply = message
                         socket.sendall(reply)
+                    else:
+                        print('ACCEPT message is rejected.')
             elif message.mtype == DECISION:
                 self.leaders[name] = False
                 block = self.acceptVal
                 if block.prev == hash(self.blockChain[-1]):
                     for transaction in [block.txA, block.txB]:
                         if self.money[transaction.fromServer] < transaction.amount:
+                            print('Block Rejected.')
                             break
                         self.money[transaction.fromServer] -= transaction.amount
                         self.money[transaction.toServer] += transaction.amount
                     else:
+                        print('Block appended.')
                         self.blockChain.append(block)
                         while True:
                             transaction = self.trans[0]
@@ -162,14 +170,18 @@ class server:
                                 self.trans.pop(0)
                             else:
                                 break
+                else:
+                    print('Invalid block.')
                 # concurrent leader
                 if self.block:
                     self.prepare()
             elif message.mtype == RECONNECT:
                 reply = Message(LOG, log = self.getLog(message.log))
                 socket.sendall(reply)
+                print(f'Log has been sent to Server{name}.')
             elif message.mtype == LOG:
                 self.setup(message.log)
+                print(f'Log is received from Server{name}.')
             self.writeLog()
 
     def prepare(self):
@@ -179,6 +191,7 @@ class server:
         message = Message(PREPARE, ballot)
         for name in self.serverSockets:
             self.sendMessage(name, message)
+        print('PREPARE message has been sent.')
 
     def sendMessage(self, socket: str, message: Message) -> bool:
         try:
