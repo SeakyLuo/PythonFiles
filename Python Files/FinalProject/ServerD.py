@@ -87,10 +87,8 @@ class server:
                 transaction: Transaction = eval(command)
                 if self.money[transaction.fromServer] < transaction.amount:
                     message = 'Transaction failed.'
-                    print(message)
                 else:
                     message = 'Transaction successful!'
-                    print(message)
                     self.trans.append(transaction)
                     if len(self.trans) > 1:
                         print('A block created.')
@@ -244,6 +242,6 @@ class server:
         return ''
 
 if __name__ == '__main__':
-    name = saveServers()
+    name = D
     config = readConfig()
     server = server(name, config)

@@ -1,0 +1,1 @@
+{'trans': [Transaction(fromServer='A', toServer='B', amount=10.0)], 'money': {'A': 100, 'B': 100, 'C': 100, 'D': 100, 'E': 100}, 'leaders': {'A': False, 'B': False, 'C': False, 'D': False, 'E': False}, 'ballotNum': Ballot(bal=0, pid=1, depth=0), 'acceptNum': Ballot(bal=0, pid=1, depth=0), 'acceptVal': None, 'ballot_pool': [], 'block': None, 'blockChain': []}

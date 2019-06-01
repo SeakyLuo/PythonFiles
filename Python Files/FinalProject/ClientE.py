@@ -21,7 +21,7 @@ class client:
             print(reply)
 
 if __name__ == '__main__':
-    name = saveClients()
+    name = E
     config = readConfig()[name]
     serverIP = gethostbyname(gethostname()) # config[IP]
     serverPort = config[PORT]

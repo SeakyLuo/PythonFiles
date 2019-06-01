@@ -16,8 +16,16 @@ PBC = 'pbc'
 PS = 'ps'
 
 @dataclass
+class Transaction:
+    fromServer: str
+    toServer: str
+    amount: float
+    def toString(self):
+        return f'{self.fromServer} {self.toServer} {self.amount}'
+
+@dataclass
 class Block:
-    def __init__(self, prev: Block, txA: Transaction, txB: Transaction):
+    def __init__(self, prev, txA: Transaction, txB: Transaction):
         if prev:
             self.depth: int = prev.depth + 1
             self.nonce: str = prev.hashString
@@ -51,22 +59,21 @@ class Ballot:
         return self.depth > obj.depth or (self.depth == obj.depth and self.bal >= obj.val)
 
 @dataclass
-class Transaction:
-    fromServer: str
-    toServer: str
-    amount: float
-    def toString(self):
-        return f'{self.fromServer} {self.toServer} {self.amount}'
-
-@dataclass
 class Message:
     mtype: int
     ballot: Ballot = None # a Ballot object or a tuple of two Ballots
     acceptVal: Block = None
     log: str = ''
 
-def readConfig():
-    return json.loads(fread('config.txt', False))
+def readConfig() -> dict:
+    return json.loads(fread('config.txt'))
+
+def updateConfig():
+    config = readConfig()
+    for name, info in config.items():
+        info[IP] = gethostbyname(gethostname())
+        config[name] = info
+    fwrite('config.txt', json.dumps(config))
 
 def saveClients():
     content = fread('client.py')
@@ -89,7 +96,7 @@ def fread(filename):
         content = file.read()
         return content
 
-def fwrite(filename, content, mode = 'w'):
+def fwrite(filename, content):
     with open(filename, 'w') as file:
         file.write(content)
 
