@@ -1,0 +1,224 @@
+# TCP server
+from helper import *
+
+class server:
+    def __init__(self, name, config: dict):
+        self.name = name
+        self.host = gethostbyname(gethostname())
+        self.port = config[name][PORT]
+        self.socket = socket(AF_INET, SOCK_STREAM)
+        self.socket.bind((self.host, self.port))
+        self.socket.listen(5)
+        self.pid = pid[name]
+        log = readLog(name)
+        self.setup(log)
+        print(f'Server {self.name} started!')
+        self.clientConn, address = self.socket.accept()
+        print(f'Connected to Client')
+        threading.Thread(target = self.client).start()
+        self.serverSockets = {}
+        for name in names:
+            if name == self.name: continue
+            soc = socket(AF_INET, SOCK_STREAM)
+            soc.connect((config[name][IP], config[name][PORT]))
+            self.serverSockets[name] = soc
+            threading.Thread(target = self.server, args = (name, soc)).start()
+        if log:
+            message = Message(RECONNECT, self.name, len(self.blockChain))
+            for name in names:
+                self.sendMessage(name, message)
+        # for reconnection
+        while True:
+            conn, address = self.socket.accept()
+            name = ez.find(config).uniqueKey(address)
+            self.serverSockets[name] = conn
+            threading.Thread(target = self.server, args = (name, conn)).start()
+
+    def setup(self, log):
+        self.blockChain = []
+        if log:
+            self.trans = log['trans']
+            self.money = log['money']
+            self.leaders = log['leaders']
+            self.ballotNum = log['ballotNum']
+            self.acceptNum = log['acceptNum']
+            self.acceptVal = log['acceptVal']
+            self.ballot_pool = log['ballot_pool']
+            self.block = log['block']
+            if self.blockChain:
+                for block in log['blockChain']:
+                    if block not in self.blockChain:
+                        self.blockChain.append(block)
+            else:
+                self.blockChain += log['blockChain']
+        else:
+            self.trans = []
+            self.money = { name: 100 for name in names }
+            self.leaders = { name: False for name in names }
+            self.ballotNum = Ballot(0, self.pid, 0)
+            self.acceptNum = Ballot(0, self.pid, 0)
+            self.acceptVal = None
+            self.ballot_pool = []
+            self.block = None
+
+    def getBallot(self, block: Block = None) -> Ballot:
+        if block:
+            self.ballotNum.increment(block.depth)
+        return self.ballotNum
+
+    def client(self):
+        while True:
+            recv = self.clientConn.recv(1024)
+            command = recv.decode()
+            if command == PB:
+                print('Print Balance Command Received')
+                message = '\n'.join([f'{name}: {balance}' for name, balance in money.items()])
+            elif command == PBC:
+                print('Print Block Chain Command Received')
+                message = '↑\n'.join([block.toString() for block in self.blockChain])
+            elif command == PS:
+                print('Print Set Received')
+                if self.trans:
+                    message = '\n'.join([transaction.toString() for transaction in self.trans])
+                else:
+                    message = 'No Transactions.'
+            else:
+                print(f'Transaction received from {self.name}')
+                transaction: Transaction = eval(command)
+                if self.money[transaction.fromServer] < transaction.amount:
+                    message = 'Transaction failed.'
+                else:
+                    message = 'Transaction successful!'
+                    self.trans.append(transaction)
+                    if len(self.trans):
+                        print('A block created.')
+                        self.prepare()
+                    self.writeLog()
+            self.clientConn.sendall(message.encode())
+
+    def server(self, name, socket: socket):
+        while True:
+            recv = socket.recv(1024)
+            message: Message = eval(recv.decode())
+            ballot = message.ballot
+            if message.mtype == PREPARE:
+                print('PREPARE message received.')
+                if ballot >= self.ballotNum:
+                    self.ballotNum = ballot.bal
+                    reply = Message(ACK, (ballot, self.acceptNum), self.acceptVal)
+                    socket.sendall(reply)
+                    print('ACK has been sent.')
+                else:
+                    print('Reject PREPARE message.')
+            elif message.mtype == ACK:
+                ballotNum, b = ballot
+                self.ballot_pool.append(message)
+                majority = len(self.leaders) // 2 + 1
+                if len(self.ballot_pool) >= majority:
+                    myVal = self.block if all(not msg.acceptVal for msg in self.ballot_pool) else self.highestB()
+                    reply = Message(ACCEPT, ballotNum, myVal)
+                    self.leaders[self.name] = True
+                    for name in self.serverSockets:
+                        self.sendMessage(name, reply)
+                    print('ACCEPT message has been sent.')
+                    self.acceptVal = myVal
+                    self.acceptNum = ballotNum
+                    self.ballot_pool.clear()
+            elif message.mtype == ACCEPT:
+                if self.leaders[self.name]:
+                    self.ballot_pool.append(message)
+                    majority = len(self.leaders) // 2 + 1
+                    if len(self.ballot_pool) >= majority:
+                        reply = Message(DECISION, ballot, self.block)
+                        self.blockChain.append(self.block)
+                        for name in self.serverSockets:
+                            self.sendMessage(name, reply)
+                        self.block = None
+                        self.leaders[self.name] = False
+                        self.ballot_pool.clear()
+                        for i in range(2):
+                            self.trans.pop(i)
+                else:
+                    if ballot >= self.ballotNum:
+                        self.leaders[name] = True
+                        self.acceptNum = ballot
+                        self.acceptVal = message.acceptVal
+                        reply = message
+                        socket.sendall(reply)
+            elif message.mtype == DECISION:
+                self.leaders[name] = False
+                block = self.acceptVal
+                if block.prev == hash(self.blockChain[-1]):
+                    for transaction in [block.txA, block.txB]:
+                        if self.money[transaction.fromServer] < transaction.amount:
+                            break
+                        self.money[transaction.fromServer] -= transaction.amount
+                        self.money[transaction.toServer] += transaction.amount
+                    else:
+                        self.blockChain.append(block)
+                        while True:
+                            transaction = self.trans[0]
+                            if self.money[transaction.fromServer] < transaction.amount:
+                                self.trans.pop(0)
+                            else:
+                                break
+                # concurrent leader
+                if self.block:
+                    self.prepare()
+            elif message.mtype == RECONNECT:
+                reply = Message(LOG, log = self.getLog(message.log))
+                socket.sendall(reply)
+            elif message.mtype == LOG:
+                self.setup(message.log)
+            self.writeLog()
+
+    def prepare(self):
+        txA, txB = self.trans[:2]
+        self.block = Block(self.blockChain[-1] if self.blockChain else None, txA, txB)
+        ballot = self.getBallot(block)
+        message = Message(PREPARE, ballot)
+        for name in self.serverSockets:
+            self.sendMessage(name, message)
+
+    def sendMessage(self, socket: str, message: Message) -> bool:
+        try:
+            self.serverSockets[name].sendall(str(message).encode())
+            return True
+        except Exception as e:
+            return False
+
+    def highestB(self) -> Block:
+        msg = self.ballot_pool[0]
+        block = msg.acceptVal
+        b = msg.ballot
+        for message in self.ballot_pool[1:]:
+            if message.b >= b:
+                block = message.block
+        return block
+
+    def readLog(self):
+        try:
+            return json.loads(fread(f'Log{self.name}.txt'))
+        except:
+            return ''
+
+    def getLog(self, depth = 0) -> dict:
+        return {
+            'trans': self.trans,
+            'money': self.money,
+            'leaders': self.leaders,
+            'ballotNum': self.ballotNum,
+            'acceptNum': self.acceptNum,
+            'acceptVal': self.acceptVal,
+            'ballot_pool': self.ballot_pool,
+            'block': self.block,
+            'blockChain': self.blockChain[depth:],
+        }
+
+    def writeLog(self):
+        fwrite(f'Log{self.name}.txt', json.dumps(self.getLog()))
+
+if __name__ == '__main__':
+    name = saveServers()
+    config = readConfig()
+    server = server(name, config)
