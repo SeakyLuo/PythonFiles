@@ -28,7 +28,8 @@ class server:
             message = Message(RECONNECT, self.name, len(self.blockChain))
             for name in names:
                 self.sendMessage(name, message)
-            print('RECONNECT message has been sent.')
+            print('RECONNECT message has been sent to the other servers.')
+            self.receiveLog = False
         # for reconnection
         while True:
             conn, address = self.socket.accept()
@@ -38,7 +39,6 @@ class server:
             threading.Thread(target = self.server, args = (name, conn)).start()
 
     def setup(self, log):
-        self.blockChain = []
         if log:
             self.trans = log['trans']
             self.money = log['money']
@@ -48,12 +48,7 @@ class server:
             self.acceptVal = log['acceptVal']
             self.ballot_pool = log['ballot_pool']
             self.block = log['block']
-            if self.blockChain:
-                for block in log['blockChain']:
-                    if block not in self.blockChain:
-                        self.blockChain.append(block)
-            else:
-                self.blockChain += log['blockChain']
+            self.blockChain = log['blockChain']
         else:
             self.trans = []
             self.money = { name: 100 for name in names }
@@ -63,6 +58,7 @@ class server:
             self.acceptVal = None
             self.ballot_pool = []
             self.block = None
+            self.blockChain = []
 
     def getBallot(self, block: Block = None) -> Ballot:
         if block:
@@ -181,8 +177,13 @@ class server:
                 socket.sendall(reply)
                 print(f'Log has been sent to Server{name}.')
             elif message.mtype == LOG:
-                self.setup(message.log)
-                print(f'Log is received from Server{name}.')
+                # update log only once?
+                if not self.receiveLog:
+                    print(f'Log is received from Server{name}.')
+                    for block in message.log:
+                        # verify block?
+                        self.blockChain.append(block)
+                    self.receiveLog = True
             self.writeLog()
 
     def prepare(self):
