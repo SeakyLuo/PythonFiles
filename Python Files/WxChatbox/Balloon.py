@@ -135,13 +135,14 @@ def balloon(msg, match: re.Match):
     text = ['打气球咯', str(game), '击中的气球越多获得的奖励也会更多~', game.getChanceLeft(), BalloonGame.askAim()]
     return Message(text, Mode.balloon, balloon_action1)
 def balloon_action1(msg):
-    if msg.text in ['A', 'a', '气球', BalloonGame.balloon]:
+    text = msg.text.strip()
+    if text in ['A', 'a', '气球', BalloonGame.balloon]:
         return Message(f'请问你想瞄准哪个{BalloonGame.Balloon()}呢\n如果要瞄准第二行第三个回复23就好啦', Mode.balloon, balloon_action1)
-    elif msg.text in ['B', 'b', '老板', BalloonGame.boss]:
+    elif text in ['B', 'b', '老板', BalloonGame.boss]:
         return balloon_aim_boss(msg.sender.nick_name)
-    elif msg.text.isnumeric() and len(msg.text) == 2:
-        return balloon_aim_balloon(msg.text, msg.sender.nick_name)
-    elif EXIT_CODE in msg.text:
+    elif text.isnumeric() and len(text) == 2:
+        return balloon_aim_balloon(text, msg.sender.nick_name)
+    elif EXIT_CODE in text:
         return Message('被你知道这个可爱的小咒语了哈哈，游戏退出~', Mode.standard)
     return Message(['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()], Mode.balloon, balloon_action1)
 def balloon_aim_balloon(msgText, sender):
