@@ -216,7 +216,7 @@ class server:
 
     def readLog(self):
         try:
-            return json.loads(fread(f'Log{self.name}.txt'))
+            return eval(fread(f'Log{self.name}.txt'))
         except:
             return ''
 

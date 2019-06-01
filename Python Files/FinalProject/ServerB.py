@@ -87,8 +87,10 @@ class server:
                 transaction: Transaction = eval(command)
                 if self.money[transaction.fromServer] < transaction.amount:
                     message = 'Transaction failed.'
+                    print(message)
                 else:
                     message = 'Transaction successful!'
+                    print(message)
                     self.trans.append(transaction)
                     if len(self.trans) > 1:
                         print('A block created.')
@@ -214,7 +216,7 @@ class server:
 
     def readLog(self):
         try:
-            return json.loads(fread(f'Log{self.name}.txt'))
+            return eval(fread(f'Log{self.name}.txt'))
         except:
             return ''
 
