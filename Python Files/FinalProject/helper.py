@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-import time, threading, json, ez
+import time, threading, json
 from socket import *
 from hashlib import sha256
 

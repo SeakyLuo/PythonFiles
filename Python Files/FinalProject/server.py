@@ -4,6 +4,7 @@ from helper import *
 class server:
     def __init__(self, name, config: dict):
         self.name = name
+        self.config = config
         self.host = gethostbyname(gethostname())
         self.port = config[name][PORT]
         self.socket = socket(AF_INET, SOCK_STREAM)
@@ -31,7 +32,7 @@ class server:
         # for reconnection
         while True:
             conn, address = self.socket.accept()
-            name = ez.find(config).uniqueKey(address)
+            name = self.findServerName(address[0])
             print(f'{name} is reconnected.')
             self.serverSockets[name] = conn
             threading.Thread(target = self.server, args = (name, conn)).start()
@@ -230,6 +231,12 @@ class server:
 
     def writeLog(self):
         fwrite(f'Log{self.name}.txt', json.dumps(self.getLog()))
+
+    def findServerName(self, ip):
+        for name, info in self.config.items():
+            if info[IP] == ip:
+                return name
+        return ''
 
 if __name__ == '__main__':
     name = saveServers()
