@@ -18,9 +18,8 @@ class server:
         self.accept_ballot = []
         self.sendSocket = {}
         self.replySocket = {}
-        self.threads = {}
         if log:
-            message = Message(RECONNECT, log = len(self.blockChain))
+            message = Message(RECONNECT, self.name, log = len(self.blockChain))
             self.broadcast(message)
             print('RECONNECT message has been sent to other servers.')
             self.receiveLog = False
@@ -155,8 +154,7 @@ class server:
             elif message.mtype == DECISION:
                 print('DECISION received from the Leader')
                 self.leaders[sender] = False
-                block = self.acceptVal
-                self.appendBlock(block)
+                self.appendBlock(self.acceptVal)
                 # concurrent leader
                 if self.block:
                     self.prepare()

@@ -18,9 +18,8 @@ class server:
         self.accept_ballot = []
         self.sendSocket = {}
         self.replySocket = {}
-        self.threads = {}
         if log:
-            message = Message(RECONNECT, log = len(self.blockChain))
+            message = Message(RECONNECT, self.name, log = len(self.blockChain))
             self.broadcast(message)
             print('RECONNECT message has been sent to other servers.')
             self.receiveLog = False
@@ -148,6 +147,7 @@ class server:
                         self.leaders[sender] = True
                         self.acceptNum = ballot
                         self.acceptVal = message.acceptVal
+                        print('Accept:', message.acceptVal)
                         reply = message
                         self.sendMessage(sender, reply)
                     else:
@@ -155,8 +155,8 @@ class server:
             elif message.mtype == DECISION:
                 print('DECISION received from the Leader')
                 self.leaders[sender] = False
-                block = self.acceptVal
-                self.appendBlock(block)
+                self.appendBlock(self.acceptVal)
+                print('Decision:', message.acceptVal)
                 # concurrent leader
                 if self.block:
                     self.prepare()
@@ -228,6 +228,8 @@ class server:
         return block
 
     def appendBlock(self, block):
+        print('Append:', block)
+        if self.blockChain: print(self.blockChain[-1].hash())
         if not self.blockChain or block.prev == self.blockChain[-1].hash():
             for transaction in [block.txA, block.txB]:
                 copy = self.money.copy()
