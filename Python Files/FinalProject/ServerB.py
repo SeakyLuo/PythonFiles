@@ -27,7 +27,6 @@ class server:
         while True:
             conn, address = self.socket.accept()
             message = conn.recv(1024).decode()
-            print(message)
             if message == self.name:
                 self.clientConn = conn
                 threading.Thread(target = self.client).start()
@@ -56,6 +55,7 @@ class server:
             self.acceptVal = None
             self.block = None
             self.blockChain = []
+        self.tmpMoney = self.money.copy()
 
     def client(self):
         while True:
@@ -73,7 +73,7 @@ class server:
                 print('Print Block Chain Command Received')
                 seperator = '=' * 20 + '\n'
                 message = '↑\n'.join([block.toString() for block in self.blockChain])
-                message = seperator + message + seperator
+                message = 'Blockchain:\n' + seperator + message + seperator
             elif command == PS:
                 print('Print Set Received')
                 if self.trans:
@@ -83,10 +83,12 @@ class server:
             else:
                 print(f'Transaction received from {self.name}')
                 transaction: Transaction = eval(command)
-                if self.money[transaction.fromServer] < transaction.amount:
+                if self.tmpMoney[transaction.fromServer] < transaction.amount:
                     message = 'Transaction failed.'
                     print(message)
                 else:
+                    self.tmpMoney[transaction.fromServer] -= transaction.amount
+                    self.tmpMoney[transaction.toServer] += transaction.amount
                     message = 'Transaction successful!'
                     print(message)
                     self.trans.append(transaction)
@@ -165,7 +167,7 @@ class server:
                 if self.block:
                     self.prepare()
             elif message.mtype == RECONNECT:
-                reply = Message(LOG, self.name, log = self.blockChain[message.log:])
+                reply = Message(LOG, self.name, log = self.blockChain[message.log:]) # bug
                 self.sendMessage(sender, reply)
                 print(f'Log has been sent to Server{sender}.')
             elif message.mtype == LOG:
@@ -234,19 +236,19 @@ class server:
     def appendBlock(self, block):
         if not self.blockChain or block.prev == self.blockChain[-1].hash():
             for transaction in [block.txA, block.txB]:
-                copy = self.money.copy()
-                if copy[transaction.fromServer] < transaction.amount:
+                if self.money[transaction.fromServer] < transaction.amount:
                     print('Block Rejected.')
+                    self.money = self.tmpMoney.copy()
                     break
-                copy[transaction.fromServer] -= transaction.amount
-                copy[transaction.toServer] += transaction.amount
+                self.money[transaction.fromServer] -= transaction.amount
+                self.money[transaction.toServer] += transaction.amount
             else:
-                self.money = copy
                 self.blockChain.append(block)
+                self.tmpMoney = self.money.copy()
                 print('Block appended.')
-                while self.trans:
+                while self.trans: # better checking
                     transaction = self.trans[0]
-                    if self.money[transaction.fromServer] < transaction.amount:
+                    if self.tmpMoney[transaction.fromServer] < transaction.amount:
                         self.trans.pop(0)
                     else:
                         break
