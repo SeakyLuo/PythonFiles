@@ -25,21 +25,16 @@ class Transaction:
 
 @dataclass
 class Block:
-    def __init__(self, prev, txA: Transaction, txB: Transaction):
-        if prev:
-            self.depth: int = prev.depth + 1
-            self.nonce: str = prev.hashString
-            self.prev:  str = hash(prev)
-        else:
-            self.depth: int = 1
-            self.nonce: str = 'NULL'
-            self.prev:  str = 'NULL'
-        self.txA = txA
-        self.txB = txB
-        self.hashString = str(self.depth) + self.prev + self.nonce + self.txA.toString() + self.txB.toString()
+    txA: Transaction
+    txB: Transaction
+    depth: int = 1
+    nonce: str = 'NULL'
+    prev:  str = 'NULL'
+    def hashString(self):
+        return str(self.depth) + self.prev + self.nonce + self.txA.toString() + self.txB.toString()
 
     def __hash__(self):
-        return sha256(self.hashString)
+        return sha256(self.hashString())
 
     def toString(self):
         return f'Depth: {self.depth}\nH(B-1): {self.prev}\nNonce: {self.nonce}\ntxA: {self.txA.toString()}\ntxB: {self.txB.toString()}\n'
@@ -53,10 +48,9 @@ class Ballot:
     def increment(self, depth):
         self.bal += 1
         self.depth = depth
-        return self
 
     def __ge__(self, obj):
-        return self.depth > obj.depth or (self.depth == obj.depth and self.bal >= obj.val)
+        return self.depth > obj.depth or (self.depth == obj.depth and self.bal >= obj.bal)
 
 @dataclass
 class Message:
