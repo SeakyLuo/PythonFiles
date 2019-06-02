@@ -7,6 +7,7 @@ class client:
         self.serverParams = (serverIP, serverPort)
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.socket.connect(self.serverParams)
+        self.socket.send(name.encode())
         while True:
             command = input("Type your command: \n1. fromClient toClient amount\n2. printBlockchain (pbc)\n3. printBalance (pb)\n4. printSet (ps)\n>>> ")
             if command in [PBC, PB, PS]:
@@ -23,6 +24,6 @@ class client:
 if __name__ == '__main__':
     name = D
     config = readConfig()[name]
-    serverIP = gethostbyname(gethostname()) # config[IP]
+    serverIP = config[IP]
     serverPort = config[PORT]
     client = client(name, serverIP, serverPort)

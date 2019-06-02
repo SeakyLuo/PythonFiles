@@ -5,39 +5,33 @@ class server:
     def __init__(self, name, config: dict):
         self.name = name
         self.config = config
-        self.host = gethostbyname(gethostname())
-        self.port = config[name][PORT]
+        self.host = config[self.name][IP]
+        self.port = config[self.name][PORT]
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.socket.bind((self.host, self.port))
         self.socket.listen(5)
-        self.pid = pid[name]
+        self.pid = pid[self.name]
         log = self.readLog()
         self.setup(log)
         print(f'Server {self.name} started!')
-        self.clientConn, address = self.socket.accept()
-        print(f'Connected to Client')
-        threading.Thread(target = self.client).start()
         self.serverSockets = {}
-        for name in names:
-            if name == self.name: continue
-            soc = socket(AF_INET, SOCK_STREAM)
-            soc.connect((config[name][IP], config[name][PORT]))
-            self.serverSockets[name] = soc
-            threading.Thread(target = self.server, args = (name, soc)).start()
-        if log:
-            message = Message(RECONNECT, log = len(self.blockChain))
-            for name in names:
-                if name != self.name:
-                    self.sendMessage(name, message)
-            print('RECONNECT message has been sent to the other servers.')
-            self.receiveLog = False
-        # for reconnection
+        self.ballot_pool = []
+        # if log:
+        #     message = Message(RECONNECT, log = len(self.blockChain))
+        #     self.broadcast(message)
+        #     print('RECONNECT message has been sent to other servers.')
+        #     self.receiveLog = False
+        #listen for connection request from client and other 4 servers
         while True:
             conn, address = self.socket.accept()
-            name = self.findServerName(address[0])
-            print(f'{name} is reconnected.')
-            self.serverSockets[name] = conn
-            threading.Thread(target = self.server, args = (name, conn)).start()
+            message = conn.recv(1024).decode()
+            if message == self.name:
+                self.clientConn = conn
+                threading.Thread(target = self.client).start()
+                print(f'Connected to Client')
+            else:
+                print(message)
+                threading.Thread(target = self.server, args = (address, conn, message)).start()
 
     def setup(self, log):
         if log:
@@ -47,7 +41,6 @@ class server:
             self.ballotNum = log['ballotNum']
             self.acceptNum = log['acceptNum']
             self.acceptVal = log['acceptVal']
-            self.ballot_pool = log['ballot_pool']
             self.block = log['block']
             self.blockChain = log['blockChain']
         else:
@@ -57,14 +50,8 @@ class server:
             self.ballotNum = Ballot(0, self.pid, 0)
             self.acceptNum = Ballot(0, self.pid, 0)
             self.acceptVal = None
-            self.ballot_pool = []
             self.block = None
             self.blockChain = []
-
-    def getBallot(self, block: Block = None) -> Ballot:
-        if block:
-            self.ballotNum.increment(block.depth)
-        return self.ballotNum
 
     def client(self):
         while True:
@@ -96,23 +83,31 @@ class server:
                         print('A block created.')
                         self.prepare()
                     self.writeLog()
-            self.clientConn.sendall(message.encode())
+            self.clientConn.send(message.encode())
 
-    def server(self, name, socket: socket):
+    def server(self, name, socket: socket, firstMessage):
         while True:
-            recv = socket.recv(1024)
-            message: Message = eval(recv.decode())
+            if firstMessage:
+                message: Message = eval(firstMessage)
+                firstMessage = None
+            else:
+                recv = socket.recv(1024).decode()
+                print(recv)
+                if not recv:
+                    continue
+                message: Message = eval(recv)
             ballot = message.ballot
             if message.mtype == PREPARE:
                 print('PREPARE message received.')
                 if ballot >= self.ballotNum:
                     self.ballotNum = ballot.bal
                     reply = Message(ACK, (ballot, self.acceptNum), self.acceptVal)
-                    socket.sendall(reply)
+                    self.sendMessage(socket, reply)
                     print('ACK has been sent.')
                 else:
                     print('Reject PREPARE message.')
             elif message.mtype == ACK:
+                print('ACK message is received.')
                 ballotNum, b = ballot
                 self.ballot_pool.append(message)
                 majority = len(self.leaders) // 2 + 1
@@ -120,22 +115,21 @@ class server:
                     myVal = self.block if all(not msg.acceptVal for msg in self.ballot_pool) else self.highestB()
                     reply = Message(ACCEPT, ballotNum, myVal)
                     self.leaders[self.name] = True
-                    for name in self.serverSockets:
-                        self.sendMessage(name, reply)
-                    print('ACCEPT message has been sent to the other servers.')
+                    self.broadcast(reply)
+                    print('ACCEPT message has been sent to other servers.')
                     self.acceptVal = myVal
                     self.acceptNum = ballotNum
                     self.ballot_pool.clear()
             elif message.mtype == ACCEPT:
                 if self.leaders[self.name]:
+                    print('ACCEPT message is received from the Acceptor.')
                     self.ballot_pool.append(message)
                     majority = len(self.leaders) // 2 + 1
                     if len(self.ballot_pool) >= majority:
                         reply = Message(DECISION, ballot, self.block)
                         self.blockChain.append(self.block)
-                        for name in self.serverSockets:
-                            self.sendMessage(name, reply)
-                        print('DECISION message has been sent to the other servers.')
+                        self.broadcast(reply)
+                        print('DECISION message has been sent to other servers.')
                         self.block = None
                         self.leaders[self.name] = False
                         self.ballot_pool.clear()
@@ -148,7 +142,7 @@ class server:
                         self.acceptNum = ballot
                         self.acceptVal = message.acceptVal
                         reply = message
-                        socket.sendall(reply)
+                        self.sendMessage(socket, reply)
                     else:
                         print('ACCEPT message is rejected.')
             elif message.mtype == DECISION:
@@ -177,7 +171,7 @@ class server:
                     self.prepare()
             elif message.mtype == RECONNECT:
                 reply = Message(LOG, log = self.getLog(message.log))
-                socket.sendall(reply)
+                self.sendMessage(socket, reply)
                 print(f'Log has been sent to Server{name}.')
             elif message.mtype == LOG:
                 # update log only once?
@@ -192,18 +186,32 @@ class server:
     def prepare(self):
         txA, txB = self.trans[:2]
         self.block = Block(self.blockChain[-1] if self.blockChain else None, txA, txB)
-        ballot = self.getBallot(block)
+        ballot = self.getBallot(self.block)
         message = Message(PREPARE, ballot)
-        for name in self.serverSockets:
-            self.sendMessage(name, message)
+        self.broadcast(message)
         print('PREPARE message has been sent.')
 
-    def sendMessage(self, socket: str, message: Message) -> bool:
-        try:
-            self.serverSockets[name].sendall(str(message).encode())
-            return True
-        except Exception as e:
-            return False
+    def sendMessage(self, socket, message):
+        socket.sendall(str(message).encode())
+
+    def broadcast(self, message: Message) -> bool:
+        msg = str(message).encode()
+        for name, info in self.config.items():
+            if name == self.name: continue
+            try:
+                soc = socket(AF_INET, SOCK_STREAM)
+                soc = self.serverSockets.setdefault(name, soc)
+                soc.connect((info[IP], info[PORT]))
+                soc.sendall(msg)
+            except:
+                pass
+            # finally:
+            #     soc.close()
+
+    def getBallot(self, block: Block = None) -> Ballot:
+        if block:
+            self.ballotNum.increment(block.depth)
+        return self.ballotNum
 
     def highestB(self) -> Block:
         msg = self.ballot_pool[0]
@@ -234,14 +242,7 @@ class server:
         }
 
     def writeLog(self):
-        # fwrite(f'Log{self.name}.txt', json.dumps(self.getLog()))
         fwrite(f'Log{self.name}.txt', str(self.getLog()))
-
-    def findServerName(self, ip):
-        for name, info in self.config.items():
-            if info[IP] == ip:
-                return name
-        return ''
 
 if __name__ == '__main__':
     name = E

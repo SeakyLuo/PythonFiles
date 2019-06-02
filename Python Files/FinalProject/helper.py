@@ -61,6 +61,7 @@ class Ballot:
 @dataclass
 class Message:
     mtype: int
+    sender: str
     ballot: Ballot = None # a Ballot object or a tuple of two Ballots
     acceptVal: Block = None
     log: str = ''
@@ -103,4 +104,5 @@ def fwrite(filename, content):
 if __name__ == '__main__':
     saveClients()
     saveServers()
+    updateConfig()
     clearLogs()
