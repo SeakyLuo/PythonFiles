@@ -2,7 +2,7 @@
 from helper import *
 
 class server:
-    def __init__(self, name, config: dict):
+    def __init__(self, name: str, config: dict):
         self.name = name
         self.config = config
         self.host = config[self.name][IP]
@@ -37,6 +37,7 @@ class server:
                 threading.Thread(target = self.server, args = [conn, message, sender]).start()
 
     def setup(self, log):
+        self.blockChain = []
         if log:
             self.trans = log['trans']
             self.money = log['money']
@@ -45,7 +46,7 @@ class server:
             self.acceptNum = log['acceptNum']
             self.acceptVal = log['acceptVal']
             self.block = log['block']
-            self.blockChain = log['blockChain']
+            self.blockChain += log['blockChain']
         else:
             self.trans = []
             self.money = { name: 100 for name in names }
@@ -54,7 +55,6 @@ class server:
             self.acceptNum = Ballot(0, self.pid, 0)
             self.acceptVal = None
             self.block = None
-            self.blockChain = []
         self.tmpMoney = self.money.copy()
 
     def client(self):
@@ -73,7 +73,7 @@ class server:
                 print('Print Block Chain Command Received')
                 seperator = '=' * 20 + '\n'
                 message = '↑\n'.join([block.toString() for block in self.blockChain])
-                message = 'Blockchain:\n' + seperator + message + seperator
+                message = '\n' + seperator + message + seperator
             elif command == PS:
                 print('Print Set Received')
                 if self.trans:
@@ -167,16 +167,16 @@ class server:
                 if self.block:
                     self.prepare()
             elif message.mtype == RECONNECT:
-                reply = Message(LOG, self.name, log = self.blockChain[message.log:]) # bug
+                reply = Message(LOG, self.name, log = self.getLog(message.log))
                 self.sendMessage(sender, reply)
                 print(f'Log has been sent to Server{sender}.')
             elif message.mtype == LOG:
-                # update log only once?
                 if not self.receiveLog:
                     self.receiveLog = True
                     print(f'Log is received from Server{sender}.')
-                    for block in message.log:
-                        # verify block?
+                    self.money = message.log['money']
+                    self.tmpMoney = self.money.copy()
+                    for block in message.log['blockChain']:
                         self.appendBlock(block)
                     print('Done appending blocks.')
             self.writeLog()

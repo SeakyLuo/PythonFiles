@@ -4,6 +4,7 @@ from helper import *
 class client:
     def __init__(self, name, serverIP, serverPort):
         self.name = name
+        print(f'This is Client{self.name}')
         self.serverParams = (serverIP, serverPort)
         self.socket = socket(AF_INET, SOCK_STREAM)
         self.socket.connect(self.serverParams)
