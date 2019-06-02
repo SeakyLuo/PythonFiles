@@ -66,7 +66,9 @@ class server:
                 message = '\n'.join([f'{name}: {balance}' for name, balance in self.money.items()])
             elif command == PBC:
                 print('Print Block Chain Command Received')
+                seperator = '=' * 20
                 message = '↑\n'.join([block.toString() for block in self.blockChain])
+                message = seperator + message + seperator
             elif command == PS:
                 print('Print Set Received')
                 if self.trans:
