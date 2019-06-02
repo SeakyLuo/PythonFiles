@@ -33,8 +33,8 @@ class Block:
     def hashString(self):
         return str(self.depth) + self.prev + self.nonce + self.txA.toString() + self.txB.toString()
 
-    def __hash__(self):
-        return sha256(self.hashString())
+    def hash(self):
+        return sha256(self.hashString().encode()).hexdigest()
 
     def toString(self):
         return f'Depth: {self.depth}\nH(B-1): {self.prev}\nNonce: {self.nonce}\ntxA: {self.txA.toString()}\ntxB: {self.txB.toString()}\n'

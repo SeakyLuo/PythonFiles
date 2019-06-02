@@ -14,9 +14,11 @@ class server:
         log = self.readLog()
         self.setup(log)
         print(f'Server {self.name} started!')
-        self.ballot_pool = []
+        self.ack_ballot = []
+        self.accept_ballot = []
         self.sendSocket = {}
         self.replySocket = {}
+        self.threads = {}
         if log:
             message = Message(RECONNECT, log = len(self.blockChain))
             self.broadcast(message)
@@ -31,7 +33,9 @@ class server:
                 threading.Thread(target = self.client).start()
                 print(f'Connected to Client')
             else:
-                threading.Thread(target = self.server, args = [conn, message]).start()
+                message = eval(message)
+                sender = message.sender
+                threading.Thread(target = self.server, args = [conn, message, sender]).start()
 
     def setup(self, log):
         if log:
@@ -59,10 +63,12 @@ class server:
             command = recv.decode()
             if command == PB:
                 print('Print Balance Command Received')
-                message = '\n'.join([f'{name}: {balance}' for name, balance in money.items()])
+                message = '\n'.join([f'{name}: {balance}' for name, balance in self.money.items()])
             elif command == PBC:
                 print('Print Block Chain Command Received')
+                seperator = '=' * 20
                 message = '↑\n'.join([block.toString() for block in self.blockChain])
+                message = seperator + message + seperator
             elif command == PS:
                 print('Print Set Received')
                 if self.trans:
@@ -85,15 +91,19 @@ class server:
                     self.writeLog()
             self.clientConn.send(message.encode())
 
-    def server(self, conn: socket, msg: str):
+    def server(self, conn: socket, msg: Message, sender: str):
         while True:
             if msg:
-                message = eval(msg)
+                message = msg
+                msg = None
             else:
-                recv = conn.recv(1024).decode()
+                try:
+                    recv = conn.recv(1024).decode()
+                except ConnectionResetError:
+                    conn.close()
+                    print(f'Lost connection with {sender}')
+                    return
                 message = eval(recv)
-            msg = None
-            sender = message.sender
             ballot = message.ballot
             if message.mtype == PREPARE:
                 print('PREPARE message received.')
@@ -101,30 +111,30 @@ class server:
                     self.ballotNum = ballot
                     reply = Message(ACK, self.name, (ballot, self.acceptNum), self.acceptVal)
                     self.sendMessage(sender, reply)
+
                     print('ACK has been sent.')
                 else:
                     print('Reject PREPARE message.')
             elif message.mtype == ACK:
                 print('ACK message is received.')
                 ballotNum, b = ballot
-                self.ballot_pool.append(message)
+                self.ack_ballot.append(message)
                 majority = len(self.leaders) // 2 + 1
-                if len(self.ballot_pool) == majority:
-                    myVal = self.block if all(not msg.acceptVal for msg in self.ballot_pool) else self.highestB()
-                    self.ballot_pool.clear()
+                if len(self.ack_ballot) == majority:
+                    myVal = self.block if all(not msg.acceptVal for msg in self.ack_ballot) else self.highestB()
                     self.acceptVal = myVal
                     self.acceptNum = ballotNum
                     self.leaders[self.name] = True
                     reply = Message(ACCEPT, self.name, ballotNum, myVal)
                     self.broadcast(reply)
                     print('ACCEPT message has been sent to other servers.')
+                    self.accept_ballot.clear()
             elif message.mtype == ACCEPT:
                 if self.leaders[self.name]:
                     print('ACCEPT message is received from the Acceptor.')
-                    self.ballot_pool.append(message)
+                    self.accept_ballot.append(message)
                     majority = len(self.leaders) // 2 + 1
-                    if len(self.ballot_pool) == majority:
-                        self.ballot_pool.clear()
+                    if len(self.accept_ballot) == majority:
                         reply = Message(DECISION, self.name, ballot, self.block)
                         self.broadcast(reply)
                         print('DECISION message has been sent to other servers.')
@@ -143,6 +153,7 @@ class server:
                     else:
                         print('ACCEPT message is rejected.')
             elif message.mtype == DECISION:
+                print('DECISION received from the Leader')
                 self.leaders[sender] = False
                 block = self.acceptVal
                 self.appendBlock(block)
@@ -167,10 +178,11 @@ class server:
         txA, txB = self.trans[:2]
         if self.blockChain:
             prev = self.blockChain[-1]
-            self.block = Block(txA, txB, prev.depth + 1, prev.hashString(), hash(prev))
+            self.block = Block(txA, txB, prev.depth + 1, prev.hashString(), prev.hash())
         else:
             self.block = Block(txA, txB)
         ballot = self.getBallot(self.block)
+        self.ack_ballot.clear()
         message = Message(PREPARE, self.name, ballot, self.block)
         self.broadcast(message)
         print('PREPARE message has been sent.')
@@ -206,24 +218,27 @@ class server:
         return self.ballotNum
 
     def highestB(self) -> Block:
-        msg = self.ballot_pool[0]
+        msg = self.ack_ballot[0]
         block = msg.acceptVal
-        b = msg.ballot
-        for message in self.ballot_pool[1:]:
-            if message.b >= b:
-                block = message.block
+        b = msg.ballot[1]
+        for message in self.ack_ballot[1:]:
+            if message.ballot[1] >= b:
+                block = message.acceptVal
+                b = message.ballot[1]
         return block
 
     def appendBlock(self, block):
-        if not self.blockChain or block.prev == hash(self.blockChain[-1]):
+        if not self.blockChain or block.prev == self.blockChain[-1].hash():
             for transaction in [block.txA, block.txB]:
-                if self.money[transaction.fromServer] < transaction.amount:
+                copy = self.money.copy()
+                if copy[transaction.fromServer] < transaction.amount:
                     print('Block Rejected.')
                     break
-                self.money[transaction.fromServer] -= transaction.amount
-                self.money[transaction.toServer] += transaction.amount
+                copy[transaction.fromServer] -= transaction.amount
+                copy[transaction.toServer] += transaction.amount
             else:
-                self.appendBlock(block)
+                self.money = copy
+                self.blockChain.append(block)
                 print('Block appended.')
                 while self.trans:
                     transaction = self.trans[0]
