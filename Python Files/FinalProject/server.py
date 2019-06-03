@@ -21,7 +21,7 @@ class server:
         if log:
             message = Message(RECONNECT, self.name, log = len(self.blockChain))
             self.broadcast(message)
-            print('RECONNECT message has been sent to other servers.')
+            print('RECONNECT message has been broadcasted.')
             self.receiveLog = False
         # listen for connection request from client and other 4 servers
         while True:
@@ -63,40 +63,41 @@ class server:
                 recv = self.clientConn.recv(1024)
             except ConnectionResetError:
                 self.clientConn.close()
-                print('Lost connection with Client')
+                print('Lost connection with the Client.')
                 return
             command = recv.decode()
+            successfulTransaction = False
             if command == PB:
-                print('Print Balance Command Received')
+                print('Print Balance Command Received.')
                 message = '\n'.join([f'{name}: {balance}' for name, balance in self.money.items()])
             elif command == PBC:
-                print('Print Block Chain Command Received')
+                print('Print Block Chain Command Received.')
                 seperator = '=' * 20 + '\n'
                 message = '↑\n'.join([block.toString() for block in self.blockChain])
                 message = '\n' + seperator + message + seperator
             elif command == PS:
-                print('Print Set Received')
+                print('Print Set Received.')
                 if self.trans:
                     message = '\n'.join([transaction.toString() for transaction in self.trans])
                 else:
                     message = 'No Transactions.'
             else:
-                print(f'Transaction received from {self.name}')
+                print('Transaction received from the Client.')
                 transaction: Transaction = eval(command)
                 if self.tmpMoney[transaction.fromServer] < transaction.amount:
                     message = 'Transaction failed.'
-                    print(message)
                 else:
                     self.tmpMoney[transaction.fromServer] -= transaction.amount
                     self.tmpMoney[transaction.toServer] += transaction.amount
                     message = 'Transaction successful!'
-                    print(message)
+                    successfulTransaction = True
                     self.trans.append(transaction)
-                    if len(self.trans) > 1:
-                        print('A block created.')
-                        self.prepare()
-                    self.writeLog()
             self.clientConn.send(message.encode())
+            if successfulTransaction:
+                if len(self.trans) > 1:
+                    print('A block created.')
+                    self.prepare()
+                self.writeLog()
 
     def server(self, conn: socket, msg: Message, sender: str):
         while True:
@@ -118,11 +119,11 @@ class server:
                     self.ballotNum = ballot
                     reply = Message(ACK, self.name, (ballot, self.acceptNum), self.acceptVal)
                     self.sendMessage(sender, reply)
-                    print('ACK has been sent.')
+                    print('ACK has been sent to the Leader.')
                 else:
-                    print('Reject PREPARE message.')
+                    print('Reject PREPARE message from the Leader.')
             elif message.mtype == ACK:
-                print('ACK message is received.')
+                print(f'ACK message is received from Server{sender}.')
                 ballotNum, b = ballot
                 self.ack_ballot.append(message)
                 majority = len(self.leaders) // 2 + 1
@@ -134,17 +135,17 @@ class server:
                     self.leaders[self.name] = True
                     reply = Message(ACCEPT, self.name, ballotNum, myVal)
                     self.broadcast(reply)
-                    print('ACCEPT message has been sent to other servers.')
+                    print('ACCEPT message has been broadcasted.')
                     self.accept_ballot.clear()
             elif message.mtype == ACCEPT:
                 if self.leaders[self.name]:
-                    print('ACCEPT message is received from the Acceptor.')
+                    print(f'ACCEPT message is received from the Server{sender}.')
                     self.accept_ballot.append(message)
                     majority = len(self.leaders) // 2 + 1
                     if len(self.accept_ballot) == majority:
                         reply = Message(DECISION, self.name, ballot, self.block)
                         self.broadcast(reply)
-                        print('DECISION message has been sent to other servers.')
+                        print('DECISION message has been broadcasted.')
                         self.appendBlock(self.block)
                         self.block = None
                         self.leaders[self.name] = False
@@ -160,7 +161,7 @@ class server:
                     else:
                         print('ACCEPT message is rejected.')
             elif message.mtype == DECISION:
-                print('DECISION received from the Leader')
+                print('DECISION is received from the Leader.')
                 self.leaders[sender] = False
                 self.appendBlock(self.acceptVal)
                 # concurrent leader
@@ -192,7 +193,7 @@ class server:
         self.ack_ballot.clear()
         message = Message(PREPARE, self.name, ballot, self.block)
         self.broadcast(message)
-        print('PREPARE message has been sent.')
+        print('PREPARE message has been broadcasted.')
 
     def sendMessage(self, toServer, message):
         if toServer not in self.replySocket:
@@ -202,9 +203,11 @@ class server:
             except:
                 pass
             self.replySocket[toServer] = soc
+        delay()
         self.replySocket[toServer].sendall(str(message).encode())
 
     def broadcast(self, message: Message) -> bool:
+        delay()
         msg = str(message).encode()
         for name, info in self.config.items():
             if name == self.name: continue
@@ -275,6 +278,12 @@ class server:
 
     def writeLog(self):
         fwrite(f'Log{self.name}.txt', str(self.getLog()))
+
+def delay():
+    t_delay = round(random.uniform(1, 4), 2)
+    print(f'Delay {t_delay} seconds.')
+    time.sleep(t_delay)
+    return t_delay
 
 if __name__ == '__main__':
     name = saveServers()
