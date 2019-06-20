@@ -364,7 +364,7 @@ class UnknownMatrix(Toplevel):
         self.transient(master)
         self.grab_set()
         self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
-        self.title('Uknown Matrix')
+        self.title('Unknown Matrix')
 
         self.onCopyListener = None
         self.onCloseListener = None
