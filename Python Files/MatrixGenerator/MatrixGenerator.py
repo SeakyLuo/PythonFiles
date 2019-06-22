@@ -288,11 +288,13 @@ class Generator(Frame):
     def getRowCol(self):
         return self.getRow(), self.getCol()
 
-    def setRow(self, row):
-        setEntry(self.rowEntry, row)
+    def setRow(self, size):
+        setEntry(self.rowEntry, size)
+        self.row = size
 
-    def setCol(self, col):
-        setEntry(self.colEntry, col)
+    def setCol(self, size):
+        setEntry(self.colEntry, size)
+        self.col = size
 
     def setRowCol(self, row, col):
         self.setRow(row)
@@ -323,7 +325,7 @@ class Generator(Frame):
         elif resultType == VECTOR:
             entries = []
             if self.entries and row == 1 and col > 1:
-                entries = self.collectEntries(row, col, False)
+                entries = self.collectEntries(False)
                 row = col
                 self.setRow(row)
             self.setCol(1)
@@ -494,16 +496,16 @@ class Generator(Frame):
         if resultFormat == LATEX:
             vecOption = settings[VECTOR_OPTION]
             if resultType == VECTOR and vecOption != COLUMN_VECTOR:
-                result = ezs.vl(','.join(self.collectEntries(r, c, False, False, checkEmpty)), vecOption == OVERRIGHTARROW)
+                result = ezs.vl(','.join(self.collectEntries(False, False, checkEmpty)), vecOption == OVERRIGHTARROW)
             else:
-                result = ezs.ml(r, c, ' '.join(self.collectEntries(r, c, False, False, checkEmpty)), resultType == DETERMINANT, settings[LATEX_NEWLINE], settings[LATEX_OPTION])
+                result = ezs.ml(r, c, ' '.join(self.collectEntries(False, False, checkEmpty)), resultType == DETERMINANT, settings[LATEX_NEWLINE], settings[LATEX_OPTION])
         elif resultFormat == ARRAY:
             arrayOption = settings[ARRAY_OPTION]
             normalArray = arrayOption == NORMAL_ARRAY
             if resultType == VECTOR and settings[ARRAY_VECTOR]:
-                result = str(self.collectEntries(r, c, True, False, checkEmpty))
+                result = str(self.collectEntries(True, False, checkEmpty))
             else:
-                result_list = self.collectEntries(r, c, True, True, checkEmpty)
+                result_list = self.collectEntries(True, True, checkEmpty)
                 result = str(result_list)
                 if settings[ARRAY_VECTOR]:
                     try:
@@ -532,11 +534,11 @@ class Generator(Frame):
             self.clear(2)
         return result
 
-    def collectEntries(self, r: int, c: int, evaluate: bool = True, nested: bool = False, withEmpty: bool = True):
+    def collectEntries(self, evaluate: bool = True, nested: bool = False, withEmpty: bool = True):
         entries = []
-        for i in range(r):
+        for i in range(self.row):
             if nested: lst = []
-            for j in range(c):
+            for j in range(self.col):
                 text = self.entries[(i, j)].get()
                 if not withEmpty and not text: continue
                 if evaluate and text: text = ezs.numEval(text)
@@ -732,7 +734,7 @@ class Generator(Frame):
         result = ''
         prompt = f'Input n to make other {title} the duplicate of {title[:-1]} n.'
         r, c = self.getRowCol()
-        entries = self.collectEntries(r, c, False, True)
+        entries = self.collectEntries(False, True)
         auto = 0
         if isRow:
             for i, row in enumerate(entries):
@@ -1094,7 +1096,7 @@ class Generator(Frame):
         self.modifyState()
 
     def randomReorder(self):
-        current = self.collectEntries(self.getRow(), self.getCol())
+        current = self.collectEntries()
         values = current
         while current == values:
             shuffle(values)
@@ -1123,8 +1125,8 @@ class Generator(Frame):
             if varFormat:
                 values = [f'{var}_{number}' for var, number in sorted(vars)]
             else:
-                try: values = sorted(self.collectEntries(row, col))
-                except: values = sorted(self.collectEntries(row, col, False))
+                try: values = sorted(self.collectEntries())
+                except: values = sorted(self.collectEntries(False))
             for i in range(row * col):
                 setEntry(self.entries[divmod(i, col)], values[i])
         else:
@@ -1136,8 +1138,8 @@ class Generator(Frame):
                     values = sorted(values)
                 values = [f'{var}_{number}' for var, number in sorted(vars)]
             else:
-                try: values = self.collectEntries(row, col, True, True)
-                except: values = self.collectEntries(row, col, False, True)
+                try: values = self.collectEntries(True, True)
+                except: values = self.collectEntries(False, True)
                 if target == ROWS:
                     values = [sorted(row) for row in values]
                 else:
@@ -1159,7 +1161,7 @@ class Generator(Frame):
                 setEntry(e1, t1)
                 setEntry(e2, t2)
         else:
-            values = self.collectEntries(row, col, False, True)
+            values = self.collectEntries(False, True)
             if target == ROWS:
                 values = [list(reversed(row)) for row in values]
             else:
@@ -1196,7 +1198,7 @@ class Generator(Frame):
                     continue
                 break
             fEntry.focus()
-        values = self.collectEntries(r, c, False)
+        values = self.collectEntries(False)
         self.setResultType(VECTOR if x > 1 and y == 1 else MATRIX)
         self.setRowCol(x, y)
         self.generateEntries(x, y)
@@ -1243,7 +1245,7 @@ class Generator(Frame):
         if not row:
             row = randrange(maxSize) + 1
         values = list(range(row) if settings[ARRAY_OPTION] != NORMAL_ARRAY and self.resultFormat.get() == ARRAY else range(1, row + 1))
-        current = self.collectEntries(row, 1)
+        current = self.collectEntries()
         while values == current:
             shuffle(values)
         for entry in self.entries.values():
@@ -1255,7 +1257,7 @@ class Generator(Frame):
         r, c = self.getRowCol()
         isNormal = settings[ARRAY_OPTION] == NORMAL_ARRAY
         notVector = resultType != VECTOR
-        entries = self.collectEntries(r, c, True, notVector)
+        entries = self.collectEntries(True, notVector)
         if notVector:
             for i, row in enumerate(entries):
                 if row.count(1) != 1 and row.count(0) != len(row) - 1:
@@ -1279,7 +1281,7 @@ class Generator(Frame):
         try:
             try:
                 from numpy import linalg
-                result = ezs.integer(linalg.det(self.collectEntries(size, size, True, True)))
+                result = ezs.integer(linalg.det(self.collectEntries(True, True)))
             except ModuleNotFoundError:
                 result = ezs.integer(ezs.dc(self.generate()))
             str_result = str(result)
@@ -1374,7 +1376,7 @@ class Generator(Frame):
     def modifyState(self):
         row, col = self.getRowCol()
         state = (self.resultType.get(), \
-                 self.collectEntries(row, col, False, True), \
+                 self.collectEntries(False, True), \
                  self.getFocusEntryIndex())
         if self.states and state[:-1] == self.states[self.stateIndex][:-1]:
             return
