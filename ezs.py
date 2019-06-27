@@ -23,19 +23,19 @@ def __arghelper(obj, booleanExpression, keyFunc) -> list:
         obj = dict(enumerate(obj))
     if not keyFunc:
         keyFunc = lambda x: x
-    key, value = [], None
+    keys, value = [], None
     for k, v in obj.items():
         V = keyFunc(v)
-        Value = keyFunc(value) if value else None
-        if not key:
-            key.append(k)
+        Value = keyFunc(value) if value != None else None
+        if not keys:
+            keys.append(k)
             value = v
         elif booleanExpression(V, Value):
-            key = [k]
+            keys = [k]
             value = v
         elif V == Value:
-            key.append(k)
-    return key
+            keys.append(k)
+    return keys
 
 def npMatrixToLatex(matrix, newline = False, printResult = True, copy = True):
     '''Matrix can be any 2d iterable'''
