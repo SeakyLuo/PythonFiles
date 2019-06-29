@@ -1,12 +1,9 @@
 # Credits to https://github.com/apollojain/sudoku_solver
 
-from PIL import Image, ImageFilter
 from pytesseract import image_to_string
 import cv2
 import numpy as np
-import scipy.misc
-
-intermediatesPath = ''
+from scipy.misc import imsave
 
 def rectify(h):
     '''
@@ -24,8 +21,8 @@ def rectify(h):
     hnew: np.array
         This contains the four corners of np.array
     '''
-    h = h.reshape((4,2))
-    hnew = np.zeros((4,2), dtype = np.float32)
+    h = h.reshape((4, 2))
+    hnew = np.zeros((4, 2), dtype = np.float32)
 
     add = h.sum(1)
     hnew[0] = h[np.argmin(add)]
@@ -46,16 +43,14 @@ def pre_processing(image):
     and numbers are significantly clearer
     INPUT PARAMETERS
     ----------------
-    image: a string or an image object
-        This is the path + name of your image, including extensions
+    image: PIL.image
     '''
-    img = cv2.imread(image) if isinstance(image, str) else image
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
     thresh = cv2.adaptiveThreshold(gray, 255, 1, 1, 11, 2)
     return gray, thresh
 
-def find_puzzle(img_name):
+def find_puzzle(image):
     '''
     DESCRIPTION
     -----------
@@ -65,8 +60,8 @@ def find_puzzle(img_name):
     you want.
     INPUT PARAMETERS
     ----------------
-    img_name: string
-        the name of the file that you are passing in
+    image: PIL.image
+
     OUTPUT PARAMETERS
     -----------------
     warp: np.array
@@ -74,7 +69,7 @@ def find_puzzle(img_name):
         image, which is only the section of the original image that
         contains your sudoku puzzle.
     '''
-    gray, thresh = pre_processing(img_name)
+    gray, thresh = pre_processing(image)
     contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
     biggest = None
@@ -92,22 +87,21 @@ def find_puzzle(img_name):
         biggest = rectify(biggest)
         h = np.array([[0, 0], [449, 0], [449, 449], [0, 449]], np.float32)
         retval = cv2.getPerspectiveTransform(biggest, h)
-        warp = cv2.warpPerspective(gray,retval, (450, 450))
+        warp = cv2.warpPerspective(gray, retval, (450, 450))
         return warp
     return None
 
-def split_sudoku_cells(img_name):
+def split_sudoku_cells(image) -> dict:
     '''
     DESCRIPTION
     -----------
-    This function takes in an image name, finds your puzzle, and then
+    This function takes in an image, finds your puzzle, and then
     splits the image into 81 numpy arrays, each if which represents
     cell (i, j) of your sudoku puzzle.
     INPUT PARAMETERS
     ----------------
-    img_name: string
-        This string represents the actual name of the image that you
-        are working on, including extensions.
+    image: PIL.image
+
     OUTPUT PARAMETERS
     -----------------
     dictionary: dictionary
@@ -115,99 +109,16 @@ def split_sudoku_cells(img_name):
         that corresponds to sudoku cell (i, j)
     '''
     dictionary = {}
-    warp = find_puzzle(img_name)
+    warp = find_puzzle(image)
     if warp is not None:
-        arr = np.split(warp, 9)
-        for i in range(9):
-            dictionary[i] = {}
-            for j in range(9):
-                dictionary[i][j] = []
-        for i in range(9):
-            for j in range(9):
-                for n in arr[i]:
-                    # print(len(arr[i]))
-                    cells = np.split(n, 9)
-                    # print(cells[j])
-                    # print(len(cells[j]))
-                    dictionary[i][j].append(np.array(cells[j]))
-                dictionary[i][j] = np.array(dictionary[i][j])
+        array = np.split(warp, 9)
+        dictionary = {
+            (i + 1, j + 1) : np.array([np.split(arr, 9)[j] for arr in array[i]])
+            for i in range(9) for j in range(9)
+        }
     return dictionary
 
-def invert_image(image, name):
-    '''
-    DESCRIPTION
-    -----------
-    This function inverts an image so that it can be read by the
-    ocr python library.
-    INPUT PARAMETERS
-    ----------------
-    image: np.array
-        a numpy array that corresponds to the name of the image
-    name: string
-        name of the image
-    OUTPUT PARAMETERS
-    ----------------
-    None (Image written to 'name')
-    '''
-    img = (255 - image)
-    cv2.imwrite(name, img)
-
-def write_cells_to_images(image):
-    '''
-    DESCRIPTION
-    -----------
-    This function calls split_sudoku_cells and then saves these images in
-    an "intermediates" files.
-    INPUT PARAMETERS
-    -----------------
-    image: string
-        This is the path + name of the string corresponds to the image
-        that you are reading and saving from, including file
-        extension.
-    OUTPUT PARAMETERS
-    -----------------
-    None (a bunch of images) ij.jpg that correspond to entry (i, j)
-    of your dictionary will be saved to the "intermediates" folder)
-    '''
-    dictionary = split_sudoku_cells(image)
-    if dictionary:
-        for i in range(9):
-            for j in range(9):
-                path = f'{intermediatesPath}/{i}{j}.jpg'
-                # img = scipy.misc.toimage(dictionary[i][j])
-                # img = pre_processing(image)[1]
-                scipy.misc.imsave(path, dictionary[i][j])
-                processed_img = pre_processing(path)[1]
-                scipy.misc.imsave(path, processed_img)
-                processed_img = cv2.imread(path)
-                gs_image = cv2.cvtColor(processed_img, cv2.COLOR_BGR2GRAY)
-                invert_image(gs_image, path)
-    return dictionary != {}
-
-def ocr_image(image):
-    '''
-    DESCRIPTION
-    -----------
-    This function takes in your image name and base path
-    and tries to read the text inside of the image using
-    OCR.
-    INPUT PARAMETERS
-    ----------------
-    image_name: string
-        The path + name of your image, including extension
-
-    OUTPUR PARAMETERS
-    -----------------
-    integer: int
-        The int value inside of your image.
-    '''
-    img = Image.open(image)
-    # img = img.filter(ImageFilter.FIND_EDGES)
-    string = image_to_string(img)
-    integer = int(string) if string.isnumeric() else 0
-    return integer
-
-def image_to_matrix(image, intermediates):
+def image_to_matrix(image, intermediatesPath) -> dict:
     '''
     DESCRIPTION
     -----------
@@ -221,13 +132,23 @@ def image_to_matrix(image, intermediates):
 
     OUTPUT PARAMETERS
     -----------------
-    matrix: 2d-array
-        The sudoku puzzle with 0 as empty cells
-        If fail to convert, return False
+    matrix: dict
+        The sudoku puzzle in a dict form with a tuple as key, an int as value
+        key:   a tuple (i, j) with i, j ranging from 1 to 9
+        value: if empty then 0 otherwise the number
     '''
-    global intermediatesPath
-    intermediatesPath = intermediates
-    if write_cells_to_images(image):
-        matrix = [[ocr_image(f'{intermediatesPath}/{i}{j}.jpg') for j in range(9)] for i in range(9)]
-        return matrix
-    return False
+    d = split_sudoku_cells(cv2.imread(image))
+    matrix = {}
+    for i, j in d:
+        path = f'{intermediatesPath}/{i}{j}.png'
+        imsave(path, d[i, j])
+        img = cv2.imread(path)
+        p_img = pre_processing(img)[1]
+        imsave(path, p_img)
+        img = cv2.imread(path)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        img = (255 - img)
+        string = image_to_string(img)
+        # print(i, j, string)
+        matrix[i, j] = int(string) if string.isnumeric() else 0
+    return matrix

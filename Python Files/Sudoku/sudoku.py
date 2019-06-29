@@ -46,14 +46,11 @@ class sudoku:
                 self.entries[i, j]['state'] = NORMAL
                 clearEntry(self.entries[i, j])
         if filename:
-            numbers = {}
             if filename.endswith('.txt'):
                 numbers = ez.fread(filename)
             else:
-                matrix = image_to_matrix(filename, self.intermediates)
-                if matrix:
-                    numbers = { (x, y): matrix[x - 1][y - 1] for x, y in self.numbers }
-                else:
+                numbers = image_to_matrix(filename, self.intermediates)
+                if not numbers:
                     messagebox.showerror(title="Error", message="Invalid Image!")
             for (i, j), number in numbers.items():
                 if number:
