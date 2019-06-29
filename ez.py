@@ -182,7 +182,7 @@ class Settings:
     def save(self):
         fwrite(self.settingsFile, dumps(self.settings))
 
-def tryEval(string: str):
+def Eval(string: str):
     '''Use eval() without dealing with exceptions.'''
     try: return eval(string)
     except: return string
@@ -348,7 +348,7 @@ def fread(filename: str, evaluate: bool = True, coding: str = 'utf8'):
     with open(filename, encoding = coding) as file:
         content = file.read()
         if evaluate:
-            content = tryEval(content)
+            content = Eval(content)
         return content
 
 def fwrite(filename: str, content, mode: str = 'w', coding: str = 'utf8'):

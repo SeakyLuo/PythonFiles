@@ -3,7 +3,7 @@ from tkinter import messagebox, simpledialog
 from eztk import setEntry, clearEntry
 from random import randrange, shuffle, randint
 import ez, ezs, os
-from dialog import *
+from dialogs import *
 from constants import *
 
 settings = ez.Settings(__file__)
@@ -353,7 +353,7 @@ class Generator(Frame):
         text = event.widget.get()
         if not text:
             return
-        value = ez.tryEval(text)
+        value = ez.Eval(text)
         if not text.isnumeric():
             new_text = ''
             for ch in text:
@@ -515,7 +515,7 @@ class Generator(Frame):
                 for row in result_list:
                     for entry in row:
                         ## if is expression
-                        if isinstance(entry, str) and ezs.isNumeric(ez.tryEval(entry)):
+                        if isinstance(entry, str) and ezs.isNumeric(ez.Eval(entry)):
                             result = result.replace(f"'{entry}'", f'{entry}')
                 if settings[ARRAY_NEWLINE]:
                     # Maybe ], \\\n?
@@ -558,11 +558,11 @@ class Generator(Frame):
         result = simpledialog.askstring(title = 'Multiply', prompt = 'Add to Each Entry')
         fEntry.focus()
         if not result: return
-        result = ezs.integer(ez.tryEval(result))
+        result = ezs.integer(ez.Eval(result))
         if result == 0:
             return
         for entry in self.entries.values():
-            text = ez.tryEval(entry.get())
+            text = ez.Eval(entry.get())
             if not text:
                 new_text = result
             elif ezs.isNumeric(text) and ezs.isNumeric(result):
@@ -576,7 +576,7 @@ class Generator(Frame):
 
     def multiply(self):
         fEntry = self.getFocusEntry()
-        result = ezs.integer(ez.tryEval(simpledialog.askstring(title = 'Multiply', prompt = 'Multiply Each Entry By')))
+        result = ezs.integer(ez.Eval(simpledialog.askstring(title = 'Multiply', prompt = 'Multiply Each Entry By')))
         fEntry.focus()
         if result == None or result == 1:
             return
@@ -585,7 +585,7 @@ class Generator(Frame):
             return
         isResultNumeric = ezs.isNumeric(result)
         for entry in self.entries.values():
-            text = ez.tryEval(entry.get())
+            text = ez.Eval(entry.get())
             if text:
                 isTextNumeric = ezs.isNumeric(text)
                 if isResultNumeric:
@@ -638,7 +638,7 @@ class Generator(Frame):
                         matrix = [[i] for i in ez.find(result).between('{', '}').split(',')]
                         self.setResultType(VECTOR)
                 elif fromFormat == ARRAY:
-                    matrix = ez.tryEval(result)
+                    matrix = ez.Eval(result)
                     entries = [item.strip() for item in ez.without(result, '[', ']').split(',')]
                     if type(matrix) == str:
                         matrix = [entries]
@@ -1114,7 +1114,7 @@ class Generator(Frame):
             for j in range(col):
                 text = self.entries[(i, j)].get()
                 fText = ez.find(text)
-                varNumber = ez.tryEval(fText.between('_{', '}'))
+                varNumber = ez.Eval(fText.between('_{', '}'))
                 varType = type(varNumber)
                 if varType == str:
                     varFormat = False
@@ -1316,7 +1316,7 @@ class Generator(Frame):
         '''0 for clear zeros, 1 for clear entries, 1 for clear all'''
         if mode == 0:
             for entry in self.entries.values():
-                if ez.tryEval(entry.get()) == 0:
+                if ez.Eval(entry.get()) == 0:
                     clearEntry(entry)
         else:
             if mode >= 1:

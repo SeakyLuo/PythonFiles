@@ -1,7 +1,8 @@
 from tkinter import *
-from tkinter import filedialog
-import ez, ezs, os
+from tkinter import filedialog, messagebox
+import ez, ezs, os, threading
 from eztk import setEntry, clearEntry
+from ocr import image_to_matrix
 
 class sudoku:
     def __init__(self, master):
@@ -15,21 +16,27 @@ class sudoku:
                 e.grid(row = i - 1, column = j - 1)
                 e.bind('<KeyRelease>', self.switch)
                 self.entries[i, j] = e
-        self.currentPuzzle = 'puzzle.txt'
         self.computeButton = Button(self.master, text = '计算', command = self.compute)
         self.clear = Button(self.master, text = '清除', command = lambda: self.setup(self.currentPuzzle))
         self.clearAll = Button(self.master, text = '清除全部', command = self.setup)
         self.loadButton = Button(self.master, text = '加载', command = self.load)
         buttons = [self.computeButton, self.clear, self.clearAll, self.loadButton]
         for i, button in enumerate(buttons):
-            button.grid(row = 1, column = i)
+            button.grid(row = 1, column = i, sticky = NSEW)
         self.frame.grid(columnspan = len(buttons))
-        self.isFull = lambda: all(self.numbers.values())
+
+        self.intermediates = 'intermediates'
+        if self.intermediates not in os.listdir():
+            os.mkdir(self.intermediates)
+        self.currentPuzzle = 'puzzle.txt'
         self.setup(self.currentPuzzle)
         for entry in self.entries.values():
             if entry['state'] == NORMAL:
                 entry.focus()
                 break
+
+    def isFull(self):
+        return all(self.numbers.values())
 
     def setup(self, filename = ''):
         self.hints = {(i, j): set(range(1, 10)) for i in range(1, 10) for j in range(1, 10)}
@@ -39,7 +46,16 @@ class sudoku:
                 self.entries[i, j]['state'] = NORMAL
                 clearEntry(self.entries[i, j])
         if filename:
-            for (i, j), number in ez.fread(filename).items():
+            numbers = {}
+            if filename.endswith('.txt'):
+                numbers = ez.fread(filename)
+            else:
+                matrix = image_to_matrix(filename, self.intermediates)
+                if matrix:
+                    numbers = { (x, y): matrix[x - 1][y - 1] for x, y in self.numbers }
+                else:
+                    messagebox.showerror(title="Error", message="Invalid Image!")
+            for (i, j), number in numbers.items():
                 if number:
                     setEntry(self.entries[i, j], number)
                     self.entries[i, j]['state'] = DISABLED
@@ -50,7 +66,7 @@ class sudoku:
     def compute(self):
         if self.full or all(number == 0 for number in self.numbers.values()):
             return
-        self.solve()
+        self.solve() # create a thread to do it
         for i in range(1, 10):
             for j in range(1, 10):
                 if self.numbers[i, j]:
@@ -65,7 +81,6 @@ class sudoku:
             return False
         i, j = ezs.argmin(hints, len)
         copy = self.hints[i, j].copy()
-        print(i, j, copy)
         for number in self.hints[i, j].copy():
             hints = self.put(i, j, number)
             self.put(i, j, number)
@@ -76,8 +91,6 @@ class sudoku:
                 for x, y in hints:
                     self.hints[x, y].add(number)
                 self.hints[i, j] = copy.copy()
-                if (i, j) == (2, 3):
-                    print(self.hints[2,3])
         return False
 
     def put(self, i, j, number):
@@ -94,7 +107,7 @@ class sudoku:
     def load(self):
         filename = filedialog.askopenfilename(initialdir = os.getcwd(),
                                               title = 'Select a Puzzle',
-                                              filetypes = [('Text files','*.txt')])
+                                              filetypes = [('Files','*.txt *.png *.jpg')])
         if filename:
             self.setup(filename)
 

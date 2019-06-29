@@ -420,8 +420,12 @@ def truth_table(formula, output= 'a', saveAsFile = False):
 ## Abbreviation: tt
 tt = truth_table
 
-def integer(number):
-    '''Convert a number to an integer if appropriate.
+def Int(number: str) -> int:
+    '''Convert a str to an int if it is a string literal of integer. Otherwise returns 0.'''
+    return int(number) if number.isnumeric() else 0
+
+def integer(number: float):
+    '''Convert a float to an int if they have the same value.
        For example convert 1.0 to 1.'''
     try:
         int_n = int(number)
@@ -441,7 +445,7 @@ def numEval(obj):
     number = ''
     for i, ch in enumerate(obj):
         number += ch
-        if isNumeric(ez.tryEval(number)) or \
+        if isNumeric(ez.Eval(number)) or \
            i == 0 and ch in ['+', '-'] or \
            ch in ['e']:
             continue
@@ -453,7 +457,7 @@ def noExpressionEval(obj):
     '''Eval a string without eval expressions.'''
     if isinstance(obj, str):
         return obj
-    result = ez.tryEval(obj)
+    result = ez.Eval(obj)
     string = str(result)
     if string == obj:
         return result
