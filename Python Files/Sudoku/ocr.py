@@ -48,7 +48,7 @@ def pre_processing(image):
     '''
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    thresh = cv2.adaptiveThreshold(gray, 255, 1, 1, 11, 2)
+    thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 1, 11, 2)
     return gray, thresh
 
 def find_puzzle(image):
@@ -126,14 +126,35 @@ def image_to_matrix(image, intermediatesPath) -> dict:
                 imsave(path, img)
                 img = cv2.imread(path)
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                # flip color
                 img = 255 - img
+                # speed up
                 img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
                 img = Image.fromarray(img)
                 height, width = img.size
+                # remove border
                 img = img.crop((0.08 * width, 0.08 * height, 0.92 * width, 0.92 * height))
+                img = removeNoise(img)
+                imsave(path, img)
+                img = cv2.imread(path)
+                img = cv2.fastNlMeansDenoising(img, 10)
                 imsave(path, img)
                 string = image_to_string(img, config='--psm 10 --oem 3 -c tessedit_char_whitelist=123456789')
                 number = int(string) if string.isnumeric() else 0
                 print(i + 1, j + 1, string)
                 matrix[i + 1, j + 1] = number
     return matrix
+
+def removeNoise(image):
+    data = image.getdata()
+    w, h = image.size
+    Max = 5
+    thresh = (Max ** 2 - 1) // 2
+    for x in range(1, w - 1):
+        for y in range(1, h - 1):
+            center = data[w * y + x]
+            if center == 0:
+                distinct = sum(center == data[w * (y + j) + x + i] for i in range(-Max, Max + 1) for j in range(-Max, Max + 1)) - 1
+                if distinct < thresh:
+                    image.putpixel((x, y), 1)
+    return image

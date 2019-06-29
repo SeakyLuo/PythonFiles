@@ -35,7 +35,6 @@ class LoadDialog(Toplevel):
     def __init__(self, master, message = 'Loading', maxDots = 5):
         Toplevel.__init__(self, master)
         self.transient(master)
-        self.grab_set()
         self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
         self.title('Load Dialog')
         self.message = message
