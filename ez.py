@@ -248,10 +248,11 @@ def exportpy(directory: str, withConsole: bool, zipFile: bool = True, reminder: 
 
 def py2pyw(directory: str, pywname: str = '', reminder: bool = False):
     ''' Converts a py file or a folder of py files to pyw files.
-        pywname is the of pyw file and is only available when converting a file.
-        pywname is empty, set to pyw filename wil be set to the name of py file.'''
+        pywname is the name of a pyw file and is only available when converting a file.
+        If pywname is empty, it will be set to pyw filename wil be set to the name of py file.'''
     suffix = '.pyw'
-    if pywname and not pywname.endswith(suffix): pywname += suffix
+    if pywname and not pywname.endswith(suffix):
+        pywname += suffix
     threading.Thread(target = lambda directory, func, reminder: __handlepy(directory, func, reminder), \
                      args = (directory, lambda filename: fwrite(pywname or filename + 'w', fread(filename, False)), reminder)).start()
 

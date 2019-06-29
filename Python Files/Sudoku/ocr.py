@@ -1,6 +1,7 @@
 # Credits to https://github.com/apollojain/sudoku_solver
 
 from pytesseract import image_to_string
+from PIL import Image
 import cv2
 import numpy as np
 from scipy.misc import imsave
@@ -91,7 +92,7 @@ def find_puzzle(image):
         return warp
     return None
 
-def split_sudoku_cells(image) -> dict:
+def image_to_matrix(image, intermediatesPath) -> dict:
     '''
     DESCRIPTION
     -----------
@@ -100,34 +101,7 @@ def split_sudoku_cells(image) -> dict:
     cell (i, j) of your sudoku puzzle.
     INPUT PARAMETERS
     ----------------
-    image: PIL.image
-
-    OUTPUT PARAMETERS
-    -----------------
-    dictionary: dictionary
-        Each entry (i, j) includes a numpy array that represents the image
-        that corresponds to sudoku cell (i, j)
-    '''
-    dictionary = {}
-    warp = find_puzzle(image)
-    if warp is not None:
-        array = np.split(warp, 9)
-        dictionary = {
-            (i + 1, j + 1) : np.array([np.split(arr, 9)[j] for arr in array[i]])
-            for i in range(9) for j in range(9)
-        }
-    return dictionary
-
-def image_to_matrix(image, intermediatesPath) -> dict:
-    '''
-    DESCRIPTION
-    -----------
-    This takes in your image name and then processes it
-    using the ocr_image function. Subsequently, it places
-    it in a 2d array to be returned.
-    INPUT PARAMETERS
-    ----------------
-    image: string
+    image: str
         The path + name of your image, including extensions
 
     OUTPUT PARAMETERS
@@ -137,18 +111,29 @@ def image_to_matrix(image, intermediatesPath) -> dict:
         key:   a tuple (i, j) with i, j ranging from 1 to 9
         value: if empty then 0 otherwise the number
     '''
-    d = split_sudoku_cells(cv2.imread(image))
     matrix = {}
-    for i, j in d:
-        path = f'{intermediatesPath}/{i}{j}.png'
-        imsave(path, d[i, j])
-        img = cv2.imread(path)
-        p_img = pre_processing(img)[1]
-        imsave(path, p_img)
-        img = cv2.imread(path)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        img = (255 - img)
-        string = image_to_string(img)
-        # print(i, j, string)
-        matrix[i, j] = int(string) if string.isnumeric() else 0
+    image = cv2.imread(image)
+    warp = find_puzzle(image)
+    if warp is not None:
+        s_warp = np.split(warp, 9)
+        for i in range(9):
+            for j in range(9):
+                array = np.array([np.split(arr, 9)[j] for arr in s_warp[i]])
+                path = f'{intermediatesPath}/{i + 1}{j + 1}.png'
+                imsave(path, array)
+                img = cv2.imread(path)
+                img = pre_processing(img)[1]
+                imsave(path, img)
+                img = cv2.imread(path)
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                img = 255 - img
+                img = cv2.resize(img, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
+                img = Image.fromarray(img)
+                height, width = img.size
+                img = img.crop((0.08 * width, 0.08 * height, 0.92 * width, 0.92 * height))
+                imsave(path, img)
+                string = image_to_string(img, config='--psm 10 --oem 3 -c tessedit_char_whitelist=123456789')
+                number = int(string) if string.isnumeric() else 0
+                print(i + 1, j + 1, string)
+                matrix[i + 1, j + 1] = number
     return matrix
