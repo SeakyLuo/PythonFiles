@@ -90,9 +90,9 @@ def find_puzzle(img_name):
 
     if biggest is not None:
         biggest = rectify(biggest)
-        h = np.array([ [0,0],[449,0],[449,449],[0,449] ],np.float32)
-        retval = cv2.getPerspectiveTransform(biggest,h)
-        warp = cv2.warpPerspective(gray,retval,(450,450))
+        h = np.array([[0, 0], [449, 0], [449, 449], [0, 449]], np.float32)
+        retval = cv2.getPerspectiveTransform(biggest, h)
+        warp = cv2.warpPerspective(gray,retval, (450, 450))
         return warp
     return None
 
@@ -198,13 +198,14 @@ def ocr_image(image):
 
     OUTPUR PARAMETERS
     -----------------
-    string: string
-        The string that is inside of your image.
+    integer: int
+        The int value inside of your image.
     '''
     img = Image.open(image)
     # img = img.filter(ImageFilter.FIND_EDGES)
     string = image_to_string(img)
-    return string
+    integer = int(string) if string.isnumeric() else 0
+    return integer
 
 def image_to_matrix(image, intermediates):
     '''
@@ -227,7 +228,6 @@ def image_to_matrix(image, intermediates):
     global intermediatesPath
     intermediatesPath = intermediates
     if write_cells_to_images(image):
-        Int = lambda number: int(number) if number.isnumeric() else 0
-        matrix = [[Int(ocr_image(f'{intermediatesPath}/{i}{j}.jpg')) for j in range(9)] for i in range(9)]
+        matrix = [[ocr_image(f'{intermediatesPath}/{i}{j}.jpg') for j in range(9)] for i in range(9)]
         return matrix
     return False
