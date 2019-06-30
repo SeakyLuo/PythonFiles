@@ -1,7 +1,7 @@
 # Credits to https://github.com/apollojain/sudoku_solver
 
 from pytesseract import image_to_string
-from PIL import Image
+from PIL import Image, ImageEnhance
 import cv2
 import numpy as np
 from scipy.misc import imsave
@@ -134,11 +134,17 @@ def image_to_matrix(image, intermediatesPath) -> dict:
                 height, width = img.size
                 # remove border
                 img = img.crop((0.08 * width, 0.08 * height, 0.92 * width, 0.92 * height))
-                img = removeNoise(img)
+                # img = removeNoise(img)
+                # imsave(path, img)
+                # img = cv2.imread(path)
+                # img = cv2.fastNlMeansDenoising(img, 10)
                 imsave(path, img)
                 img = cv2.imread(path)
-                img = cv2.fastNlMeansDenoising(img, 10)
+                kernel = np.ones((5, 5), np.uint8)
+                img = cv2.dilate(img, kernel, iterations = 1)
                 imsave(path, img)
+                img = cv2.imread(path)
+                # imsave(path, img)
                 string = image_to_string(img, config='--psm 10 --oem 3 -c tessedit_char_whitelist=123456789')
                 number = int(string) if string.isnumeric() else 0
                 print(i + 1, j + 1, string)
@@ -146,6 +152,9 @@ def image_to_matrix(image, intermediatesPath) -> dict:
     return matrix
 
 def removeNoise(image):
+    enhancer = ImageEnhance.Contrast(image)
+    image = enhancer.enhance(2)
+    image = image.convert('1')
     data = image.getdata()
     w, h = image.size
     Max = 5
