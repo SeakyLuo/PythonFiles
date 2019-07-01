@@ -29,7 +29,7 @@ def rectify(h):
     hnew[0] = h[np.argmin(add)]
     hnew[2] = h[np.argmax(add)]
 
-    diff = np.diff(h,axis = 1)
+    diff = np.diff(h, axis = 1)
     hnew[1] = h[np.argmin(diff)]
     hnew[3] = h[np.argmax(diff)]
 
@@ -92,7 +92,7 @@ def find_puzzle(image):
         return warp
     return None
 
-def image_to_matrix(image, intermediatesPath) -> dict:
+def image_to_matrix(image, intermediatesPath, entries) -> dict:
     '''
     DESCRIPTION
     -----------
@@ -107,7 +107,7 @@ def image_to_matrix(image, intermediatesPath) -> dict:
     OUTPUT PARAMETERS
     -----------------
     matrix: dict
-        The sudoku puzzle in a dict form with a tuple as key, an int as value
+        The sudoku puzzle in a dict form with a tuple as key, an int as value.
         key:   a tuple (i, j) with i, j ranging from 1 to 9
         value: if empty then 0 otherwise the number
     '''
@@ -116,10 +116,10 @@ def image_to_matrix(image, intermediatesPath) -> dict:
     warp = find_puzzle(image)
     if warp is not None:
         s_warp = np.split(warp, 9)
-        for i in range(9):
-            for j in range(9):
-                array = np.array([np.split(arr, 9)[j] for arr in s_warp[i]])
-                path = f'{intermediatesPath}/{i + 1}{j + 1}.png'
+        for i in range(1, 10):
+            for j in range(1, 10):
+                array = np.array([np.split(arr, 9)[j - 1] for arr in s_warp[i - 1]])
+                path = f'{intermediatesPath}/{i}{j}.png'
                 imsave(path, array)
                 img = cv2.imread(path)
                 img = pre_processing(img)[1]
@@ -134,36 +134,16 @@ def image_to_matrix(image, intermediatesPath) -> dict:
                 height, width = img.size
                 # remove border
                 img = img.crop((0.08 * width, 0.08 * height, 0.92 * width, 0.92 * height))
-                # img = removeNoise(img)
-                # imsave(path, img)
-                # img = cv2.imread(path)
-                # img = cv2.fastNlMeansDenoising(img, 10)
                 imsave(path, img)
                 img = cv2.imread(path)
+                # Denoise
                 kernel = np.ones((5, 5), np.uint8)
                 img = cv2.dilate(img, kernel, iterations = 1)
                 imsave(path, img)
                 img = cv2.imread(path)
-                # imsave(path, img)
+                # convert
                 string = image_to_string(img, config='--psm 10 --oem 3 -c tessedit_char_whitelist=123456789')
                 number = int(string) if string.isnumeric() else 0
-                print(i + 1, j + 1, string)
-                matrix[i + 1, j + 1] = number
+                print(i, j, string)
+                matrix[i, j] = number
     return matrix
-
-def removeNoise(image):
-    enhancer = ImageEnhance.Contrast(image)
-    image = enhancer.enhance(2)
-    image = image.convert('1')
-    data = image.getdata()
-    w, h = image.size
-    Max = 5
-    thresh = (Max ** 2 - 1) // 2
-    for x in range(1, w - 1):
-        for y in range(1, h - 1):
-            center = data[w * y + x]
-            if center == 0:
-                distinct = sum(center == data[w * (y + j) + x + i] for i in range(-Max, Max + 1) for j in range(-Max, Max + 1)) - 1
-                if distinct < thresh:
-                    image.putpixel((x, y), 1)
-    return image

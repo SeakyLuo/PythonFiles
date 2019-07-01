@@ -19,11 +19,11 @@ class sudoku:
                 self.entries[i, j] = e
         self.editButton = Button(self.master, text = '编辑', command = self.edit)
         self.computeButton = Button(self.master, text = '计算', command = self.compute)
-        self.clear = Button(self.master, text = '清除', command = self.clear)
-        self.clearAll = Button(self.master, text = '清除全部', command = self.setup)
+        self.clearButton = Button(self.master, text = '清除', command = self.clear)
+        self.clearAllButton = Button(self.master, text = '清除全部', command = self.clearAll)
         self.loadButton = Button(self.master, text = '加载', command = self.load)
         self.saveButton = Button(self.master, text = '保存', command = self.save)
-        buttons = [self.editButton, self.computeButton, self.clear, self.clearAll, self.loadButton, self.saveButton]
+        buttons = [self.editButton, self.computeButton, self.clearButton, self.clearAllButton, self.loadButton, self.saveButton]
         for i, button in enumerate(buttons):
             button.grid(row = 1, column = i, sticky = NSEW)
         self.frame.grid(columnspan = len(buttons))
@@ -41,19 +41,20 @@ class sudoku:
         return all(self.numbers.values())
 
     def clear(self):
-        for (i, j), entry in self.entries.items():
+        for entry in self.entries.values():
             if entry['state'] == NORMAL:
                 clearEntry(entry)
+
+    def clearAll(self):
+        for entry in self.entries.values():
+            entry['state'] = NORMAL
+            clearEntry(entry)
 
     def reset(self):
         self.hints = {(i, j): set(range(1, 10)) for i in range(1, 10) for j in range(1, 10)}
         self.numbers = {(i, j): 0 for i in range(1, 10) for j in range(1, 10)}
 
     def setup(self, filename = ''):
-        for i in range(1, 10):
-            for j in range(1, 10):
-                self.entries[i, j]['state'] = NORMAL
-                clearEntry(self.entries[i, j])
         if filename:
             if filename.endswith('.txt'):
                 numbers = ez.fread(filename)
@@ -61,18 +62,23 @@ class sudoku:
             else:
                 dialog = LoadDialog(self.master, '正在识别图像')
                 dialog.setCloseEvent(self.ocr_event, (filename, ))
+        else:
+            self.clearAll()
 
     def setNumbers(self, numbers: dict):
+        self.clearAll()
         for (i, j), number in numbers.items():
             if number == 0: continue
             setEntry(self.entries[i, j], number)
             self.entries[i, j]['state'] = DISABLED
 
     def ocr_event(self, filename):
-        numbers = image_to_matrix(filename, self.intermediates)
-        if not numbers:
-            messagebox.showerror(title='错误', message="无法识别图片")
-        self.setNumbers(numbers)
+        try:
+            numbers = image_to_matrix(filename, self.intermediates)
+            assert numbers != {}
+            self.setNumbers(numbers)
+        except:
+            messagebox.showerror(title='错误', message='无法识别图片')
 
     def edit(self):
         if self.editButton['text'] == '编辑':
@@ -89,7 +95,7 @@ class sudoku:
         self.reset()
         self.collectNumbers()
         if sum(number != 0 for number in self.numbers.values()) < 17:
-            messagebox.showerror(title='错误', message=f'数字太少，无法计算')
+            messagebox.showerror(title='错误', message='数字太少，无法计算')
             return
         valid = self.isValid()
         if valid != True:

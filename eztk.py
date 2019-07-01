@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox, ttk
 import time, threading
 
 def getText(text):
@@ -32,14 +33,18 @@ def setEntryHint(entry, hint, hintTextColor = 'grey39'):
     entry['fg'] = hintTextColor
 
 class LoadDialog(Toplevel):
-    def __init__(self, master, message = 'Loading', maxDots = 5):
+    '''A simple LoadDialog'''
+    def __init__(self, master, load_message = 'Loading', maxDots = 5):
+        assert isinstance(load_message, str)
+        assert isinstance(maxDots, int)
+        assert maxDots > 0
         Toplevel.__init__(self, master)
         self.transient(master)
-        self.geometry("+%d+%d" % (master.winfo_rootx() + 50, master.winfo_rooty() + 50))
+        self.geometry(f"+{master.winfo_rootx() + 50}+{master.winfo_rooty() + 50}")
         self.title('Load Dialog')
-        self.message = message
+        self.load_message = load_message
         self.maxDots = maxDots
-        self.label = Label(self, text = message, width = 20)
+        self.label = Label(self, text = load_message, width = 20)
         self.label.pack()
         self.protocol('WM_DELETE_WINDOW', self.dontClose)
         self.isClose = False
@@ -49,8 +54,10 @@ class LoadDialog(Toplevel):
         threading.Thread(target = self.__task, args = (target, args)).start()
 
     def __task(self, target, args):
-        target(*args)
-        self.close()
+        try:
+            target(*args)
+        finally:
+            self.close()
 
     def dontClose(self):
         pass
@@ -60,8 +67,35 @@ class LoadDialog(Toplevel):
         while not self.isClose:
             dots = (dots + 1) % self.maxDots
             time.sleep(0.5)
-            self.label['text'] = self.message + dots * '.'
+            self.label['text'] = self.load_message + dots * '.'
         self.destroy()
 
     def close(self):
         self.isClose = True
+
+class ProgressDialog(Toplevel):
+    '''A simple ProgressDialog with progress from 0 to 100'''
+    def __init__(self, master, load_message = 'Progress: 0%'):
+        Toplevel.__init__(self, master)
+        self.master = master
+        self.transient(master)
+        self.geometry(f"+{master.winfo_rootx() + 50}+{master.winfo_rooty() + 50}")
+        self.title('Progress Dialog')
+        self.label = Label(self, text = load_message)
+        self.label.pack(side = TOP, expand = True, fill = BOTH)
+        self.progressbar = ttk.Progressbar(self, length = 300, maximum = 100, mode = 'determinate')
+        self.progressbar.pack(side = BOTTOM, expand = True, fill = BOTH)
+        self.progress = 0
+        self.progressbar.start(0)
+        threading.Thread(target = self.updateProgressbar).start()
+
+    def updateProgressbar(self):
+        while self.progress < 100:
+            pass
+        self.progressbar.stop()
+        self.destroy()
+
+    def update(self, value, text = ''):
+        self.label['text'] = text or f'Progress: {value}%'
+        self.progressbar['value'] = value
+        self.progress = value
