@@ -3,6 +3,7 @@ from tkinter import messagebox, simpledialog
 from eztk import setEntry, clearEntry
 from random import randrange, shuffle, randint
 import ez, ezs, os
+import numpy as np
 from dialogs import *
 from constants import *
 
@@ -91,6 +92,10 @@ class Generator(Frame):
         self.cmdMenu.add_command(label = MULTIPLY, accelerator = shortcuts[MULTIPLY], command = self.multiply)
         self.cmdMenu.add_separator()
         self.cmdMenu.add_command(label = TRANSPOSE, accelerator = shortcuts[TRANSPOSE], command = self.transpose)
+        self.cmdMenu.add_command(label = f'Rotate ({CLOCKWISE})', command = lambda: self.rotate(CLOCKWISE))
+        self.cmdMenu.add_command(label = f'Rotate ({COUNTER})', command = lambda: self.rotate(COUNTER))
+        self.cmdMenu.add_command(label = f'Flip ({HORIZONTAL})', command = lambda: self.flip(HORIZONTAL))
+        self.cmdMenu.add_command(label = f'Flip ({VERTICAL})', command = lambda: self.flip(VERTICAL))
         self.cmdMenu.add_command(label = RESHAPE, command = self.reshape)
         self.cmdMenu.add_separator()
         self.cmdMenu.add_command(label = LOWER_TRIANGULAR, accelerator = shortcuts[LOWER_TRIANGULAR], command = lambda: self.triangularMatrix(LOWER))
@@ -336,7 +341,7 @@ class Generator(Frame):
                 self.generateEntries(row, 1)
             if entries:
                 for i in range(1, col):
-                    setEntry(self.entries[(i, 0)], entries[i])
+                    setEntry(self.entries[i, 0], entries[i])
 
     def setResultFormat(self, resultFormat):
         if self.resultFormat.get() == resultFormat:
@@ -385,12 +390,12 @@ class Generator(Frame):
                 continue
             label = Label(self.entryFrame, width = columnLabelWidth, text = i)
             label.grid(row = 0, column = i)
-            self.entryLabels[(0, i)] = label
+            self.entryLabels[0, i] = label
         for i in range(row):
             if (i + 1, 0) not in self.entryLabels:
                 label = Label(self.entryFrame, text = i + 1)
                 label.grid(row = i + 1, column = 0)
-                self.entryLabels[(i + 1, 0)] = label
+                self.entryLabels[i + 1, 0] = label
             for j in range(col):
                 if (i, j) in self.entries:
                     continue
@@ -401,18 +406,18 @@ class Generator(Frame):
                 bindtags = entry.bindtags()
                 entry.bindtags((bindtags[2], bindtags[0], bindtags[1], bindtags[3]))
                 entry.grid(row = i + 1, column = j + 1, sticky = NSEW)
-                self.entries[(i, j)] = entry
+                self.entries[i, j] = entry
         for i, j in self.entries.copy():
             if i >= row or j >= col:
-                self.entries[(i, j)].grid_forget()
-                del self.entries[(i, j)]
+                self.entries[i, j].grid_forget()
+                del self.entries[i, j]
         for i, j in self.entryLabels.copy():
             if i > row:
-                self.entryLabels[(i, 0)].grid_forget()
-                del self.entryLabels[(i, 0)]
+                self.entryLabels[i, 0].grid_forget()
+                del self.entryLabels[i, 0]
             elif j > col:
-                self.entryLabels[(0, j)].grid_forget()
-                del self.entryLabels[(0, j)]
+                self.entryLabels[0, j].grid_forget()
+                del self.entryLabels[0, j]
 
     def beforeDelete(self, event):
         entry = self.getFocusEntry()
@@ -423,9 +428,9 @@ class Generator(Frame):
         if r == 0 and c == 0:
             self.colEntry.focus()
         elif c == 0:
-            self.entries[(r - 1, col - 1)].focus()
+            self.entries[r - 1, col - 1].focus()
         else:
-            self.entries[(r, c - 1)].focus()
+            self.entries[r, c - 1].focus()
 
     def onEntryChange(self, event):
         self.modifyState()
@@ -448,7 +453,7 @@ class Generator(Frame):
             else:
                 # check empty
                 if not self.entries: return
-                fEntry = self.entries[(row - 1 if key == UP else 0, 0 if entry == self.rowEntry else col - 1)]
+                fEntry = self.entries[row - 1 if key == UP else 0, 0 if entry == self.rowEntry else col - 1]
         else:
             info = entry.grid_info()
             r, c = info['row'] - 1, info['column'] - 1
@@ -458,7 +463,7 @@ class Generator(Frame):
                 x, y = {UP: (-1, 0), DOWN: (1, 0), LEFT: (0, -1), RIGHT: (0, 1)}[key]
                 r = (r + x) % row
                 c = (c + y) % col
-                fEntry = self.entries[(r, c)]
+                fEntry = self.entries[r, c]
         fEntry.focus()
         if key in [UP, DOWN]:
             fEntry.icursor(END if isEnd else min(len(fEntry.get()), cursorIndex))
@@ -539,7 +544,7 @@ class Generator(Frame):
         for i in range(self.row):
             if nested: lst = []
             for j in range(self.col):
-                text = self.entries[(i, j)].get()
+                text = self.entries[i, j].get()
                 if not withEmpty and not text: continue
                 if evaluate and text: text = ezs.numEval(text)
                 if nested: lst.append(text)
@@ -665,7 +670,7 @@ class Generator(Frame):
             self.generateEntries(r, c)
             for i in range(r):
                 for j in range(c):
-                    setEntry(self.entries[(i, j)], matrix[i][j])
+                    setEntry(self.entries[i, j], matrix[i][j])
             self.modifyState()
 
     def appendIndex(self):
@@ -673,7 +678,7 @@ class Generator(Frame):
         for i in range(self.getRow()):
             for j in range(self.getCol()):
                 text = f'{i + 1}{j + 1}'
-                self.entries[(i, j)].insert(END, '_{%s}' % text if isLatex else text)
+                self.entries[i, j].insert(END, '_{%s}' % text if isLatex else text)
 
     def fillRC(self, title):
         isRow = title == FILL_ROW
@@ -721,10 +726,10 @@ class Generator(Frame):
                 continue
             if isRow:
                 for _ in range(c):
-                    setEntry(self.entries[(j, _)], self.entries[(i, _)].get())
+                    setEntry(self.entries[j, _], self.entries[i, _].get())
             else:
                 for _ in range(r):
-                    setEntry(self.entries[(_, j)], self.entries[(_, i)].get())
+                    setEntry(self.entries[_, j], self.entries[_, i].get())
             break
         fEntry.focus()
 
@@ -771,7 +776,7 @@ class Generator(Frame):
                 entries = [[entries[i][result]] * c for i in range(r)]
             for i in range(r):
                 for j in range(c):
-                    setEntry(self.entries[(i, j)], entries[i][j])
+                    setEntry(self.entries[i, j], entries[i][j])
             break
         fEntry.focus()
 
@@ -782,7 +787,7 @@ class Generator(Frame):
         if row != col:
             self.syncRowCol(max(row, col))
         for i, j in self.entries:
-            setEntry(self.entries[(i, j)], 1 if i == j else 0)
+            setEntry(self.entries[i, j], 1 if i == j else 0)
         self.modifyState()
 
     def append(self, position):
@@ -818,7 +823,7 @@ class Generator(Frame):
             r, c = self.getRowCol()
             for i in range(r):
                 for j in range(c):
-                    text = self.entries[(i, j)].get()
+                    text = self.entries[i, j].get()
                     for index in ez.find(text).all(target):
                         self.findResult.append(((i, j), index, index + targetLen))
                         if self.currentEntry and divmod(self.currentEntry[1], c) == (i, j) and self.currentEntry[2] == index:
@@ -861,7 +866,7 @@ class Generator(Frame):
                     break
                 try:
                     x, y = result.replace(' ', '').split(',')
-                    entry = self.entries[(int(x) - 1, int(y) - 1)]
+                    entry = self.entries[int(x) - 1, int(y) - 1]
                     entry.focus()
                     entry.select_range(0, END)
                     break
@@ -969,19 +974,41 @@ class Generator(Frame):
         self.modifyState()
 
     def transpose(self):
-        resultType = self.resultType.get()
-        if resultType not in [MATRIX, DETERMINANT, VECTOR]:
-            return
+        entries = { key: entry.get() for key, entry in self.entries.items() }
         row, col = self.getRowCol()
-        entries = { key: self.entries[key].get() for key in self.entries }
         if row != col:
-            if resultType == VECTOR:
+            if self.resultType.get() == VECTOR:
                 self.setResultType(MATRIX)
             self.setRowCol(col, row)
             self.generateEntries(col, row)
+            row, col = col, row
         for i in range(row):
             for j in range(col):
-                setEntry(self.entries[(j, i)], entries[(i, j)])
+                setEntry(self.entries[i, j], entries[j, i])
+        self.modifyState()
+
+    def rotate(self, direction):
+        entries = self.collectEntries(nested = True)
+        entries = np.rot90(entries, axes = (0, 1) if direction == COUNTER else (1, 0))
+        row, col = self.getRowCol()
+        if row != col:
+            if self.resultType.get() == VECTOR:
+                self.setResultType(MATRIX)
+            self.setRowCol(col, row)
+            self.generateEntries(col, row)
+            row, col = col, row
+        for i in range(row):
+            for j in range(col):
+                setEntry(self.entries[i, j], entries[i][j])
+        self.modifyState()
+
+    def flip(self, direction):
+        entries = self.collectEntries(nested = True)
+        entries = np.fliplr(entries) if direction == HORIZONTAL else np.flipud(entries)
+        row, col = self.getRowCol()
+        for i in range(row):
+            for j in range(col):
+                setEntry(self.entries[i, j], entries[i][j])
         self.modifyState()
 
     def zeroMatrix(self):
@@ -1112,7 +1139,7 @@ class Generator(Frame):
         vars = []
         for i in range(row):
             for j in range(col):
-                text = self.entries[(i, j)].get()
+                text = self.entries[i, j].get()
                 fText = ez.find(text)
                 varNumber = ez.Eval(fText.between('_{', '}'))
                 varType = type(varNumber)
@@ -1146,7 +1173,7 @@ class Generator(Frame):
                     values = sorted(values)
             for i in range(row):
                 for j in range(col):
-                    setEntry(self.entries[(i, j)], values[i][j])
+                    setEntry(self.entries[i, j], values[i][j])
         self.modifyState()
 
     def reverse(self, target):
@@ -1156,7 +1183,7 @@ class Generator(Frame):
         if target == ALL:
             for i in range(row * col // 2):
                 r, c = divmod(i, col)
-                e1, e2 = self.entries[(r, c)], self.entries[(row - r - 1, col - c - 1)]
+                e1, e2 = self.entries[r, c], self.entries[row - r - 1, col - c - 1]
                 t1, t2 = e2.get(), e1.get()
                 setEntry(e1, t1)
                 setEntry(e2, t2)
@@ -1168,7 +1195,7 @@ class Generator(Frame):
                 values = list(reversed(values))
             for i in range(row):
                 for j in range(col):
-                    setEntry(self.entries[(i, j)], values[i][j])
+                    setEntry(self.entries[i, j], values[i][j])
         self.modifyState()
 
     def reshape(self):
@@ -1209,7 +1236,7 @@ class Generator(Frame):
     def triangularMatrix(self, mode):
         for i, j in self.entries:
             if i < j if mode == LOWER else i > j:
-                setEntry(self.entries[(i, j)], 0)
+                setEntry(self.entries[i, j], 0)
         self.modifyState()
 
     def unitMatrix(self):
@@ -1227,8 +1254,8 @@ class Generator(Frame):
         shuffle(cols)
         for i in range(size):
             for j in range(size):
-                setEntry(self.entries[(i, j)], 0)
-            setEntry(self.entries[(i, cols.pop())], 1)
+                setEntry(self.entries[i, j], 0)
+            setEntry(self.entries[i, cols.pop()], 1)
         self.modifyState()
 
     def unknownMatrix(self):
@@ -1262,7 +1289,7 @@ class Generator(Frame):
             for i, row in enumerate(entries):
                 if row.count(1) != 1 and row.count(0) != len(row) - 1:
                     return
-                setEntry(self.entries[(i, 0)], row.index(1) + isNormal)
+                setEntry(self.entries[i, 0], row.index(1) + isNormal)
             self.setResultType(VECTOR)
         else:
             if any(i not in entries for i in range(isNormal, r + isNormal)):
@@ -1271,7 +1298,7 @@ class Generator(Frame):
             self.syncRowCol(r)
             for i in range(r):
                 for j in range(r):
-                    setEntry(self.entries[(i, j)], entries[i] == j + isNormal)
+                    setEntry(self.entries[i, j], entries[i] == j + isNormal)
         self.modifyState()
 
     def calculateDet(self):
@@ -1339,7 +1366,7 @@ class Generator(Frame):
         for entry in self.entries.values():
             entry['width'] = value
         for i in range(1, self.getCol() + 1):
-            self.entryLabels[(0, i)]['width'] = value
+            self.entryLabels[0, i]['width'] = value
 
     def adjustWidth(self):
         dialog = SliderDialog(self, 20)
@@ -1368,7 +1395,7 @@ class Generator(Frame):
         self.setResultType(resultType)
         for i, row in enumerate(entries):
             for j, entry in enumerate(row):
-                setEntry(self.entries[(i, j)], entry)
+                setEntry(self.entries[i, j], entry)
         entry = self.getLastFocusEntry(c)
         entry.focus()
         entry.icursor(focus[2])
