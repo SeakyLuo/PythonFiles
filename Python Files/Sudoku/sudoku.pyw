@@ -19,11 +19,11 @@ class sudoku:
                 self.entries[i, j] = e
         self.editButton = Button(self.master, text = '编辑', command = self.edit)
         self.computeButton = Button(self.master, text = '计算', command = self.compute)
-        self.clear = Button(self.master, text = '清除', command = self.clear)
-        self.clearAll = Button(self.master, text = '清除全部', command = self.setup)
+        self.clearButton = Button(self.master, text = '清除', command = self.clear)
+        self.clearAllButton = Button(self.master, text = '清除全部', command = self.clearAll)
         self.loadButton = Button(self.master, text = '加载', command = self.load)
         self.saveButton = Button(self.master, text = '保存', command = self.save)
-        buttons = [self.editButton, self.computeButton, self.clear, self.clearAll, self.loadButton, self.saveButton]
+        buttons = [self.editButton, self.computeButton, self.clearButton, self.clearAllButton, self.loadButton, self.saveButton]
         for i, button in enumerate(buttons):
             button.grid(row = 1, column = i, sticky = NSEW)
         self.frame.grid(columnspan = len(buttons))
@@ -31,8 +31,7 @@ class sudoku:
         self.intermediates = 'intermediates'
         if self.intermediates not in os.listdir():
             os.mkdir(self.intermediates)
-        self.currentPuzzle = ''
-        self.setup()
+        self.setup('sudoku.txt')
         for entry in self.entries.values():
             if entry['state'] == NORMAL:
                 entry.focus()
@@ -46,13 +45,16 @@ class sudoku:
             if entry['state'] == NORMAL:
                 clearEntry(entry)
 
-    def setup(self, filename = ''):
+    def clearAll(self):
+        for entry in self.entries.values():
+            entry['state'] = NORMAL
+            clearEntry(entry)
+
+    def reset(self):
         self.hints = {(i, j): set(range(1, 10)) for i in range(1, 10) for j in range(1, 10)}
         self.numbers = {(i, j): 0 for i in range(1, 10) for j in range(1, 10)}
-        for i in range(1, 10):
-            for j in range(1, 10):
-                self.entries[i, j]['state'] = NORMAL
-                clearEntry(self.entries[i, j])
+
+    def setup(self, filename = ''):
         if filename:
             if filename.endswith('.txt'):
                 numbers = ez.fread(filename)
@@ -60,22 +62,23 @@ class sudoku:
             else:
                 dialog = LoadDialog(self.master, '正在识别图像')
                 dialog.setCloseEvent(self.ocr_event, (filename, ))
-        self.currentPuzzle = filename
-        self.full = self.isFull()
+        else:
+            self.clearAll()
 
     def setNumbers(self, numbers: dict):
+        self.clearAll()
         for (i, j), number in numbers.items():
             if number == 0: continue
             setEntry(self.entries[i, j], number)
             self.entries[i, j]['state'] = DISABLED
-            self.put(i, j, number)
 
     def ocr_event(self, filename):
-        numbers = image_to_matrix(filename, self.intermediates)
-        if not numbers:
-            messagebox.showerror(title="Error", message="Invalid Image!")
-        self.setNumbers(numbers)
-        self.full = self.isFull()
+        try:
+            numbers = image_to_matrix(filename, self.intermediates)
+            assert numbers != {}
+            self.setNumbers(numbers)
+        except:
+            messagebox.showerror(title='错误', message='无法识别图片')
 
     def edit(self):
         if self.editButton['text'] == '编辑':
@@ -89,12 +92,15 @@ class sudoku:
                     entry['state'] = DISABLED
 
     def compute(self):
-        if self.full or all(number == 0 for number in self.numbers.values()):
+        self.reset()
+        self.collectNumbers()
+        if sum(number != 0 for number in self.numbers.values()) < 17:
+            messagebox.showerror(title='错误', message='数字太少，无法计算')
             return
         valid = self.isValid()
         if valid != True:
             i, j, text = valid
-            messagebox.showerror('Error', f'第{i}行第{j}列存在非法输入：{text}')
+            messagebox.showerror(title='错误', message=f'第{i}行第{j}列存在非法输入：{text}')
             return
         dialog = LoadDialog(self.master, '正在计算')
         dialog.setCloseEvent(self.compute_event)
@@ -119,7 +125,7 @@ class sudoku:
         for j in range(1, 10):
             counter = {}
             for i in range(1, 10):
-                number = board[i][j]
+                number = board[i - 1][j - 1]
                 counter[number] = counter.get(number, 0) + 1
                 if number and counter[number] > 1:
                     return i, j, number
@@ -134,36 +140,35 @@ class sudoku:
                             return r + x, c + y, number
         return True
 
-
     def compute_event(self):
+        for (i, j), number in self.numbers.items():
+            if number:
+                self.put(i, j, number)
         self.solve()
-        for i in range(1, 10):
-            for j in range(1, 10):
-                if self.numbers[i, j]:
-                    setEntry(self.entries[i, j], self.numbers[i, j])
-        self.full = True
+        for loc, number in self.numbers.items():
+            if number:
+                setEntry(self.entries[loc], number)
 
-    def solve(self):
+    def solve(self) -> bool:
         if self.isFull():
             return True
         hints = { k: v for k, v in self.hints.items() if v }
         if not hints:
             return False
-        i, j = ezs.argmin(hints, len)
-        copy = self.hints[i, j].copy()
-        for number in self.hints[i, j].copy():
+        i, j = loc = ezs.argmin(hints, len)
+        copy = self.hints[loc].copy()
+        for number in self.hints[loc].copy():
             hints = self.put(i, j, number)
-            self.put(i, j, number)
             if self.solve():
                 return True
             else:
-                self.numbers[i, j] = 0
+                self.numbers[loc] = 0
                 for x, y in hints:
                     self.hints[x, y].add(number)
-                self.hints[i, j] = copy.copy()
+                self.hints[loc] = copy.copy()
         return False
 
-    def put(self, i, j, number):
+    def put(self, i, j, number) -> set:
         self.numbers[i, j] = number
         self.hints[i, j].clear()
         hints = set()
@@ -190,9 +195,9 @@ class sudoku:
             file.write(str(self.collectNumbers()))
             file.close()
 
-    def collectNumbers(self):
-        for i, j in self.numbers:
-            self.numbers[i, j] = int(self.entries[i, j].get() or 0)
+    def collectNumbers(self) -> dict:
+        for loc, entry in self.entries.items():
+            self.numbers[loc] = int(entry.get() or 0)
         return self.numbers
 
     def switch(self, event):
