@@ -34,10 +34,8 @@ def setEntryHint(entry, hint, hintTextColor = 'grey39'):
 
 class LoadDialog(Toplevel):
     '''A simple LoadDialog'''
-    def __init__(self, master, load_message = 'Loading', maxDots = 5):
-        assert isinstance(load_message, str)
-        assert isinstance(maxDots, int)
-        assert maxDots > 0
+    def __init__(self, master, load_message = 'Loading', maxDots = 6):
+        assert isinstance(load_message, str) and isinstance(maxDots, int) and maxDots > 0
         Toplevel.__init__(self, master)
         self.transient(master)
         self.geometry(f"+{master.winfo_rootx() + 50}+{master.winfo_rooty() + 50}")
@@ -65,7 +63,7 @@ class LoadDialog(Toplevel):
     def update(self):
         dots = 0
         while not self.isClose:
-            dots = (dots + 1) % self.maxDots
+            dots = (dots + 1) % (self.maxDots + 1)
             time.sleep(0.5)
             self.label['text'] = self.load_message + dots * '.'
         self.destroy()
@@ -76,6 +74,7 @@ class LoadDialog(Toplevel):
 class ProgressDialog(Toplevel):
     '''A simple ProgressDialog with progress from 0 to 100'''
     def __init__(self, master, load_message = 'Progress: 0%'):
+        assert isinstance(load_message, str)
         Toplevel.__init__(self, master)
         self.master = master
         self.transient(master)

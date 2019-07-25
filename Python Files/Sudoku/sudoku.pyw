@@ -77,7 +77,8 @@ class sudoku:
             numbers = image_to_matrix(filename, self.intermediates)
             assert numbers != {}
             self.setNumbers(numbers)
-        except:
+        except Exception as e:
+            print(e)
             messagebox.showerror(title='错误', message='无法识别图片')
 
     def edit(self):

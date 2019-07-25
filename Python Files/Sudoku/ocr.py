@@ -92,7 +92,7 @@ def find_puzzle(image):
         return warp
     return None
 
-def image_to_matrix(image, intermediatesPath, entries) -> dict:
+def image_to_matrix(image, intermediatesPath) -> dict:
     '''
     DESCRIPTION
     -----------

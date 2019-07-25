@@ -13,11 +13,49 @@ from itertools import chain, combinations
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + '\\'
 DataTypeError = TypeError('Unsupported data type.')
 
-def replacePattern(pattern: str, string: str, substr: str = ''):
-    '''Replace the substring that follows a pattern from a string.
-       pattern: a Regex string or a re.Pattern object.
-       string: the target string.
-       substr: default is empty, which removes the pattern.'''
+def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = True, punctuations: bool = False) -> str:
+    '''
+    Randomly generate a password. Full clexicon is list(map(chr, range(32, 126))).
+    @params:
+    length: a tuple of with the format of (minLength, maxLength),
+            or an integer that specifies the length.
+            Default: (8, 20).
+    capital: a bool that specifies the inclusion of capital letters.
+            Default: True.
+    numbers: a bool that specifies the inclusion of numbers.
+            Default: True.
+    punctuations: a bool that specifies the inclusion of punctuations, which will be selected from [` -=[]\;',./~!@#$%^&*()_+{}|:"<>?].
+            Default: False.    
+    @return:
+    password: a string. If no argument is set to True, a lower-case string will be returned.
+    '''
+    lexicon = list(map(chr, range(32, 126)))
+    if not capital:
+        lexicon = filter(lambda x: not x.isupper(), lexicon)
+    if not numbers:
+        lexicon = filter(lambda x: not x.isdigit(), lexicon)
+    if not punctuations:
+        lexicon = filter(lambda x: x.isalnum(), lexicon)
+    lexicon = list(lexicon)
+    if isinstance(length, (tuple, list)):
+        assert len(length) == 2, 'length object must have exactly 2 elements!'
+        mi, ma = length
+        iterations = random.randint(mi, ma)
+    else:
+        iterations = length
+    password = ''.join([ random.choice(lexicon) for _ in range(iterations) ])
+    return password
+
+def replacePattern(pattern: str, string: str, substr: str = '') -> str:
+    '''
+    Replace the substring that follows a pattern from a string.
+    @params:
+    pattern: a Regex string or a re.Pattern object.
+    string: the target string.
+    substr: default is empty, which removes the pattern.
+    @return:
+    new: the final result string
+    '''
     if type(pattern) == str:
         pattern = re.compile(pattern)
     if type(pattern) != re.Pattern:
@@ -55,7 +93,7 @@ def getlnk(path: str):
     shortcut = shell.CreateShortCut(path)
     return shortcut.Targetpath
 
-def random_pop(sequence: list):
+def rpop(sequence: list):
     '''Randomly remove and return an item from the sequence'''
     index = random.randrange(0, len(sequence))
     return sequence.pop(index)
@@ -335,12 +373,17 @@ def findFilePath(filename: str, path: str = ''):
                 return result
     return False
 
+def timeof(func, args: tuple = ()):
+##    from functools import partial
+##    partial(func, args)
+    return timer(func, 1, args)
+
 def timer(func, iterations: int = 1000, args: tuple = ()):
     '''If func has arguments, put them into args.'''
-    t = time.time()
+    t = time.perf_counter()
     for i in range(iterations):
         func(*args)
-    return time.time() - t
+    return time.perf_counter() - t
 
 def fread(filename: str, evaluate: bool = True, coding: str = 'utf8'):
     '''Read the file that has the filename.
