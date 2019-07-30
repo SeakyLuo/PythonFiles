@@ -1124,7 +1124,7 @@ class Generator(Frame):
 
     def randomReorder(self):
         current = self.collectEntries()
-        values = current
+        values = current.copy()
         while current == values:
             shuffle(values)
         for entry in self.entries.values():
