@@ -52,7 +52,7 @@ class Generator(Frame):
         self.insertMenu.add_separator()
         self.randomMenu = Menu(self, tearoff = False)
         self.randomMenu.add_command(label = RANDOM_MATRIX, accelerator = shortcuts[RANDOM_MATRIX], command = self.randomFill)
-        self.randomMenu.add_command(label = SHUFFLE, accelerator = shortcuts[SHUFFLE], command = self.randomReorder)
+        self.randomMenu.add_command(label = SHUFFLE, accelerator = shortcuts[SHUFFLE], command = self.shuffle)
         self.randomMenu.add_separator()
         self.randomMatrixOption = StringVar(self)
         for option in randomMatrixOptions:
@@ -250,7 +250,7 @@ class Generator(Frame):
         self.master.bind('<Control-F>', lambda event: self.find(FIND_LOCATION))
         self.master.bind('<Control-L>', lambda event: self.triangularMatrix(LOWER))
         self.master.bind('<Control-P>', lambda event: self.permutationConversion())
-        self.master.bind('<Control-R>', lambda event: self.randomReorder())
+        self.master.bind('<Control-R>', lambda event: self.shuffle())
         self.master.bind('<Control-U>', lambda event: self.triangularMatrix(UPPER))
         self.master.bind('<Control-Z>', lambda event: self.clear(0))
         self.master.bind('<Alt-a>', lambda event: self.aToZ())
@@ -1122,7 +1122,7 @@ class Generator(Frame):
                 setEntry(entry, values.pop())
         self.modifyState()
 
-    def randomReorder(self):
+    def shuffle(self):
         current = self.collectEntries()
         values = current.copy()
         while current == values:
