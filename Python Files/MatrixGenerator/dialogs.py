@@ -56,7 +56,7 @@ class FindDialog(Toplevel):
         self.findEntry.select_range(0, END)
 
     def setOnFindListner(self, listener):
-        '''listner should have the following arguments: dialog, target, direction.'''
+        '''The listener should have the following arguments: dialog, target, direction.'''
         self.findListner = listener
 
     def find(self):
@@ -67,7 +67,7 @@ class FindDialog(Toplevel):
         self.directionListener = listener
 
     def onDirectionChange(self):
-        '''listner should have the following arguments: dialog, direction.'''
+        '''The listener should have the following arguments: dialog, direction.'''
         if self.directionListener:
             self.directionListener(self, self.directionVar.get())
 
@@ -76,7 +76,7 @@ class FindDialog(Toplevel):
         self.directionVar.set(direction)
 
     def setOnCloseListener(self, listener):
-        '''listner should allow the following arguments: dialog.'''
+        '''The listener should allow the following arguments: dialog.'''
         self.closeListener = listener
 
     def close(self):
@@ -170,7 +170,7 @@ class ReplaceDialog(Toplevel):
         self.replaceText = replace
 
     def setOnFindListner(self, listener):
-        '''listner should have the following arguments: dialog, find and direction.'''
+        '''The listener should have the following arguments: dialog, find and direction.'''
         self.findListner = listener
 
     def find(self):
@@ -178,7 +178,7 @@ class ReplaceDialog(Toplevel):
             self.findListner(self, self.findEntry.get(), self.getDirection())
 
     def setOnReplaceListener(self, listener):
-        '''listner should have the following arguments: dialog, find, replace and direction.'''
+        '''The listener should have the following arguments: dialog, find, replace and direction.'''
         self.onReplaceListener = listener
 
     def replace(self):
@@ -190,7 +190,7 @@ class ReplaceDialog(Toplevel):
         self.onReplaceFindListener = listener
 
     def replaceFind(self):
-        '''listner should have the following arguments: dialog, find, replace and direction.'''
+        '''The listener should have the following arguments: dialog, find, replace and direction.'''
         if self.onReplaceFindListener:
             self.onReplaceFindListener(self, self.findEntry.get(), self.replaceEntry.get(), self.getDirection())
 
@@ -198,7 +198,7 @@ class ReplaceDialog(Toplevel):
         self.onReplaceAllListener = listener
 
     def replaceAll(self):
-        '''listner should have the following arguments: dialog, find and replace.'''
+        '''The listener should have the following arguments: dialog, find and replace.'''
         if self.onReplaceAllListener:
             self.onReplaceAllListener(self, self.findEntry.get(), self.replaceEntry.get())
 
@@ -206,7 +206,7 @@ class ReplaceDialog(Toplevel):
         self.directionListener = listener
 
     def onDirectionChange(self):
-        '''listner should have the following arguments: dialog, direction.'''
+        '''The listener should have the following arguments: dialog, direction.'''
         if self.directionListener:
             self.directionListener(self, self.directionVar.get())
 
@@ -214,7 +214,7 @@ class ReplaceDialog(Toplevel):
         self.directionVar.set(direction)
 
     def setOnCloseListener(self, listener):
-        '''listner should have the following arguments: dialog.'''
+        '''The listener should have the following arguments: dialog.'''
         self.closeListener = listener
 
     def close(self):
@@ -261,7 +261,7 @@ class SliderDialog(Toplevel):
         self.__setSliderText(value)
 
     def setOnSliderChangeListener(self, listener):
-        '''listner should have the following arguments: dialog, sliderValue.
+        '''The listner should have the following arguments: dialog, sliderValue.
            SliderText is updated automatically.'''
         self.sliderListener = listener
 
@@ -281,7 +281,7 @@ class SliderDialog(Toplevel):
         self.withdraw()
 
     def setOnDestroyListener(self, listener):
-        '''listner should have the following arguments: dialog.'''
+        '''The listner should have the following arguments: dialog.'''
         self.destroyListener = listener
 
 class RangeDialog(Toplevel):
@@ -335,7 +335,7 @@ class RangeDialog(Toplevel):
         self.maxVar.set(maxValue)
 
     def setOnConfirmListener(self, listener):
-        '''listner should have the following arguments: dialog, min and max.'''
+        '''The listner should have the following arguments: dialog, min and max.'''
         self.confirmListener = listener
 
     def onConfirm(self):
@@ -345,7 +345,7 @@ class RangeDialog(Toplevel):
         self.close()
 
     def setOnCloseListener(self, listener):
-        '''listner should have the following arguments: dialog.'''
+        '''The listner should have the following arguments: dialog.'''
         self.closeListener = listener
 
     def close(self):
@@ -404,7 +404,7 @@ class UnknownMatrix(Toplevel):
             b.grid(row = i, column = entryCount)
             b.config(highlightthickness = 1, bd = 0)
 
-        self.noteLabel = Label(self, text = 'Reminder: Result is in LaTeX form.')
+        self.noteLabel = Label(self, text = 'Reminder: The result is in the LaTeX form.')
         self.resultLabel = Label(self)
         for i, l in enumerate([self.noteLabel, self.resultLabel]):
             l.grid(row = i + 2, column = 0, columnspan = entryCount + 1)
@@ -430,7 +430,7 @@ class UnknownMatrix(Toplevel):
             self.onCopyListener(self, self.result)
 
     def setOnCloseListener(self, listener):
-        '''listner should have the following arguments: dialog, var, row, col.'''
+        '''The listener should have the following arguments: dialog, var, row, col.'''
         self.closeListener = listener
 
     def close(self):
