@@ -1,6 +1,6 @@
 import time, datetime
 import urllib.request, urllib.parse
-import os, threading, subprocess, zipfile, ntpath, shutil, platform
+import os, threading, subprocess, zipfile, ntpath, shutil, platform, sys
 import random, csv, re
 from json import loads, dumps
 from atexit import register
@@ -10,7 +10,7 @@ from functools import reduce
 from types import GeneratorType
 from itertools import chain, combinations
 
-desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + ('\\' if 'win' in sys.platform else '/')
+desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + ('\\' if sys.platform.startswith('win') else '/')
 DataTypeError = TypeError('Unsupported data type.')
 
 def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = True, punctuations: bool = False) -> str:
