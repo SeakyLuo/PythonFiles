@@ -10,7 +10,7 @@ from functools import reduce
 from types import GeneratorType
 from itertools import chain, combinations
 
-desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + '\\'
+desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + ('\\' if 'win' in sys.platform else '/')
 DataTypeError = TypeError('Unsupported data type.')
 
 def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = True, punctuations: bool = False) -> str:
