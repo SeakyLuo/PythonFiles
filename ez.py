@@ -574,8 +574,7 @@ class find:
     def after(self, occurrence):
         '''Return the obj after the occurrence.'''
         try:
-            isStr = self.type != str
-            return self.obj[self.obj.index(occurrence) + (isStr or len(occurrence)):]
+            return self.obj[self.obj.index(occurrence) + (self.type != str or len(occurrence)):]
         except:
             raise DataTypeError
 
@@ -619,7 +618,7 @@ class find:
             raise DataTypeError
         maxStreak = streak = 1
         for i, ch in enumerate(self.obj):
-            if i > 0:
+            if i:
                 if ch == self.obj[i - 1]:
                     streak += 1
                 else:
@@ -642,10 +641,7 @@ class find:
         '''Find the unique key that corresponds to the value.'''
         if self.type != dict:
             raise DataTypeError
-        for k, v in self.obj.items():
-            if v == value:
-                return k
-        return None
+        return next((k for k, v in self.obj.items() if v == value), None)
 
     def last(self, occurrence):
         '''Find the last occurring index in an obj.'''
