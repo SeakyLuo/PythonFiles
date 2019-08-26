@@ -243,10 +243,11 @@ def __handlepy(directory, func, reminder = False):
     ''' Do something, meaning that func(directory), to a py file or a folder of py files.
         func must has exactly one argument filename.
         '''
-    if os.path.isfile(directory) and directory.endswith('.py'):
-        if reminder:
-            print('File detected')
-        func(directory)
+    if os.path.isfile(directory):
+        if directory.endswith('.py'):
+            if reminder:
+                print('File detected')
+            func(directory)
     elif os.path.isdir(directory):
         if reminder:
             print('Folder detected')
@@ -301,8 +302,8 @@ def rmlnk(path: str = desktop):
         if folder.endswith('.lnk'):
             os.rename(folder, folder.replace(' - 快捷方式', ''))
 
-def chdt():
-    '''Change current directory to Desktop'''
+def cddt():
+    '''Change current Directory to DeskTop'''
     os.chdir(desktop)
 
 def copyToClipboard(text):
@@ -595,7 +596,7 @@ class find:
             return -1
 
     def between(self, obj1 = None, obj2 = None, nth = 1):
-        '''Return the obj between obj1 and obj2 (both are not included).
+        '''Return the obj between obj1 and obj2 (both are exclusive).
            Start after the first occurrence of obj1.
            End before the nth occurrence of obj2.
            Setting nth to -1 means the last occurrence.

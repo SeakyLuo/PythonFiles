@@ -134,6 +134,8 @@ def balloon(msg, match: re.Match):
     __gameInfo[msg.sender.nick_name] = game
     text = ['打气球咯', str(game), '击中的气球越多获得的奖励也会更多~', game.getChanceLeft(), BalloonGame.askAim()]
     return Message(text, Mode.balloon, balloon_action1)
+# global invalidCount
+# invalidCount = 0
 def balloon_action1(msg):
     text = msg.text.strip()
     if text in ['A', 'a', '气球', BalloonGame.balloon]:
@@ -144,7 +146,12 @@ def balloon_action1(msg):
         return balloon_aim_balloon(text, msg.sender.nick_name)
     elif EXIT_CODE in text:
         return Message('被你知道这个可爱的小咒语了哈哈，游戏退出~', Mode.standard)
-    return Message(['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()], Mode.balloon, balloon_action1)
+    msgs = ['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()]
+    # invalidCount += 1
+    # if invalidCount == 10:
+    #     msgs.append('你输错了太多次啦，悄咪咪地告诉你一个小秘密，回复骆海天牛逼可以退出哦~')
+    #     invalidCount = 5
+    return Message(msgs, Mode.balloon, balloon_action1)
 def balloon_aim_balloon(msgText, sender):
     col, row = divmod(int(msgText), 10)
     row -= 1
