@@ -25,7 +25,7 @@ def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = Tru
     numbers: a bool that specifies the inclusion of numbers.
             Default: True.
     punctuations: a bool that specifies the inclusion of punctuations, which will be selected from [` -=[]\;',./~!@#$%^&*()_+{}|:"<>?].
-            Default: False.    
+            Default: False.
     @return:
     password: a string. If no argument is set to True, a lower-case string will be returned.
     '''
@@ -644,8 +644,8 @@ class find:
         return next((k for k, v in self.obj.items() if v == value), None)
 
     def last(self, occurrence):
-        '''Find the last occurring index in an obj.'''
-        return self.all(occurrence)[-1]
+        '''Find the last occurring index in an obj. Return -1 if not found'''
+        return next((len(self.obj) - 1 - index for index, item in enumerate(reversed(self.obj)) if item == occurrence), -1)
 
     def powerSet(self):
         '''Find all the subs of obj except the empty sub and itself.
