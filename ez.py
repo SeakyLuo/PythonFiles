@@ -1,7 +1,7 @@
 import time, datetime
 import urllib.request, urllib.parse
 import os, threading, subprocess, zipfile, ntpath, shutil, platform, sys
-import random, csv, re
+import random, csv, re, html
 from json import loads, dumps
 from atexit import register
 from collections.abc import Iterable
@@ -225,19 +225,16 @@ def Eval(string: str):
     try: return eval(string)
     except: return string
 
-def translate(string: str, to_l: str = 'zh', from_l: str = 'en'):
+def translate(string: str, to_l: str = 'zh', from_l: str = 'en') -> str:
     '''Translate string from from_l language to to_l language'''
     if not string: return ''
     header = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
-    flag = 'class="t0">'
     query = urllib.parse.quote(string, encoding = 'utf-8')
-    url = "https://translate.google.cn/m?hl=%s&sl=%s&q=%s" % (to_l, from_l, query)
+    url = f'https://translate.google.cn/m?hl={to_l}&sl={from_l}&q={query}'
     request = urllib.request.Request(url, headers = header)
     page = urllib.request.urlopen(request).read().decode('utf-8')
-    target = page[page.find(flag) + len(flag):]
-    target = target.split("<")[0]
-    target = sub(target, "&#39;", "'")
-    return target
+    target = find(page).between('class="t0">', '<')
+    return html.unescape(target)
 
 def __handlepy(directory, func, reminder = False):
     ''' Do something, meaning that func(directory), to a py file or a folder of py files.
