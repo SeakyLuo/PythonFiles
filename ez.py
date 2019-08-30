@@ -13,6 +13,26 @@ from itertools import chain, combinations
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + ('\\' if sys.platform.startswith('win') else '/')
 DataTypeError = TypeError('Unsupported data type.')
 
+def find_item(path, target, findAll = False):
+    '''
+    Recursively find an item in your computer whose name contains target.
+    If findAll is False, it will stop immediately on first match.
+    '''
+    try:
+        files = os.listdir(path)
+    except PermissionError:
+        return False
+    for item in files:
+        full_path = os.path.join(path, item)
+        if target in item:
+            print(path)
+            if not findAll:
+                return True
+        elif os.path.isdir(item):
+            if find_item(target, full_path) and findAll:
+                return True
+    return False
+
 def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = True, punctuations: bool = False) -> str:
     '''
     Randomly generate a password. Full clexicon is list(map(chr, range(32, 126))).
