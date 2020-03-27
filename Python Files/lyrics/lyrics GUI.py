@@ -19,11 +19,9 @@ else:
     info = fread('previous.txt')
     if info:
         info = info.replace('\ufeff', '')
-        if info[-1] != '/' and '/' in info:
-            info += '/'
-        elif info[-1] != '\\' and '\\' in info:
-            info += '\\'
-        defaultPath = info
+        defaultPath = os.path.normpath(info)
+        if defaultPath[-1] != '\\':
+            defaultPath += '\\'
 
 def search():
     global sc
@@ -155,7 +153,7 @@ artistLabel = Label(root, text = 'Artist: ')
 artistText = Text(root)
 
 def askdirectory():
-    if (path := filedialog.Directory().show()) == '':
+    if (path := os.path.normpath(filedialog.Directory().show())) == '':
         return
     defaultPath = path
     setText(pathText, defaultPath)

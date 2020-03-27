@@ -23,17 +23,19 @@ def lyrics_stripper(lrc: str) -> str:
     return '\n'.join(sentence.strip() for sentence in lrc.split('\n'))
 
 class Searcher:
-    def __init__(self, title: str, artist: str = '', Print: bool = True, fmt: str = "", amount: int = 1):
+    def __init__(self, title: str, artist: str = '', Print: bool = True, amount: int = 1):
         '''
         @params:
         title : the name of the target song.
         artist: optional but recommended for more accurate results.
         Print : print lyrics if True.
-        fmt   : if given, save lyrics into a file with the specific format.
         amount: the max number of lyrics returned.
                 Set to 0 to get all results.
         '''
-        self.title = self.new_title = title
+        self.search(title, artist, Print, amount)
+
+    def init(self, title: str, artist: str = '', Print: bool = True, amount: int = 1):
+        self.title = title
         self.artist = artist
         self.text = '《{}》'.format(self.title)
         if self.artist:
@@ -42,34 +44,35 @@ class Searcher:
         self.lyrics_list = []
         self.urls = []
         self.again = False
-        self.error = False
-        self.search(Print, fmt, amount)
+        self.Print = Print
+        self.amount = amount
 
-    def search(self, Print, fmt, amount):
+    def search(self, title, artist, Print, amount):
         '''Find and output lyrics.'''
+        self.init(title, artist, Print, amount)
         try:
-            self.parse(self.title, self.artist, amount)
+            self._search(title, artist, amount)
             if self.lyrics_list == []:
-                print(f'QAQ主人sama搜不到{self.text}的歌词诶...')
+                print(f'QAQ主人sama搜不到{text}的歌词诶...')
                 self.again = True
                 for left, right in [('(', ')'), ('（', '）'), ('《', '》'), ('(', '）'), ('（', ')')]:
-                    if ez.contains(self.title, left, right):
-                        self.new_title = (self.title[:self.title.find(left)] + self.title[find(self.title).last(right) + 1:]).strip()
-                        print(f'直接搜一下《{self.new_title}》看看~')
-                        self.parse(self.new_title, self.artist, amount)
+                    if ez.contains(title, left, right):
+                        new_title = (title[:title.find(left)] + title[find(title).last(right) + 1:]).strip()
+                        print(f'直接搜一下《{new_title}》看看~')
+                        self._search(new_title, artist, amount)
                         if self.lyrics_list:
-                            print('嘤嘤嘤找到啦!!!~~~')
+                            print('哇哇哇找到啦!!!~~~')
                             break
                         else:
-                            print(f'QAQ抱歉，直接搜《{self.new_title}》也找不到诶...')
+                            print(f'QAQ抱歉，直接搜《{new_title}》也找不到诶...')
                 else:
-                    if self.artist:
-                        print(f'不管作者了，直接搜一下《{self.title}》看看~')
-                        self.parse(self.new_title, '', amount)
+                    if artist:
+                        print(f'不管作者了，直接搜一下《{title}》看看~')
+                        self._search(title, '', amount)
                         if self.lyrics_list:
                             print('嘤嘤嘤找到啦!!!~~~')
                         else:
-                            print(f'QAQ抱歉，只搜《{self.new_title}》也找不到诶...')
+                            print(f'QAQ抱歉，只搜《{title}》也找不到诶...')
                             return ''
                     else:
                         print('网址在这里，主人sama您自己试试吧~')
@@ -77,12 +80,8 @@ class Searcher:
                             print(url)
                         return ''
             self.lyrics = self.lyrics_list[0]
-            if fmt:
-                self.save(fmt)
             if Print:
                 print(f'总共找到了{len(self.lyrics_list)}条结果, 为您呈现第1条~\n\n{self.lyrics}\n')
-            else:
-                return self.lyrics
         except PermissionError:
             print('请先关闭音乐播放器哦~')
             self.error = PermissionError
@@ -90,17 +89,18 @@ class Searcher:
             if self.error == KeyboardInterrupt:
                 raise Exception('好吧好吧，看起来是真的想离开人家呢o(╥﹏╥)o')
             else:
-                print('嘤嘤嘤被键盘打断了，再按一次强行终止哦')
+                print('嘤嘤嘤被键盘打断了，再来一次强行终止哦')
                 self.error = KeyboardInterrupt
-                return
         except Exception as e:
             print(traceback.format_exc())
             print('诶呀呀出故障了，网址在这里，主人sama您自己试试吧~')
             for url in self.urls:
                 print(url)
             self.error = type(e)
+        finally:
+            return '' if self.error else self.lyrics
 
-    def parse(self, title, artist, amount):
+    def _search(self, title, artist, amount):
         self.urls.clear()
         self.qqmusic(title, artist, amount)
 
@@ -147,18 +147,23 @@ class Searcher:
                 break
         return len(self.lyrics_list) == 0
 
-    def save(self, fmt, ALL = True):
+    def save(self, fmt = 'lrc', All = True):
+        '''
+        @params:
+            fmt: save lyrics into a file with the specified format.
+            All: save all instead of the one
+        '''
         filename = f'{self.title}-{self.artist}'
-        if ALL and len(self.lyrics_list) > 1:
+        if All and len(self.lyrics_list) > 1:
             for i, lrc in enumerate(self.lyrics_list):
                 ez.fwrite(f'{filename}（{i + 1}）.{fmt}', lrc)
         else:
             ez.fwrite(f'{filename}.{fmt}', self.lyrics)
 
-    def read(self, ALL = True):
+    def read(self, All = True):
         '''Print the lyrics of a song.'''
         if self.lyrics:
-            if ALL and len(self.lyrics_list) > 1:
+            if All and len(self.lyrics_list) > 1:
                 print(f'总共有{len(self.lyrics)}条歌词~')
                 for i, lrc in enumerate(self.lyrics_list):
                     print(f'这是第{i + 1}条歌词：\n\n')
@@ -179,7 +184,7 @@ class Searcher:
             return
         self.lyrics_list = self.lyrics_list[nth:]
         self.lyrics = self.lyrics_list[0]
-        print(f'将您的歌词设置为第{nth}条辣：\n~{self.lyrics}')
+        print(f'将您的歌词设置为第{nth}条辣：\n{self.lyrics}')
 
 class Setter:
     def __init__(self, path = '', artist = ''):
@@ -200,9 +205,9 @@ class Setter:
         self.lyrics = ''
         self.lyrics_list = []
         self.song_list = []
+        self.success_list = []
         self.fail_list = []
         self.again_list = []
-        self.count = 0  ## Count how many times set() is successfully called.
         self.talf = ()  ## title artist lyrics format
 
         if os.path.exists(self.path):
@@ -297,12 +302,12 @@ class Setter:
                 artist = eyed3.load(self.path + song).tag.artist
                 self.set(title = song, artist = artist, src = source, ow = overwrite)
                 print(f'还剩{len(self.song_list) - i - 1}首！')
-            if self.count == 1 and self.title == '' and self.artist == '' and self.lyrics == '':
+            if len(self.success_list) == 1 and self.title == '' and self.artist == '' and self.lyrics == '':
                 self.title, self.artist, self.lyrics, self.format = self.talf
-            if self.count:
-                self.count = 0
-                print('~~~嘻嘻嘻任务搞定啦~~~')
-            if self.fail_list and input('如果想查看导入歌词失败的歌曲请输入"y"哟，其他输入表示不想看嘤嘤\n>>>') == 'y':
+            print('~~~嘻嘻嘻任务完成啦~~~')
+            if self.success_list and input('如果想查看导入歌词成功的歌曲请输入"y"哟，其他输入表示不想看嘤嘤嘤\n>>>') == 'y':
+                self.success()
+            if self.fail_list and input('如果想查看导入歌词失败的歌曲请输入"y"哟，其他输入表示不想看嘤嘤嘤\n>>>') == 'y':
                 self.fail()
 
     def set(self, title, artist = '', src = '', ow = False):
@@ -316,7 +321,7 @@ class Setter:
         try:
             music = eyed3.load(self.path + title + self.format)
             print(f'成功加载{text}~~~')
-            if music.tag.lyrics and music.tag.lyrics and not ow:
+            if music.tag.lyrics and not ow:
                 self.lyrics = music.tag.lyrics[-1].text
                 print('这首歌已经有歌词了呢~')
                 return
@@ -332,8 +337,8 @@ class Setter:
                 self.lyrics = search.lyrics
                 self.lyrics_list = search.lyrics_list[:]
                 if self.lyrics:
-                    self.count += 1
-                    if self.count == 1:
+                    self.success_list.append((title, artist))
+                    if len(self.success_list) == 1:
                         self.talf = (title, artist, search.lyrics, fmt)
                 else:
                     self.fail_list.append((title, artist))
@@ -369,7 +374,7 @@ class Setter:
         music.tag.lyrics.set(lyrics)
         music.tag.save()
         self.lyrics = lyrics
-        self.lyrics_list = [ lyrics ]
+        self.lyrics_list = [lyrics]
         print('重设歌词成功~')
 
     def delete(self, title = ''):
@@ -390,7 +395,7 @@ class Setter:
     def fail(self):
         '''Print all songs failed to find matching lyrics.'''
         if self.fail_list:
-            print(f'失败的歌曲有{len(self.fail_list)}首，哭哭')
+            print(f'哭哭，失败的歌曲有{len(self.fail_list)}首，他们是：')
             for title, artist in self.fail_list:
                 if artist:
                     print(f'《{title}》', '-' * 3, artist)
@@ -399,11 +404,23 @@ class Setter:
         else:
             print('没有失败的哦~~~')
 
+    def success(self):
+        '''Print all songs that were set lyrics.'''
+        if self.success_list:
+            print(f'嘻嘻，成功的歌曲有{len(self.success_list)}首！他们是：')
+            for title, artist in self.success_list:
+                if artist:
+                    print(f'《{title}》', '-' * 3, artist)
+                else:
+                    print(f'《{title}》')
+        else:
+            print('没有成功的诶……')
+
+
     def retry(self):
         '''Rematch lyrics for the failed songs.'''
-        for song in self.fail_list:
-            artist = eyed3.load(self.path + song).tag.artist
-            self.set(title = song, artist = artist)
+        for title, artist in self.fail_list:
+            self.set(title = title, artist = artist)
 
     def again(self):
         '''Print all songs that searches multiple times.'''
@@ -420,7 +437,7 @@ class Setter:
         '''Print the lyrics of a song or print the lyrics of all songs in a folder.'''
         if title:
             music = eyed3.load(self.path + title)
-            print(len(music.tag.lyrics[-1].text))
+            print(music.tag.lyrics[-1].text)
             print()
         else:
             if self.lyrics_list:
@@ -432,7 +449,7 @@ class Setter:
                             music = eyed3.load(self.path + song)
                             name = get_title(song)
                             lyrics = music.tag.lyrics[-1].text
-                            print(f'这是《{name}》的歌词\n~')
+                            print(f'这是《{name}》的歌词~\n')
                             print(lyrics)
                         except IndexError:
                             print(f'《{name}》没有歌词哟')
