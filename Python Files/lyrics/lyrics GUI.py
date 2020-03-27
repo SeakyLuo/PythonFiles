@@ -27,20 +27,20 @@ else:
 
 def search():
     global sc
-    songtitle = getText(titleText)
-    if songtitle == '':
+    title = getText(titleText)
+    if title == '':
         messagebox.showerror('错误', '没有歌名怎么让人家帮你搜啦')
         return
-    sc = lyrics.Searcher(title = songtitle, artist = getArtist())
+    sc = lyrics.Searcher(title = title, artist = getArtist())
 
 def Set():
     global st
-    st = lyrics.Setter(path = getPath(), artist = getArtist())
+    st = lyrics.Setter(path = os.path.join(getPath(), getText(titleText)), artist = getArtist())
     response = getText(commandText)
     if response in ['ow', 'overwrite']:
         st.add(source = '', overwrite = True)
     else:
-        for flag in ['ow = ', 'overwrite = ']:
+        for flag in ['ow = ', 'overwrite = ', 'ow=', 'overwrite=']:
             if response.startswith(flag):
                 st.add(source = '', overwrite = eval(find(response).after(flag)))
                 break
@@ -52,7 +52,6 @@ def read():
     title = getText(titleText)
     if title:
         try:
-            path = getPath()
             st = lyrics.Setter(path = os.path.join(getPath(), title), artist = getArtist())
         except FileNotFoundError:
             pass

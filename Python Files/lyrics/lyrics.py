@@ -19,7 +19,7 @@ def utf8(byte):
         return sub(repr(byte.encode())[2:-1], '\'', '%27', '\\x', '%', ' ', '%20')
     return ''
 
-def lyrics_stripper(lrc: str):
+def lyrics_stripper(lrc: str) -> str:
     return '\n'.join(sentence.strip() for sentence in lrc.split('\n'))
 
 class Searcher:
@@ -141,11 +141,7 @@ class Searcher:
         result = requests.get(url, params = params, headers = headers)
         data = json.loads(result.text)
         for item in data['data']['lyric']['list']:
-            print('before:')
-            print(item['content'])
-            lyrics = lyrics_stripper(item['content'])
-            print('after')
-            print(lyrics)
+            lyrics = lyrics_stripper(item['content'].replace('\\n', '\n'))
             self.lyrics_list.append(lyrics)
             if len(self.lyrics_list) == amount:
                 break
@@ -226,7 +222,7 @@ class Setter:
                     music = eyed3.load(full_path)
                     self.artist = music.tag.artist
                     self.format = fmt
-                    self.lyrics = music.tag.lyrics[0].text
+                    self.lyrics = music.tag.lyrics[-1].text
                     break
             else:
                 ## 模糊查找相似歌曲，不支持模糊查找路径
@@ -262,7 +258,7 @@ class Setter:
             music = eyed3.load(self.path + self.title + self.format)
             self.artist = music.tag.artist
             try:
-                self.lyrics = music.tag.lyrics[0].text
+                self.lyrics = music.tag.lyrics[-1].text
                 self.lyrics_list.append(self.lyrics)
             except IndexError:
                 pass
@@ -271,7 +267,7 @@ class Setter:
                 if is_music(song):
                     self.song_list.append(song)
                     try:
-                        self.lyrics_list.append(eyed3.load(song).tag.lyrics[0].text)
+                        self.lyrics_list.append(eyed3.load(song).tag.lyrics[-1].text)
                     except IndexError:
                         pass
             songs = len(self.song_list)
@@ -297,14 +293,15 @@ class Setter:
             if not self.fail_list:
                 print('下面是歌词~\n\n' + self.lyrics + '\n')
         else:
-            for song in self.song_list:
+            for i, song in enumerate(self.song_list):
                 artist = eyed3.load(self.path + song).tag.artist
                 self.set(title = song, artist = artist, src = source, ow = overwrite)
+                print(f'还剩{len(self.song_list - i - 1)}首！')
             if self.count == 1 and self.title == '' and self.artist == '' and self.lyrics == '':
                 self.title, self.artist, self.lyrics, self.format = self.talf
             if self.count:
                 self.count = 0
-                print('嘻嘻任务搞定啦~~~')
+                print('~~~嘻嘻嘻任务搞定啦~~~')
             if self.fail_list and input('如果想查看导入歌词失败的歌曲请输入"y"哟，其他输入表示不想看嘤嘤\n>>>') == 'y':
                 self.fail()
 
@@ -319,8 +316,8 @@ class Setter:
         try:
             music = eyed3.load(self.path + title + self.format)
             print(f'成功加载{text}~~~')
-            if music.tag.lyrics and music.tag.lyrics[0].text and not ow:
-                self.lyrics = music.tag.lyrics[0].text
+            if music.tag.lyrics and music.tag.lyrics and not ow:
+                self.lyrics = music.tag.lyrics[-1].text
                 print('这首歌已经有歌词了呢~')
                 return
             if artist == '':
@@ -423,7 +420,7 @@ class Setter:
         '''Print the lyrics of a song or print the lyrics of all songs in a folder.'''
         if title:
             music = eyed3.load(self.path + title)
-            print(music.tag.lyrics[0].text)
+            print(len(music.tag.lyrics[-1].text))
             print()
         else:
             if self.lyrics_list:
@@ -434,7 +431,7 @@ class Setter:
                         try:
                             music = eyed3.load(self.path + song)
                             name = get_title(song)
-                            lyrics = music.tag.lyrics[0].text
+                            lyrics = music.tag.lyrics[-1].text
                             print(f'这是《{name}》的歌词\n~')
                             print(lyrics)
                         except IndexError:
