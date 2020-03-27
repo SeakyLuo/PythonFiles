@@ -20,8 +20,6 @@ else:
     if info:
         info = info.replace('\ufeff', '')
         defaultPath = os.path.normpath(info)
-        if defaultPath[-1] != '\\':
-            defaultPath += '\\'
 
 def search():
     global sc

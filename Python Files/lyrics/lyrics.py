@@ -43,6 +43,7 @@ class Searcher:
         self.lyrics = ''
         self.lyrics_list = []
         self.urls = []
+        self.error = None
         self.again = False
         self.Print = Print
         self.amount = amount
