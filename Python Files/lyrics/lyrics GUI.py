@@ -155,7 +155,9 @@ artistLabel = Label(root, text = 'Artist: ')
 artistText = Text(root)
 
 def askdirectory():
-    defaultPath = filedialog.Directory().show()
+    if (path := filedialog.Directory().show()) == '':
+        return
+    defaultPath = path
     setText(pathText, defaultPath)
     fwrite('previous.txt', defaultPath)
 pathLabel = Button(root, text = 'Path: ', command = askdirectory)

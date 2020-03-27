@@ -8,8 +8,12 @@ def getText(text):
 def clearText(text):
     text.delete(1.0, END)
 
-def setText(text, content):
+def appendText(text, content):
     text.insert(1.0, content)
+
+def setText(text, content):
+    clearText(text)
+    appendText(text, content)
 
 def setEntry(entry, text):
     entry.delete(0, END)

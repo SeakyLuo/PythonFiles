@@ -296,7 +296,7 @@ class Setter:
             for i, song in enumerate(self.song_list):
                 artist = eyed3.load(self.path + song).tag.artist
                 self.set(title = song, artist = artist, src = source, ow = overwrite)
-                print(f'还剩{len(self.song_list - i - 1)}首！')
+                print(f'还剩{len(self.song_list) - i - 1}首！')
             if self.count == 1 and self.title == '' and self.artist == '' and self.lyrics == '':
                 self.title, self.artist, self.lyrics, self.format = self.talf
             if self.count:
