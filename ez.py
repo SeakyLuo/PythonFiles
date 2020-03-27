@@ -13,25 +13,19 @@ from itertools import chain, combinations
 desktop = os.path.join(os.path.join(os.path.expanduser('~')), 'Desktop') + ('\\' if sys.platform.startswith('win') else '/')
 DataTypeError = TypeError('Unsupported data type.')
 
-def find_item(path, target, findAll = False):
+def getSourceCode(url: str) -> str:
     '''
-    Recursively find an item in your computer whose name contains target.
-    If findAll is False, it will stop immediately on first match.
+    Retrieve the decoded content behind the url.
     '''
-    try:
-        files = os.listdir(path)
-    except PermissionError:
-        return False
-    for item in files:
-        full_path = os.path.join(path, item)
-        if target in item:
-            print(path)
-            if not findAll:
-                return True
-        elif os.path.isdir(item):
-            if find_item(target, full_path) and findAll:
-                return True
-    return False
+    headers = {'User-Agent': "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML,  like Gecko) Chrome/31.0.165063 Safari/537.36 AppEngine-Google."}
+    request = urllib.request.Request(url,  headers=headers)
+    return urllib.request.urlopen(request).read().decode()
+
+def random_pop(sequence):
+    '''
+    Randomly remove and pop an item from the sequence.
+    '''
+    return sequence.pop(random.randrange(0, len(sequence)))
 
 def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = True, punctuations: bool = False) -> str:
     '''
@@ -101,6 +95,10 @@ def prchoice(obj):
     while sum(probs[:index + 1]) < probability:
         index += 1
     return targets[index]
+
+cd = os.chdir
+ls = os.listdir
+pwd = os.getcwd
 
 def cdlnk(path: str):
     '''cd lnk path'''
@@ -319,6 +317,8 @@ def rmlnk(path: str = desktop):
         if folder.endswith('.lnk'):
             os.rename(folder, folder.replace(' - 快捷方式', ''))
 
+cd = os.chdir
+
 def cddt():
     '''Change current Directory to DeskTop'''
     os.chdir(desktop)
@@ -364,31 +364,28 @@ def checkfolders(folder1: str, folder2: str):
                 return False
     return True
 
-def findFilePath(filename: str, path: str = ''):
-    '''Default path: All
-       Find the first occurence only.
-       Use smaller range to have faster searching speed.'''
-    if not path:
-        c = findFilePath(filename, 'C:\\')
-        if c:
-            return c
-        d = findFilePath(filename, 'D:\\')
-        if d:
-            return d
-        return False
-    path = os.path.normcase(path)
+def find_item(path: str, target: str, findAll: bool = False):
+    '''
+    Recursively find the path of an item in your computer whose name contains the target.
+    If findAll is False, it will stop immediately after first match.
+    @params:
+        path: directory to find
+        target: the name of target file
+        findAll: bool
+
+    '''
     try:
-        filelist = os.listdir(path)
+        files = os.listdir(path)
     except PermissionError:
-        return
-    if filename in filelist:
-        return path
-    for f in filelist:
-        p = os.path.join(path, f)
-        if os.path.isdir(p):
-            result = findFilePath(filename, p)
-            if result:
-                return result
+        return False
+    for item in files:
+        full_path = os.path.join(path, item)
+        if target in item:
+            if not full_path:
+                return full_path
+        elif os.path.isdir(item):
+            if find_item(target, full_path) and findAll:
+                return full_path
     return False
 
 def timeof(func, args: tuple = ()):
@@ -405,8 +402,8 @@ def timer(func, iterations: int = 1000, args: tuple = ()):
 
 def fread(filename: str, evaluate: bool = True, coding: str = 'utf8'):
     '''Read the file that has the filename.
-        Set evaluate to true to evaluate the content.
-        Default coding: utf8.'''
+       Set evaluate to true to evaluate the content.
+       Default coding: utf8.'''
     with open(filename, encoding = coding) as file:
         content = file.read()
         if evaluate:
@@ -460,8 +457,10 @@ def advancedSplit(obj, *sep):
 asplit = advancedSplit
 
 def similar(obj1, obj2, capital = True):
-    '''Check the similarities of two strings.
-        Set capital to False to ignore capital.'''
+    '''
+    Determine the how similar two strings are.
+    Set capital to False to ignore upper case.
+    '''
     def grade(o1, o2):
         ## Let o1 >= o2
         if o1 == o2:
@@ -475,14 +474,14 @@ def similar(obj1, obj2, capital = True):
             result = sum((i == j) + (i != j) * (i.lower() == j.lower()) * 0.9 for i, j in zip(o1, o2)) / len_o1
             return eval(format(result, '.4f'))
         if len_o2 <= 15 and score > 0.6:
-            ps = list(reversed(find(o2).power_set() + [o2]))
+            substrings = [ o2[i: j] for i in range(len_o2) for j in reversed(range(i + 1, len_o2)) ]
             maxLen = 0
-            for i, sub in enumerate(ps):
+            for i, sub in enumerate(substrings):
                 subLen = len(sub)
                 if sub in o1 and maxLen < subLen:
                     maxLen = subLen
                 try:
-                    if i < 2 ** len(o2) - 2 and maxLen > len(ps[i + 1]):
+                    if i < 2 ** len(o2) - 2 and maxLen > len(substrings[i + 1]):
                         break
                 except IndexError:
                     break
@@ -807,19 +806,28 @@ def formatted():
 #abbreviation
 fmt = formatted
 
-def delta_days(date1: int, date2 = None):
+def intToDatetime(date: int):
+    return datetime.datetime(date // 10000, (date % 10000) // 100, date % 100)
+
+def delta_days(date1: int, date2: int = None):
     '''Return the days difference between two dates.
        Date must be in the format of YYYYMMDD.
        If date2 is None, then it will be regarded as today.'''
-    year = lambda x: x // 10000
-    month = lambda x: (x % 10000) // 100
-    day = lambda x: x % 100
-    start = datetime.datetime(year(date1), month(date1), day(date1))
-    end = datetime.datetime(year(date2), month(date2), day(date2)) if date2 else datetime.datetime.today()
+    start = intToDatetime(date1)
+    end = intToDatetime(date2) if date2 else datetime.datetime.today()
     delta = abs((end - start).days + 1)
     return delta
 
-def ndays_ago(nDays: int):
-    '''Return the date n days ago.'''
-    d = datetime.datetime.today() - datetime.timedelta(days = nDays)
+def days_ago(nDays: int, date: int = None):
+    '''Return the date n days ago.
+       If date is None, then it will be regarded as today.'''
+    start = intToDatetime(date) if date else datetime.datetime.today()
+    d = start - datetime.timedelta(days = nDays)
+    return int(d.strftime('%Y%m%d'))
+
+def days_later(nDays: int, date: int = None):
+    '''Return the date n days after someday.
+       If date is None, then it will be regarded as today.'''
+    start = intToDatetime(date) if date else datetime.datetime.today()
+    d = start + datetime.timedelta(days = nDays)
     return int(d.strftime('%Y%m%d'))

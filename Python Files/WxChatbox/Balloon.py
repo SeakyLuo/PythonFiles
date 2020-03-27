@@ -4,13 +4,14 @@ from HorseRace import horse_race1
 BALLOON = r'.*(打气球).*'
 __bossAim = 0
 __gameInfo = {}
+__dirtyCount = 0
 
 class Voucher: #'\n'.join(['=' * 21, '|' + ' ' * 40 + '|',  ])
     content = \
 '''====================
       ■■■■■■■■
       ■■■■■■■■
-===================
+====================
 '''
     levels = ['一', '二', '三', '四', '五']
     awards = [
@@ -127,30 +128,35 @@ class BalloonGame:
     def getVoucherCount(self):
         return self.boomCount // 2
     def ends(self):
-        return self.boomCount == BalloonGame.width * BalloonGame.height or self.shots == 0
+        return self.boomCount == (BalloonGame.width * BalloonGame.height) or self.shots == 0
 
 def balloon(msg, match: re.Match):
     game = BalloonGame()
     __gameInfo[msg.sender.nick_name] = game
     text = ['打气球咯', str(game), '击中的气球越多获得的奖励也会更多~', game.getChanceLeft(), BalloonGame.askAim()]
     return Message(text, Mode.balloon, balloon_action1)
-# global invalidCount
-# invalidCount = 0
+__invalidCount = 0
 def balloon_action1(msg):
     text = msg.text.strip()
     if text in ['A', 'a', '气球', BalloonGame.balloon]:
         return Message(f'请问你想瞄准哪个{BalloonGame.Balloon()}呢\n如果要瞄准第二行第三个回复23就好啦', Mode.balloon, balloon_action1)
-    elif text in ['B', 'b', '老板', BalloonGame.boss]:
+    if text in ['B', 'b', '老板', BalloonGame.boss]:
         return balloon_aim_boss(msg.sender.nick_name)
-    elif text.isnumeric() and len(text) == 2:
+    if text.isnumeric() and len(text) == 2:
         return balloon_aim_balloon(text, msg.sender.nick_name)
-    elif EXIT_CODE in text:
+    if EXIT_CODE in text:
         return Message('被你知道这个可爱的小咒语了哈哈，游戏退出~', Mode.standard)
-    msgs = ['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()]
-    # invalidCount += 1
-    # if invalidCount == 10:
-    #     msgs.append('你输错了太多次啦，悄咪咪地告诉你一个小秘密，回复骆海天牛逼可以退出哦~')
-    #     invalidCount = 5
+    if any(dirty in text for dirty in ['傻', '猪', '笨', '蠢', '臭']):
+        global __dirtyCount
+        __dirtyCount += 1
+        msgs = [f'你你你，你个大猪蹄子骂我！你{"再" * __dirtyCount}骂就不跟你玩了！', BalloonGame.askAim()]
+    else:
+        msgs = ['请回复A或者B或者一个合法的两位数啦', BalloonGame.askAim()]
+        global __invalidCount
+        __invalidCount += 1
+        if __invalidCount == 10:
+            msgs.append('话说你输错了太多次啦，悄咪咪地告诉你一个小秘密，回复骆海天牛逼可以退出哦~')
+            invalidCount = 5
     return Message(msgs, Mode.balloon, balloon_action1)
 def balloon_aim_balloon(msgText, sender):
     col, row = divmod(int(msgText), 10)
@@ -164,7 +170,7 @@ def balloon_aim_balloon(msgText, sender):
         message: Message = balloon_aim_boss(sender)
         message.insertStart('你不知道为什么突然手一抖，枪口瞄准了老板！')
         return message
-    elif typ == int:
+    if typ == int:
         text = '这个气球已经被打爆啦，请再选一个' if result == BalloonGame.madeShot else '你不可以打那里啦'
         return Message([text, BalloonGame.askAim()], Mode.balloon, balloon_action1)
     text = [f'你瞄准了{BalloonGame.Balloon(msgText)}！', '砰！', str(game)]
@@ -187,7 +193,6 @@ def balloon_aim_balloon(msgText, sender):
         text.append('啊，你打歪了！你什么都没打中！')
         text.append('别灰心啦，你下次一定可以的！' if game.shots else '哎哟，游戏而已啦，没什么的')
     text.append(game.getChanceLeft())
-    print(result)
     if game.ends():
         return Message(text + balloon_award(sender))
     else:

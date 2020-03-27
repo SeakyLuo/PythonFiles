@@ -179,7 +179,7 @@ class FIR:
                 if line == '':
                     continue
                 count = 1
-                if line == side*4:
+                if line == side * 4:
                     ## 如果不止5个相连请你圆润地离开
                     for k in range(5):
                         Label(self.master, text = side, bg = 'yellow').grid(row = r+k*x, column = c+k*y)
@@ -249,7 +249,7 @@ class FIR:
                         count = 2
                         move[count] += [(r+k*x, c+k*y) for k in range(1, 1+idx)]
                     ## 破(_0_0_,  _0__0_,  _0___0_)的T型
-                    for k in set((1, idx)):
+                    for k in {1, idx}:
                         for i, j in directions:
                             if (i, j) == (x, y):
                                 continue

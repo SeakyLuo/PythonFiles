@@ -123,9 +123,12 @@ def scientificNotation(num, pr = True):
 ##abbreviation
 scin = scientificNotation
 
-def nmb(n, m): ## nmb does not mean nimabi
-## This function gives an algorithm which returns all the method
-## that you can put n identical balls into m identical boxes
+def nmb(n, m):
+    '''
+    nmb does not mean nimabi
+    This function gives an algorithm which returns all the method
+    that you can put n identical balls into m identical boxes
+    '''
     def recursive(n, m, lst, method = ''):
         if m>1:
             startIdx = 0
@@ -494,7 +497,8 @@ def get24(a, b = -1, c = -1, d = -1):
                             pass
 
 def permutation(n, m):
-    '''factorial(n)/factorial(n-m)
+    '''Deprecated: Use math.perm of Python 3.8 instead.
+       factorial(n)/factorial(n-m)
         n!/(n-m)!'''
     return factorial(n) // factorial(n - m)
 
@@ -517,7 +521,8 @@ def permutations(*args):
     # return methods
 
 def combination(n, m):
-    ''' n choose m
+    '''Deprecated: Use math.comb of Python 3.8 instead.
+        n choose m
         factorial(n)/(factorial(m)*factorial(n-m))
         n!/(m!*(n-m)!)'''
     if m > n:
@@ -599,18 +604,17 @@ frac = fraction
 
 def factorial(n):
     '''Return n!'''
-    product = 1
-    for i in range(1, n + 1):
-        product *= i
-    return product
+    return math.factorial(n)
+##    product = 1
+##    for i in range(1, n + 1):
+##        product *= i
+##    return product
 
 ##abbreviation
 fact = factorial
 
 def factorialSkip(n):
-    if n in [0, 1]:
-        return 1
-    return n * factorialSkip(n - 2)
+    return 1 if n in [0, 1] else n * factorialSkip(n - 2)
 
 def isPrime(n):
     return type(n) == int and all(n % i for i in range(2, int(n ** 0.5) + 1))
@@ -664,9 +668,9 @@ def findCofactors(*numbers):
 ##abbreviation
 fc = findCofactors
 
-def gcd(*numbers):
-    '''Greatest Common Divisor.'''
-    return reduce(lambda n1, n2: findCofactors(n1, n2)[-1], sorted(numbers))
+##def gcd(*numbers):
+##    '''Greatest Common Divisor.'''
+##    return reduce(lambda n1, n2: findCofactors(n1, n2)[-1], sorted(numbers))
 
 def lcm(*numbers):
     '''Least Common Multiple.'''
@@ -674,7 +678,7 @@ def lcm(*numbers):
     def lcm2(n1, n2):
         if n2 % n1 == 0:
             return n2
-        elif gcd(n1, n2) == 1:
+        elif math.gcd(n1, n2) == 1:
             return n1 * n2
         n1_dict = findPrimeFactors(n1, printResult = 0, return_dict = 1)
         n2_dict = findPrimeFactors(n2, printResult = 0, return_dict = 1)
