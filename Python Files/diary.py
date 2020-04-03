@@ -126,4 +126,4 @@ def search(word, groupByYear = False, Print = True, printText = True):
 
 if __name__ == '__main__':
 ##    main(2021)
-    search('倪', 1, 1, 0)
+    search('崇仁', 0, 1, 1)
