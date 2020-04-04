@@ -31,17 +31,17 @@ def rpassword(length: tuple = (8, 20), capital: bool = True, numbers: bool = Tru
     '''
     Randomly generate a password. Full clexicon is list(map(chr, range(32, 126))).
     @params:
-    length: a tuple of with the format of (minLength, maxLength),
-            or an integer that specifies the length.
-            Default: (8, 20).
-    capital: a bool that specifies the inclusion of capital letters.
-            Default: True.
-    numbers: a bool that specifies the inclusion of numbers.
-            Default: True.
-    punctuations: a bool that specifies the inclusion of punctuations, which will be selected from [` -=[]\;',./~!@#$%^&*()_+{}|:"<>?].
-            Default: False.
+        length: a tuple of with the format of (minLength, maxLength),
+                or an integer that specifies the length.
+                Default: (8, 20).
+        capital: a bool that specifies the inclusion of capital letters.
+                Default: True.
+        numbers: a bool that specifies the inclusion of numbers.
+                Default: True.
+        punctuations: a bool that specifies the inclusion of punctuations, which will be selected from [` -=[]\;',./~!@#$%^&*()_+{}|:"<>?].
+                Default: False.
     @return:
-    password: a string. If no argument is set to True, a lower-case string will be returned.
+        password: a string. If no argument is set to True, a lower-case string will be returned.
     '''
     lexicon = list(map(chr, range(32, 126)))
     if not capital:
@@ -64,11 +64,11 @@ def replacePattern(pattern: str, string: str, substr: str = '') -> str:
     '''
     Replace the substring that follows a pattern from a string.
     @params:
-    pattern: a Regex string or a re.Pattern object.
-    string: the target string.
-    substr: default is empty, which removes the pattern.
+        pattern: a Regex string or a re.Pattern object.
+        string: the target string.
+        substr: default is empty, which removes the pattern.
     @return:
-    new: the final result string
+        new: the final result string
     '''
     if type(pattern) == str:
         pattern = re.compile(pattern)
@@ -83,8 +83,10 @@ def replacePattern(pattern: str, string: str, substr: str = '') -> str:
         new = new.replace(target, substr)
 
 def prchoice(obj):
-    '''Probabilistic random choice. (Random choice with probability)
-       Obj should be two's iterable.'''
+    '''
+    Probabilistic random choice. (Random choice with probability)
+    Obj should be a two's iterable.
+    '''
     targets = []
     probs = []
     for target, prob in obj:
@@ -350,7 +352,7 @@ def copyToClipboard(text):
 ## abbreviation
 cpc = copyToClipboard
 
-def checkfolders(folder1: str, folder2: str):
+def checkfolders(folder1: str, folder2: str) -> bool:
     '''Check whether folder1 is exactly the same as folder2'''
     l1 = os.listdir(folder1)
     l2 = os.listdir(folder2)
@@ -364,7 +366,7 @@ def checkfolders(folder1: str, folder2: str):
                 return False
     return True
 
-def find_item(path: str, target: str, findAll: bool = False):
+def find_item(path: str, target: str, findAll: bool = False) -> str:
     '''
     Recursively find the path of an item in your computer whose name contains the target.
     If findAll is False, it will stop immediately after first match.
@@ -372,12 +374,11 @@ def find_item(path: str, target: str, findAll: bool = False):
         path: directory to find
         target: the name of target file
         findAll: bool
-
     '''
     try:
         files = os.listdir(path)
     except PermissionError:
-        return False
+        return ''
     for item in files:
         full_path = os.path.join(path, item)
         if target in item:
@@ -386,7 +387,7 @@ def find_item(path: str, target: str, findAll: bool = False):
         elif os.path.isdir(item):
             if find_item(target, full_path) and findAll:
                 return full_path
-    return False
+    return ''
 
 def timeof(func, args: tuple = ()):
 ##    from functools import partial
@@ -436,20 +437,20 @@ def write_csv(filename: str, content: list):
         for data in content:
             writer.writerow(data)
 
-def advancedSplit(obj, *sep):
+def advancedSplit(obj: str, *seperators) -> list:
     '''Can have multiple seperators.'''
-    if sep == () or len(sep) == 1:
-        return obj.split(*sep)
+    if seperators == () or len(seperators) == 1:
+        return obj.split(*seperators)
     word = ''
     lst = []
     for ch in obj:
         word += ch
-        f = contains(word, *sep)
-        if f:
-            word = without(word, *f)
-            if word:
-                lst.append(word)
-                word = ''
+        for sep in seperators:
+            if word.endswith(sep):
+                word = find(word).before(sep)
+                if word:
+                    lst.append(word)
+                    word = ''
     if word:
         lst.append(word)
     return lst
@@ -540,8 +541,10 @@ def __levenshteinDistance(s1, s2):
     return distances[-1]
 
 def similar2(obj1, obj2, capital = True):
-    '''Check the how similar string obj1 to obj2 is using Levenshtein Distance.
-        Set capital to False to ignore capital.'''
+    '''
+    Check the how similar string obj1 to obj2 is using Levenshtein Distance.
+    Set capital to False to ignore capital.
+    '''
     if capital:
         obj1 = obj1.lower()
         obj2 = obj2.lower()
@@ -553,7 +556,7 @@ def predir():
     path = os.getcwd()
     os.chdir(path[:find(path).last('\\')])
 
-def isMultiple(obj1, obj2):
+def isMultiple(obj1, obj2) -> bool:
     '''Check whether obj1 is a multiple of obj2'''
     type1 = type(obj1)
     assert type1 == type(obj2), 'Inconsistent data type'
@@ -564,7 +567,7 @@ def isMultiple(obj1, obj2):
         return False
     return all(obj1[i:i + length2] == obj2 for i in range(0, length1, length2))
 
-def contains(obj, *args):
+def contains(obj, *args) -> bool:
     '''Check whether obj contains any of the args.'''
     return any(arg in obj for arg in args)
 
@@ -576,130 +579,144 @@ class find:
         self.empty = self.type()
         self.obj = obj
         if not isinstance(obj, Iterable):
-            print('Unsupported data type automatically is converted to str.')
+            print('Unsupported data is converted to str by default.')
             self.obj = repr(obj)
             self.type = str
 
-    def before(self, occurrence):
-        '''Return the obj before the occurrence.'''
+    def __iter(self, target):
         try:
-            return self.obj[:self.obj.index(occurrence)]
-        except:
+            if self.type == str:
+                for i in range(len(self.obj)):
+                    if self.obj[i:i + len(target)] == target:
+                        yield i
+            else:
+                for i, n in enumerate(self.obj):
+                    if n == target:
+                        yield i
+        except Exception as e:
+            print(e)
             raise DataTypeError
 
-    def after(self, occurrence):
-        '''Return the obj after the occurrence.'''
-        try:
-            return self.obj[self.obj.index(occurrence) + (self.type != str or len(occurrence)):]
-        except:
-            raise DataTypeError
+    def before(self, target, nth = 1):
+        '''Return the obj before the target.'''
+        for i, n in enumerate(self.__iter(target)):
+            if i == n - 1:
+                return self.obj[:n]
+        return self.empty
 
-    def all(self, occurrence):
+    def after(self, target, nth = 1):
+        '''Return the obj after the target.'''
+        for i, n in enumerate(self.__iter(target)):
+            if i == n - 1:
+                return self.obj[n + (self.type != str or len(target)):]
+        return self.empty
+
+    def nth(self, target, nth = 1):
+        '''Return the nth index.'''
+        index = nth - 1 if nth >= 0 else nth % len(self.obj)
+        for i, n in enumerate(self.__iter(target)):
+            if i == index:
+                return n
+        return -1
+
+    def all(self, target):
         '''Find all the occurring indices in an obj.'''
-        if self.type == str:
-            return [ idx for idx in range(len(self.obj)) if self.obj[idx:].startswith(occurrence) ]
-        try:
-            return [ idx for idx in range(len(self.obj)) if self.obj[idx] == occurrence ]
-        except:
-            raise DataTypeError
+        return tuple(self.__iter(target))
 
-    def nth(self, occurrence, nth = 1):
-        '''Find the nth occurring index in an obj.'''
-        try:
-            return self.all(occurrence)[nth - 1]
-        except IndexError:
-            return -1
+    def between(self, left, right, ln = 1, rn = -1):
+        '''
+        Return the obj between left and right (both are exclusive).
+        Start after nth(ln) ocurrence of left.
+        End before nth(rn) ocurrence of right.
+        '''
+        return self.obj[self.nth(left, ln):self.nth(right, rn)]
 
-    def between(self, obj1 = None, obj2 = None, nth = 1):
-        '''Return the obj between obj1 and obj2 (both are exclusive).
-           Start after the first occurrence of obj1.
-           End before the nth occurrence of obj2.
-           Setting nth to -1 means the last occurrence.
-           '''
-        try:
-            start = 0
-            if obj1 != None:
-                start = self.obj.index(obj1) + (len(obj1) if self.type == str else 1)
-            nth = nth - 1 if nth > 0 else nth
-            end = find(self.obj[start:]).all(obj2)[nth] + start if obj2 != None else None
-            return self.obj[start:end]
-        except ValueError:
-            return self.empty
-        except:
-            raise DataTypeError
-
-    def consecutive(self):
-        '''Count the longest consecutive occurrences.'''
+    def consecutive(self) -> int:
+        '''Count the longest consecutive targets.'''
         if self.type == dict:
             raise DataTypeError
         maxStreak = streak = 1
-        for i, ch in enumerate(self.obj):
-            if i:
-                if ch == self.obj[i - 1]:
-                    streak += 1
-                else:
-                    if streak >= maxStreak:
-                        maxStreak = streak
-                    streak = 1
+        for i, n in enumerate(self.obj):
+            if i == 0: continue
+            if n == self.obj[i - 1]:
+                streak += 1
+            else:
+                if streak >= maxStreak:
+                    maxStreak = streak
+                streak = 1
         return maxStreak
 
-    def distance(self, obj1 = None, obj2 = None):
-        '''Find the distance between obj1 and obj2.'''
+    def distance(self, left, right, ln = 1, rn = -1) -> int:
+        '''
+        Find the distance between left and right.
+        Start after nth(ln) ocurrence of left.
+        End before nth(rn) ocurrence of right.
+        '''
         return len(self.between(obj1, obj2))
 
-    def key(self, value) -> tuple:
+    def keys(self, value) -> tuple:
         '''Find a tuple of all the keys with the value.'''
         if self.type != dict:
             raise DataTypeError
-        return tuple(k for k in self.obj if self.obj[k] == value)
+        return tuple(k for k, v in self.obj.items() if v == value)
 
-    def uniqueKey(self, value):
+    def key(self, value):
         '''Find the unique key that corresponds to the value.'''
         if self.type != dict:
             raise DataTypeError
         return next((k for k, v in self.obj.items() if v == value), None)
 
-    def last(self, occurrence):
-        '''Find the last occurring index in an obj. Return -1 if not found'''
-        return next((len(self.obj) - 1 - index for index, item in enumerate(reversed(self.obj)) if item == occurrence), -1)
+    def last(self, target):
+        '''Find the last index in obj. Return -1 if not found'''
+        try:
+            if self.type == str:
+                for i, item in enumerate(reversed(self.obj)):
+                    index = len(self.obj) - i - 1
+                    if self.obj[index:index + len(target)] == target:
+                        return index
+            else:
+                for i, item in enumerate(reversed(self.obj)):
+                    if item == target:
+                        return len(self.obj) - i - 1
+            return -1
+        except:
+            raise DataTypeError
 
     def powerSet(self):
-        '''Find all the subs of obj except the empty sub and itself.
-           This fuction returns a list because set is not ordered.'''
+        '''
+        Find all the subs of obj except the empty sub and itself.
+        This fuction returns a list because set is not ordered.
+        '''
         return list(chain.from_iterable(combinations(self.obj, r) for r in range(len(self.obj) + 1)))
-##        res = [[]]
-##        for n in self.obj:
-##            for i in range(len(res)):
-##                res.append(res[i] + [n])
-##        return res
+    #    res = [[]]
+    #    for n in self.obj:
+    #        for lst in res:
+    #            res.append(lst + [n])
+    #    return res
 
     def count(self):
         '''Calls collections.Counter'''
         return dict(Counter(self.obj))
 
     def switch(self, obj1, obj2):
-        ''''Switch obj1 and obj2 in obj'''
-        assert type(obj1) == type(obj2) == type(self.obj[0]), 'Inconsistent Datatype'
-        isStr = self.type == str
-        add = lambda obj, item: obj + item if isStr else obj + self.type([item])
-        obj = self.type()
-        lenObj = len(self.obj)
-        len1 = len(obj1) if '__len__' in dir(obj1) else 1
-        len2 = len(obj2) if '__len__' in dir(obj2) else 1
-        nexti = -1
-        for i, n in enumerate(self.obj):
-            if i < nexti:
-                continue
+        ''''Switch obj1 and obj2 in obj. (Assume obj1 and obj2 occur once)'''
+        obj = self.obj[:]
+        if obj1 != obj2:
+            index1 = self.nth(obj1)
+            if index1 == -1:
+                raise ValueError(f"{obj1} not found.")
+            index2 = self.nth(obj2)
+            if index2 == -1:
+                raise ValueError(f"{obj1} not found.")
+            if self.type == str:
+                if type(obj1) != str or type(obj2) != str:
+                    raise DataTypeError
+                if index1 > index2:
+                    obj1, obj2 = obj2, obj1
+                    index1, index2 = index2, index1
+                obj = obj[:index1] + obj2 + obj[index1 + len(obj1):index2] + obj1 + obj[index2 + len(obj2):]
             else:
-                nexti = -1
-            if i + len1 <= lenObj and self.obj[i:i + len1] == add(self.empty, obj1):
-                nexti = i + len1
-                obj = add(obj, obj2)
-            elif i + len2 <= lenObj and self.obj[i:i + len2] == add(self.empty, obj2):
-                nexti = i + len2
-                obj = add(obj, obj1)
-            else:
-                obj = add(obj, n)
+                obj[index1], obj[index2] = obj2, obj1
         return obj
 
 ##flatten = lambda x:[y for l in x for y in flatten(l)] if isinstance(x, list) else [x]
