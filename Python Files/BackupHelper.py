@@ -12,11 +12,27 @@ class Checker:
         self.__filesRemoved = []
         self.__foldersToRemove = []
         self.__foldersRemoved = []
+        self.__src = src
+        self.__dst = dst
+        self.__copy = copy
+        self.__update = update
+        self.again(src, dst, copy, update)
+
+    def again(self, src: str = None, dst: str = None, copy: bool = None, update: bool = None):
+        if src != None: self.__src = src
+        if dst != None: self.__dst = dst
+        if copy != None: self.__copy = copy
+        if update != None: self.__update = update
         self.__check(src, dst, copy, update)
+        if not copy:
+            print(f'待复制文件：{len(self.__filesToCopy)}项')
+        if not update:
+            print(f'待更新文件：{len(self.__filesToUpdate)}项')
         if self.__filesToRemove:
             print(f'待移除文件：{len(self.__filesToRemove)}项')
         if self.__foldersToRemove:
             print(f'待移除文件夹：{len(self.__foldersToRemove)}项')
+        
 
     def __check(self, src, dst, copy, update):
         src_list = os.listdir(src)
@@ -193,5 +209,7 @@ class Checker:
         self.__print(self.__foldersRemoved, '已移除文件夹：{0}项', '没有已移除的文件夹')
 
 if __name__ == '__main__':
-    c = Checker(r'C:\Users\Seaky\Desktop\Docs',
-                r'E:\Docs')
+    c = Checker(r'C:\Users\Seaky\Desktop\Pics',
+                r'E:\Pics',
+                False,
+                False)
