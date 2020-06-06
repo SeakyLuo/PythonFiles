@@ -43,6 +43,12 @@ class Checker:
             if item.startswith('~$'):
                 print(f'在{src}中检测到临时文件：{item}，已跳过')
                 continue
+            if item.endswith('.ini'):
+                print(f'在{src}中检测到配置文件：{item}，已跳过')
+                continue
+            if item.endswith('.lnk'):
+                print(f'在{src}中检测到快捷方式：{item}，已跳过')
+                continue
             if os.path.isdir(src_item):
                 if item in dst_list:
                     self.__check(src_item, dst_item, copy, update)
